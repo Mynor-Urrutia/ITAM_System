@@ -1,47 +1,54 @@
-// src/components/Navbar.js
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-// Importa los componentes de Font Awesome
+import { useAuth } from '../context/AuthContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSignOutAlt, faBriefcase, faBuilding } from '@fortawesome/free-solid-svg-icons'; // Iconos a usar
+import { faSignOutAlt, faUserCircle } from '@fortawesome/free-solid-svg-icons'; // Importamos faUserCircle para el icono de usuario
 
-function Navbar({ user, onLogout }) {
-  const navigate = useNavigate();
+function Navbar() {
+    const { user, logout } = useAuth();
 
-  const handleLogout = () => {
-    onLogout();
-    navigate('/login');
-  };
+    // Función para obtener el nombre del rol del usuario.
+    // Asegúrate de que tu objeto 'user' de AuthContext tenga 'role_name'.
+    const getRoleName = () => {
+        if (user && user.role_name) {
+            return user.role_name;
+        }
+        return 'Sin Rol';
+    };
 
-  return (
-    <nav className="bg-gray-800 text-white p-4 shadow-md flex justify-between items-center">
-      <div className="text-xl font-bold">
-        ITAM System
-      </div>
-      <div className="flex items-center space-x-6"> {/* Aumentado el espacio entre elementos */}
-        {user && (
-          <div className="text-sm text-right flex items-center space-x-4"> {/* Contenedor para info de usuario */}
-            <div className="flex flex-col">
-              <p className="font-semibold">{user.username}</p>
-              {/* Puesto y Departamento en la misma línea */}
-              <p className="text-xs text-gray-300">
-                <FontAwesomeIcon icon={faBriefcase} className="mr-1" />
-                {user.puesto || 'N/A'} &bull; <FontAwesomeIcon icon={faBuilding} className="mr-1" />
-                {user.departamento || 'N/A'}
-              </p>
+    return (
+        <nav className="bg-white shadow-md p-4 flex justify-between items-center">
+            {/* Espacio para cualquier elemento a la izquierda del navbar, como un botón de menú para mobile */}
+            <div>
+                {/* Puedes poner un botón de hamburguesa aquí para el sidebar en mobile */}
             </div>
-          </div>
-        )}
-        <button
-          onClick={handleLogout}
-          className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition duration-200 flex items-center"
-        >
-          <FontAwesomeIcon icon={faSignOutAlt} className="mr-2" /> {/* Icono de cerrar sesión */}
-          Cerrar Sesión
-        </button>
-      </div>
-    </nav>
-  );
+
+            {/* Información del Usuario a la derecha */}
+            <div className="flex items-center space-x-4">
+                {user && (
+                    <div className="flex items-center">
+                        <FontAwesomeIcon icon={faUserCircle} className="text-gray-600 text-3xl mr-3" />
+                        <div>
+                            <p className="text-gray-800 font-semibold text-lg leading-tight">
+                                {user.first_name} {user.last_name}
+                            </p>
+                            <p className="text-gray-600 text-sm leading-tight -mt-0.5">
+                                ({user.puesto || 'N/A'}, {user.departamento || 'N/A'}, {getRoleName()})
+                            </p>
+                        </div>
+                    </div>
+                )}
+
+                {/* Botón de Cerrar Sesión (solo icono) */}
+                <button
+                    onClick={logout}
+                    className="ml-6 p-3 bg-red-600 text-white rounded-full hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition duration-150"
+                    title="Cerrar Sesión"
+                >
+                    <FontAwesomeIcon icon={faSignOutAlt} className="text-xl" />
+                </button>
+            </div>
+        </nav>
+    );
 }
 
 export default Navbar;

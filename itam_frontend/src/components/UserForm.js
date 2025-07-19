@@ -1,9 +1,9 @@
 // src/components/UserForm.js
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+// import axios from 'axios'; // <-- ¡ELIMINA ESTA IMPORTACIÓN!
+import api from '../api'; // <-- ¡IMPORTA TU INSTANCIA 'api' CONFIGURADA!
 import { useNavigate } from 'react-router-dom';
-
-const API_BASE_URL = 'http://127.0.0.1:8000/api';
+import { toast } from 'react-toastify'; // Importa toast para notificaciones
 
 // Opciones para los campos de selección (deben coincidir con tus CHOICES en Django)
 const PUESTO_CHOICES = [
@@ -19,21 +19,21 @@ const STATUS_CHOICES = [
   'Activo', 'Inactivo', 'Vacaciones', 'Licencia'
 ];
 
+// const API_BASE_URL = 'http://127.0.0.1:8000/api'; // <-- ¡ESTO YA NO ES NECESARIO! 'api' ya tiene la baseURL
 
 function UserForm({ user, onClose }) {
-  // Si 'user' existe, estamos editando; de lo contrario, estamos creando.
   const isEditing = !!user;
 
   const [formData, setFormData] = useState({
     username: '',
     email: '',
-    password: '', // Solo para creación o si quieres permitir cambiar la contraseña al editar
+    password: '',
     first_name: '',
     last_name: '',
     puesto: '',
     departamento: '',
     region: '',
-    status: 'Activo', // Valor por defecto
+    status: 'Activo',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -45,7 +45,7 @@ function UserForm({ user, onClose }) {
       setFormData({
         username: user.username || '',
         email: user.email || '',
-        password: '', // La contraseña no se precarga por seguridad
+        password: '', // La contraseña no se precarga por seguridad, se maneja por separado
         first_name: user.first_name || '',
         last_name: user.last_name || '',
         puesto: user.puesto || '',
@@ -56,18 +56,20 @@ function UserForm({ user, onClose }) {
     }
   }, [isEditing, user]);
 
-  const getAuthHeaders = () => {
-    const token = localStorage.getItem('accessToken');
-    if (!token) {
-      navigate('/login'); // Redirigir si no hay token
-      return {};
-    }
-    return {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    };
-  };
+  // === ¡ELIMINAMOS ESTA FUNCIÓN! La instancia 'api' ya maneja los headers ===
+  // const getAuthHeaders = () => {
+  //   const token = localStorage.getItem('accessToken'); // <-- CLAVE INCORRECTA
+  //   if (!token) {
+  //     navigate('/login');
+  //     return {};
+  //   }
+  //   return {
+  //     headers: {
+  //       Authorization: `Bearer ${token}`,
+  //     },
+  //   };
+  // };
+  // =========================================================================
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -84,28 +86,31 @@ function UserForm({ user, onClose }) {
 
     try {
       if (isEditing) {
-        // Eliminar password si está vacío y estamos editando, para no enviarlo innecesariamente
+        // Para edición: preparamos los datos, eliminando la contraseña si no se va a cambiar
         const dataToSend = { ...formData };
         if (!dataToSend.password) {
-          delete dataToSend.password;
+          delete dataToSend.password; // No enviar contraseña si está vacía
         }
 
-        await axios.put(`${API_BASE_URL}/users/${user.id}/`, dataToSend, getAuthHeaders());
-        alert('Usuario actualizado exitosamente!');
+        // === ¡USAR 'api.put' DIRECTAMENTE! El token se adjunta automáticamente ===
+        await api.put(`/users/${user.id}/`, dataToSend);
+        toast.success('Usuario actualizado exitosamente!');
       } else {
-        // Para creación, la contraseña es obligatoria.
+        // Para creación: la contraseña es obligatoria.
         if (!formData.password) {
           setError('La contraseña es obligatoria para nuevos usuarios.');
           setLoading(false);
           return;
         }
-        await axios.post(`${API_BASE_URL}/users/`, formData, getAuthHeaders());
-        alert('Usuario creado exitosamente!');
+        // === ¡USAR 'api.post' DIRECTAMENTE! El token se adjunta automáticamente ===
+        await api.post('/users/', formData);
+        toast.success('Usuario creado exitosamente!');
       }
       onClose(); // Cierra el modal y refresca la lista de usuarios
     } catch (err) {
       if (err.response && err.response.status === 401) {
-        alert('Sesión expirada o no autorizada. Por favor, inicia sesión de nuevo.');
+        // Los interceptores deberían manejar esto, pero si no, este es el fallback
+        toast.error('Sesión expirada o no autorizada. Por favor, inicia sesión de nuevo.');
         localStorage.clear();
         navigate('/login');
       } else {
@@ -114,6 +119,7 @@ function UserForm({ user, onClose }) {
           : err.message;
         setError('Error: ' + errorMsg);
         console.error("Error submitting user form:", err.response || err);
+        toast.error('Error al guardar usuario: ' + errorMsg); // Notificación de error
       }
     } finally {
       setLoading(false);
@@ -273,7 +279,6 @@ function UserForm({ user, onClose }) {
           </select>
         </div>
       )}
-
 
       <div className="flex justify-end space-x-3 mt-6">
         <button

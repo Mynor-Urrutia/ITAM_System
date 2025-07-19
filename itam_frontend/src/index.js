@@ -1,16 +1,19 @@
-// src/index.js
+// C:\Proyectos\ITAM_System\itam_frontend\src\index.js
 import React from 'react';
-import ReactDOM from 'react-dom/client'; // Importa 'react-dom/client' para React 18
-import './index.css';
+import ReactDOM from 'react-dom/client';
+import './index.css'; // Tu archivo CSS de Tailwind
 import App from './App';
-import reportWebVitals from './reportWebVitals';
 
-const root = ReactDOM.createRoot(document.getElementById('root')); // Nueva forma de renderizar en React 18
+// Importa y configura Font Awesome
+import { library } from '@fortawesome/fontawesome-svg-core';
+import { fas } from '@fortawesome/free-solid-svg-icons'; // Importa todos los iconos sólidos
+
+// Añade los iconos a la librería de Font Awesome
+library.add(fas);
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
     <App />
   </React.StrictMode>
 );
-
-// Si quieres reportar métricas de rendimiento (opcional)
-reportWebVitals();

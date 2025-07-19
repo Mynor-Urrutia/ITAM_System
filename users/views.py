@@ -1,108 +1,112 @@
-# C:\Proyectos\ITAM_System\itam_backend\users\views.py
-
-from rest_framework import generics, permissions, status # 'status' es importante para las respuestas HTTP
+# C:\Proyectos\ITAM_System\users\views.py
+from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
-from .models import CustomUser
-# ¡MODIFICA ESTA LÍNEA PARA INCLUIR ChangePasswordSerializer!
-from .serializers import UserSerializer, UserRegistrationSerializer, ChangePasswordSerializer
-# Las siguientes dos líneas están bien, solo asegúrate de que estén separadas de la importación de serializadores
-from rest_framework.decorators import action
-from rest_framework.viewsets import ModelViewSet
+# Importa get_user_model para obtener tu CustomUser
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group, Permission # Importa Group y Permission
+from .permissions import IsActiveUser # ¡Importa tu permiso personalizado!
 
-# Vista para el registro de usuarios
-class RegisterView(generics.CreateAPIView):
-    queryset = CustomUser.objects.all()
-    permission_classes = (permissions.AllowAny,) # Cualquiera puede registrarse
-    serializer_class = UserRegistrationSerializer
+# Obtiene tu CustomUser
+User = get_user_model()
 
-# Vista para el login
-class LoginView(APIView):
-    permission_classes = (permissions.AllowAny,)
+# Importa tus serializadores
+from .serializers import (
+    UserSerializer, UserRegistrationSerializer, ChangePasswordSerializer,
+    PermissionSerializer, RoleSerializer
+)
 
-    def post(self, request, *args, **kwargs):
-        username = request.data.get('username')
-        password = request.data.get('password')
-        user = CustomUser.objects.filter(username=username).first()
+# ... Tus vistas existentes (RegisterView, LoginView, UserListCreateView, UserDetailView, ChangeUserPasswordView) ...
 
-        if user and user.check_password(password):
-            # *** ASEGÚRATE QUE ESTA LÍNEA ES CORRECTA ***
-            if user.status != 'Activo': # <--- ¡Aquí es donde debe verificar TU CAMPO 'status'!
-                return Response(
-                    {'error': 'Tu cuenta no está activa. Contacta al administrador.'},
-                    status=status.HTTP_403_FORBIDDEN
-                )
-            # *** Y ASEGÚRATE DE NO ESTAR VERIFICANDO user.is_active en algún otro lugar aquí ***
+# Vista para el login (TokenObtainPairView ya maneja esto, pero si tienes una personalizada, asegúrate que devuelva los datos)
+# Si estás usando TokenObtainPairView de simplejwt, no necesitas esta LoginView personalizada.
+# La dejaremos comentada si usas la de simplejwt en urls.py
+# class LoginView(APIView):
+#     permission_classes = (permissions.AllowAny,)
 
-            refresh = RefreshToken.for_user(user)
-            return Response({
-                'access': str(refresh.access_token),
-                'refresh': str(refresh),
-                'user_id': user.id,
-                'username': user.username,
-                'email': user.email,
-                'first_name': user.first_name,
-                'last_name': user.last_name,
-                'puesto': user.puesto,
-                'departamento': user.departamento,
-                'region': user.region,
-                'status': user.status, # Asegúrate de que el status enviado aquí sea el correcto también
-            })
-        return Response({'error': 'Credenciales inválidas'}, status=status.HTTP_401_UNAUTHORIZED)
-# Vistas para el CRUD de usuarios (Listar, Crear, Ver Detalle, Actualizar)
-# Se recomienda usar ModelViewSet para simplificar, pero si ya tienes generics.ListCreateAPIView
-# y generics.RetrieveUpdateDestroyAPIView, asegúrate de que usen UserSerializer.
+#     def post(self, request, *args, **kwargs):
+#         username = request.data.get('username')
+#         password = request.data.get('password')
+#         user = User.objects.filter(username=username).first() # Usa tu CustomUser
 
-class UserListCreateView(generics.ListCreateAPIView):
-    queryset = CustomUser.objects.all()
+#         if user and user.check_password(password):
+#             if user.status != 'Activo':
+#                 return Response(
+#                     {'error': 'Tu cuenta no está activa. Contacta al administrador.'},
+#                     status=status.HTTP_403_FORBIDDEN
+#                 )
+
+#             refresh = RefreshToken.for_user(user)
+#             # Aquí deberías devolver solo los tokens, y el frontend hará otra petición para los datos del usuario
+#             return Response({
+#                 'access': str(refresh.access_token),
+#                 'refresh': str(refresh),
+#                 # No devuelvas los datos del usuario aquí si el frontend va a hacer una petición a /users/me/
+#             })
+#         return Response({'error': 'Credenciales inválidas'}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+# Vistas para el CRUD de usuarios
+class UserListCreateAPIView(generics.ListCreateAPIView):
+    queryset = User.objects.all().order_by('username')
     serializer_class = UserSerializer
-    permission_classes = [permissions.IsAuthenticated] # Solo usuarios autenticados pueden ver/crear
+    # === ¡CAMBIA ESTO! ===
+    permission_classes = [permissions.IsAdminUser, IsActiveUser] # Añade IsActiveUser
+    # ====================
 
-    # Opcional: Filtrar para que los usuarios no administradores solo vean su propio perfil
-    # def get_queryset(self):
-    #     if self.request.user.is_staff or self.request.user.is_superuser:
-    #         return CustomUser.objects.all()
-    #     return CustomUser.objects.filter(id=self.request.user.id)
-
-
-class UserDetailView(generics.RetrieveUpdateAPIView): # Usamos RetrieveUpdateAPIView para permitir ver y actualizar
-    queryset = CustomUser.objects.all()
+class UserRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [permissions.IsAuthenticated] # Solo autenticados pueden ver/actualizar
+    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser, IsActiveUser] # Añade IsActiveUser
 
-    # Opcional: Asegurar que un usuario solo pueda ver/editar su propio perfil a menos que sea admin
-    # def get_queryset(self):
-    #     if self.request.user.is_staff or self.request.user.is_superuser:
-    #         return CustomUser.objects.all()
-    #     return CustomUser.objects.filter(id=self.request.user.id)
+# Vista para obtener los detalles del usuario autenticado
+class CurrentUserView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsActiveUser] # Añade IsActiveUser
 
+    def get(self, request):
+        serializer = UserSerializer(request.user)
+        return Response(serializer.data)
+
+# Vistas para CRUD de Roles (usando Group)
+class RoleListCreateAPIView(generics.ListCreateAPIView):
+    queryset = Group.objects.all().order_by('name')
+    serializer_class = RoleSerializer
+    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser, IsActiveUser] # Añade IsActiveUser
+
+class RoleRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Group.objects.all()
+    serializer_class = RoleSerializer
+    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser, IsActiveUser] # Añade IsActiveUser
+
+# Vista para listar todos los permisos disponibles de Django
+class PermissionListAPIView(generics.ListAPIView):
+    queryset = Permission.objects.all().order_by('codename')
+    serializer_class = PermissionSerializer
+    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser, IsActiveUser] # Añade IsActiveUser
+
+# Vista para cambiar la contraseña de un usuario
 class ChangeUserPasswordView(APIView):
-    permission_classes = [permissions.IsAuthenticated] # Solo usuarios autenticados pueden usar esto
+    permission_classes = [permissions.IsAuthenticated, IsActiveUser] # Añade IsActiveUser
 
     def post(self, request, pk, *args, **kwargs):
         try:
-            user_to_change = CustomUser.objects.get(pk=pk)
-        except CustomUser.DoesNotExist:
+            user_to_change = User.objects.get(pk=pk)
+        except User.DoesNotExist:
             return Response({'detail': 'Usuario no encontrado.'}, status=status.HTTP_404_NOT_FOUND)
 
-        # Solo un superusuario o el propio usuario puede cambiar su contraseña
-        # if not request.user.is_superuser and request.user != user_to_change:
-        #     return Response({'detail': 'No tienes permiso para cambiar la contraseña de este usuario.'},
-        #                     status=status.HTTP_403_FORBIDDEN)
-
-        # Para este caso, asumimos que solo los administradores podrán cambiar la contraseña de otros.
-        # Si quieres que cualquier usuario pueda cambiar la suya, necesitarías otra lógica.
-        if not request.user.is_superuser:
-             return Response({'detail': 'Solo los administradores pueden cambiar contraseñas de otros usuarios.'},
-                             status=status.HTTP_403_FORBIDDEN)
-
+        # Lógica de permisos para cambiar contraseña:
+        # - Un superusuario puede cambiar la contraseña de cualquier usuario.
+        # - Un usuario normal solo puede cambiar su propia contraseña.
+        if not request.user.is_superuser and request.user.pk != user_to_change.pk:
+            return Response({'detail': 'No tienes permiso para cambiar la contraseña de este usuario.'},
+                            status=status.HTTP_403_FORBIDDEN)
 
         serializer = ChangePasswordSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         new_password = serializer.validated_data['new_password']
-        user_to_change.set_password(new_password) # Django hashea la contraseña
+        user_to_change.set_password(new_password)
         user_to_change.save()
 
         return Response({'detail': 'Contraseña actualizada exitosamente.'}, status=status.HTTP_200_OK)

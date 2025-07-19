@@ -1,267 +1,323 @@
-// src/components/UserCrud.js
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+// C:\Proyectos\ITAM_System\itam_frontend\src\components\UserCrud.js
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import api from '../api';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import { useAuth } from '../context/AuthContext';
 
 import Modal from './Modal';
 import UserForm from './UserForm';
 import UserDetail from './UserDetail';
 import ChangePasswordForm from './ChangePasswordForm';
 
-// Importa los componentes de Font Awesome
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faPlus, // Para crear
-  faEye, // Para ver
-  faEdit, // Para editar
-  faKey, // Para cambiar contraseña
-  faToggleOn, faToggleOff // Para habilitar/deshabilitar
+    faPlus,
+    faEye,
+    faEdit,
+    faKey,
+    faToggleOn, faToggleOff
 } from '@fortawesome/free-solid-svg-icons';
 
-const API_BASE_URL = 'http://127.0.0.1:8000/api';
-
 function UserCrud() {
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const navigate = useNavigate();
+    const [users, setUsers] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+    const navigate = useNavigate();
 
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showViewModal, setShowViewModal] = useState(false);
-  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
+    const [showCreateModal, setShowCreateModal] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [showViewModal, setShowViewModal] = useState(false);
+    const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+    const [currentUser, setCurrentUser] = useState(null);
 
-  const getAuthHeaders = () => {
-    const token = localStorage.getItem('accessToken');
-    if (!token) {
-      navigate('/login');
-      return {};
-    }
-    return {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+    const { user: loggedInUser, fetchUserDetails } = useAuth();
+
+    const effectRan = useRef(false);
+
+    const fetchUsers = useCallback(async () => {
+        setLoading(true);
+        setError('');
+        try {
+            const response = await api.get('/users/');
+            setUsers(response.data);
+            toast.success('Usuarios cargados exitosamente.');
+        } catch (err) {
+            if (err.response && err.response.status === 401) {
+                toast.error('Sesión expirada o no autorizada. Por favor, inicia sesión de nuevo.');
+                localStorage.clear();
+                navigate('/login');
+            } else {
+                setError('Error al cargar usuarios: ' + (err.response?.data?.detail || err.message));
+                console.error("Error fetching users:", err);
+                toast.error('Error al cargar usuarios.');
+            }
+        } finally {
+            setLoading(false);
+        }
+    }, [navigate]);
+
+    useEffect(() => {
+        if (effectRan.current === false) {
+            fetchUsers();
+            effectRan.current = true;
+        }
+    }, [fetchUsers]);
+
+    const handleCreateUserClick = () => {
+        setCurrentUser(null);
+        setShowCreateModal(true);
     };
-  };
 
-  const fetchUsers = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const response = await axios.get(`${API_BASE_URL}/users/`, getAuthHeaders());
-      setUsers(response.data);
-    } catch (err) {
-      if (err.response && err.response.status === 401) {
-        alert('Sesión expirada o no autorizada. Por favor, inicia sesión de nuevo.');
-        localStorage.clear();
-        navigate('/login');
-      } else {
-        setError('Error al cargar usuarios: ' + (err.response?.data?.detail || err.message));
-        console.error("Error fetching users:", err);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+    const handleEditUserClick = (userToEdit) => {
+        setCurrentUser(userToEdit);
+        setShowEditModal(true);
+    };
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
+    const handleViewUserClick = (user) => {
+        setCurrentUser(user);
+        setShowViewModal(true);
+    };
 
-  const handleCreateUserClick = () => {
-    setCurrentUser(null);
-    setShowCreateModal(true);
-  };
+    const handleChangePasswordClick = (user) => {
+        setCurrentUser(user);
+        setShowChangePasswordModal(true);
+    };
 
-  const handleEditUserClick = (user) => {
-    setCurrentUser(user);
-    setShowEditModal(true);
-  };
+    const closeModal = () => {
+        setShowCreateModal(false);
+        setShowEditModal(false);
+        setShowViewModal(false);
+        setShowChangePasswordModal(false);
+        setCurrentUser(null);
+        // NO LLAMAMOS fetchUsers() aquí. Las funciones de creación/edición/toggle actualizan el estado local.
+    };
 
-  const handleViewUserClick = (user) => {
-    setCurrentUser(user);
-    setShowViewModal(true);
-  };
+    const handleCreateUser = async (newUserData) => {
+        try {
+            const response = await api.post('/users/', newUserData);
+            toast.success('Usuario creado exitosamente!');
+            setUsers(prevUsers => [...prevUsers, response.data]);
+            setShowCreateModal(false);
+        } catch (err) {
+            const errorMsg = err.response?.data?.detail || Object.values(err.response?.data || {}).flat().join(' ') || 'Error al crear el usuario.';
+            toast.error(`Error al crear el usuario: ${errorMsg}`);
+            console.error("Error creating user:", err.response || err);
+        }
+    };
 
-  const handleChangePasswordClick = (user) => {
-    setCurrentUser(user);
-    setShowChangePasswordModal(true);
-  };
+    const handleUpdateUser = async (updatedUserData) => {
+        try {
+            const response = await api.put(`/users/${updatedUserData.id}/`, updatedUserData);
+            toast.success('Usuario actualizado exitosamente!');
+            setUsers(prevUsers => prevUsers.map(u => u.id === updatedUserData.id ? response.data : u));
+            setShowEditModal(false);
 
-  const closeModal = () => {
-    setShowCreateModal(false);
-    setShowEditModal(false);
-    setShowViewModal(false);
-    setShowChangePasswordModal(false);
-    setCurrentUser(null);
-    fetchUsers();
-  };
+            if (loggedInUser && loggedInUser.id === updatedUserData.id) {
+                console.log("Editando al usuario actual, recargando detalles del usuario...");
+                await fetchUserDetails();
+                toast.info("Tus propios datos de perfil han sido actualizados.");
+            }
 
-  const handleToggleStatus = async (userId, currentStatus) => {
-    const newStatus = currentStatus === 'Activo' ? 'Inactivo' : 'Activo';
-    if (!window.confirm(`¿Estás seguro de que quieres cambiar el estado del usuario a "${newStatus}"?`)) {
-      return;
-    }
+        } catch (err) {
+            console.error("Error updating user:", err.response || err);
+            const errorMsg = err.response?.data?.detail || Object.values(err.response?.data || {}).flat().join(' ') || 'Error al actualizar el usuario.';
+            setError(errorMsg);
+            toast.error(`Error al actualizar el usuario: ${errorMsg}`);
+        }
+    };
 
-    try {
-      await axios.patch(`${API_BASE_URL}/users/${userId}/`, { status: newStatus }, getAuthHeaders());
-      alert(`Estado del usuario actualizado a ${newStatus}.`);
-      fetchUsers();
-    } catch (err) {
-      if (err.response && err.response.status === 401) {
-        alert('Sesión expirada o no autorizada. Por favor, inicia sesión de nuevo.');
-        localStorage.clear();
-        navigate('/login');
-      } else {
-        setError('Error al actualizar el estado: ' + (err.response?.data?.status || err.message));
-        console.error("Error updating user status:", err);
-      }
-    }
-  };
+    const handleToggleIsActive = async (userId, currentIsActive) => { // Función para alternar 'is_active'
+        const newIsActive = !currentIsActive;
+        const actionText = newIsActive ? 'habilitar' : 'deshabilitar';
 
+        if (!window.confirm(`¿Estás seguro de que quieres ${actionText} este usuario (afectará su inicio de sesión)?`)) {
+            return;
+        }
 
-  if (loading) return <div className="text-center mt-8">Cargando usuarios...</div>;
-  if (error) return <div className="text-center mt-8 text-red-500">{error}</div>;
+        try {
+            const response = await api.patch(`/users/${userId}/`, { is_active: newIsActive });
+            toast.success(`Usuario ${actionText === 'habilitar' ? 'habilitado' : 'deshabilitado'} exitosamente.`);
 
-  return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold text-gray-800 mb-6">Gestión de Usuarios</h1>
+            setUsers(prevUsers => prevUsers.map(u =>
+                u.id === userId ? { ...u, is_active: newIsActive } : u
+            ));
 
-      <div className="flex justify-between items-center mb-4">
-        <button
-          onClick={handleCreateUserClick}
-          className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-150 flex items-center"
-        >
-          <FontAwesomeIcon icon={faPlus} className="mr-2" /> {/* Icono de más */}
-          Crear Nuevo Usuario
-        </button>
-      </div>
+            if (loggedInUser && loggedInUser.id === userId) {
+                console.log("Alternando el estado de actividad del usuario actual, recargando detalles...");
+                await fetchUserDetails();
+                toast.info("Tu estado de cuenta ha sido actualizado.");
+            }
 
-      <div className="overflow-x-auto bg-white shadow-md rounded-lg">
-        <table className="min-w-full leading-normal">
-          <thead>
-            <tr>
-              <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                Usuario
-              </th>
-              <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                Email
-              </th>
-              <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                Nombre
-              </th>
-              <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                Puesto
-              </th>
-              <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                Departamento
-              </th>
-              <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                Región
-              </th>
-              <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                Estado
-              </th>
-              <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                Acciones
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((user) => (
-              <tr key={user.id}>
-                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                  <p className="text-gray-900 whitespace-no-wrap">{user.username}</p>
-                </td>
-                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                  <p className="text-gray-900 whitespace-no-wrap">{user.email}</p>
-                </td>
-                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                  <p className="text-gray-900 whitespace-no-wrap">{user.first_name} {user.last_name}</p>
-                </td>
-                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                  <p className="text-gray-900 whitespace-no-wrap">{user.puesto || 'N/A'}</p>
-                </td>
-                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                  <p className="text-gray-900 whitespace-no-wrap">{user.departamento || 'N/A'}</p>
-                </td>
-                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                  <p className="text-gray-900 whitespace-no-wrap">{user.region || 'N/A'}</p>
-                </td>
-                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                  <span
-                    className={`relative inline-block px-3 py-1 font-semibold leading-tight ${
-                      user.status === 'Activo' ? 'text-green-900' : 'text-red-900'
-                    }`}
-                  >
-                    <span
-                      aria-hidden
-                      className={`absolute inset-0 opacity-50 rounded-full ${
-                        user.status === 'Activo' ? 'bg-green-200' : 'bg-red-200'
-                      }`}
-                    ></span>
-                    <span className="relative">{user.status}</span>
-                  </span>
-                </td>
-                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm text-right">
-                  <div className="flex justify-end space-x-2">
-                    <button
-                      onClick={() => handleViewUserClick(user)}
-                      className="text-blue-600 hover:text-blue-900 p-1"
-                      title="Ver Detalles"
-                    >
-                      <FontAwesomeIcon icon={faEye} /> {/* Icono de ver */}
-                    </button>
-                    <button
-                      onClick={() => handleEditUserClick(user)}
-                      className="text-yellow-600 hover:text-yellow-900 p-1"
-                      title="Editar Usuario"
-                    >
-                      <FontAwesomeIcon icon={faEdit} /> {/* Icono de editar */}
-                    </button>
-                    <button
-                      onClick={() => handleChangePasswordClick(user)}
-                      className="text-purple-600 hover:text-purple-900 p-1"
-                      title="Cambiar Contraseña"
-                    >
-                      <FontAwesomeIcon icon={faKey} /> {/* Icono de llave/contraseña */}
-                    </button>
-                    <button
-                      onClick={() => handleToggleStatus(user.id, user.status)}
-                      className={`${
-                        user.status === 'Activo' ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900'
-                      } p-1`}
-                      title={user.status === 'Activo' ? 'Deshabilitar' : 'Habilitar'}
-                    >
-                      <FontAwesomeIcon icon={user.status === 'Activo' ? faToggleOff : faToggleOn} /> {/* Iconos de toggle */}
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+        } catch (err) {
+            if (err.response && err.response.status === 401) {
+                toast.error('Sesión expirada o no autorizada. Por favor, inicia sesión de nuevo.');
+                localStorage.clear();
+                navigate('/login');
+            } else {
+                setError('Error al actualizar el estado de actividad: ' + (err.response?.data?.detail || err.message));
+                console.error("Error updating user active status:", err);
+                toast.error('Error al actualizar el estado de actividad del usuario.');
+            }
+        }
+    };
 
-      {/* Modales */}
-      <Modal show={showCreateModal} onClose={closeModal} title="Crear Nuevo Usuario">
-        <UserForm onClose={closeModal} />
-      </Modal>
+    if (loading) return <div className="text-center mt-8">Cargando usuarios...</div>;
+    if (error) return <div className="text-center mt-8 text-red-500">{error}</div>;
 
-      <Modal show={showEditModal} onClose={closeModal} title="Editar Usuario">
-        <UserForm user={currentUser} onClose={closeModal} />
-      </Modal>
+    return (
+        <div className="container mx-auto p-4">
+            <h1 className="text-3xl font-bold text-gray-800 mb-6">Gestión de Usuarios</h1>
 
-      <Modal show={showViewModal} onClose={closeModal} title="Detalles del Usuario">
-        <UserDetail user={currentUser} onClose={closeModal} />
-      </Modal>
+            <div className="flex justify-between items-center mb-4">
+                <button
+                    onClick={handleCreateUserClick}
+                    className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-150 flex items-center"
+                >
+                    <FontAwesomeIcon icon={faPlus} className="mr-2" />
+                    Crear Nuevo Usuario
+                </button>
+            </div>
 
-      <Modal show={showChangePasswordModal} onClose={closeModal} title={`Cambiar Contraseña para ${currentUser?.username || ''}`}>
-        {currentUser && <ChangePasswordForm userId={currentUser.id} onClose={closeModal} />}
-      </Modal>
-    </div>
-  );
+            <div className="overflow-x-auto bg-white shadow-md rounded-lg">
+                <table className="min-w-full leading-normal">
+                    <thead>
+                        <tr>
+                            <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                Usuario
+                            </th>
+                            <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                Email
+                            </th>
+                            <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                Nombre
+                            </th>
+                            <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                Puesto
+                            </th>
+                            <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                Departamento
+                            </th>
+                            <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                Región
+                            </th>
+                            {/* Nueva columna para el estado de actividad (is_active) */}
+                            <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                Acceso Activo
+                            </th>
+                            {/* Columna existente para el estado organizacional (status) */}
+                            <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                Estado Org.
+                            </th>
+                            <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                Acciones
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {users.map((user) => (
+                            <tr key={user.id}>
+                                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                                    <p className="text-gray-900 whitespace-no-wrap">{user.username}</p>
+                                </td>
+                                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                                    <p className="text-gray-900 whitespace-no-wrap">{user.email}</p>
+                                </td>
+                                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                                    <p className="text-gray-900 whitespace-no-wrap">{user.first_name} {user.last_name}</p>
+                                </td>
+                                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                                    <p className="text-gray-900 whitespace-no-wrap">{user.puesto || 'N/A'}</p>
+                                </td>
+                                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                                    <p className="text-gray-900 whitespace-no-wrap">{user.departamento || 'N/A'}</p>
+                                </td>
+                                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                                    <p className="text-gray-900 whitespace-no-wrap">{user.region || 'N/A'}</p>
+                                </td>
+                                {/* Columna para is_active con el toggle button */}
+                                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm text-center">
+                                    <button
+                                        onClick={() => handleToggleIsActive(user.id, user.is_active)}
+                                        className={`${
+                                            user.is_active ? 'text-green-600 hover:text-green-800' : 'text-red-600 hover:text-red-800'
+                                        } p-1 text-2xl`}
+                                        title={user.is_active ? 'Deshabilitar acceso' : 'Habilitar acceso'}
+                                    >
+                                        <FontAwesomeIcon icon={user.is_active ? faToggleOn : faToggleOff} />
+                                    </button>
+                                </td>
+                                {/* Columna para el campo 'status' organizacional */}
+                                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                                    <span
+                                        className={`relative inline-block px-3 py-1 font-semibold leading-tight ${
+                                            user.status === 'Activo' ? 'text-green-900' : 
+                                            user.status === 'Inactivo' ? 'text-red-900' : 
+                                            'text-blue-900' // O el color que quieras para otros estados
+                                        }`}
+                                    >
+                                        <span
+                                            aria-hidden
+                                            className={`absolute inset-0 opacity-50 rounded-full ${
+                                                user.status === 'Activo' ? 'bg-green-200' : 
+                                                user.status === 'Inactivo' ? 'bg-red-200' : 
+                                                'bg-blue-200'
+                                            }`}
+                                        ></span>
+                                        <span className="relative">{user.status}</span>
+                                    </span>
+                                </td>
+                                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm text-right">
+                                    <div className="flex justify-end space-x-2">
+                                        <button
+                                            onClick={() => handleViewUserClick(user)}
+                                            className="text-blue-600 hover:text-blue-900 p-1"
+                                            title="Ver Detalles"
+                                        >
+                                            <FontAwesomeIcon icon={faEye} />
+                                        </button>
+                                        <button
+                                            onClick={() => handleEditUserClick(user)}
+                                            className="text-yellow-600 hover:text-yellow-900 p-1"
+                                            title="Editar Usuario"
+                                        >
+                                            <FontAwesomeIcon icon={faEdit} />
+                                        </button>
+                                        <button
+                                            onClick={() => handleChangePasswordClick(user)}
+                                            className="text-purple-600 hover:text-purple-900 p-1"
+                                            title="Cambiar Contraseña"
+                                        >
+                                            <FontAwesomeIcon icon={faKey} />
+                                        </button>
+                                        {/* El botón de toggle para is_active ya está en su propia columna */}
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* Modales */}
+            <Modal show={showCreateModal} onClose={closeModal} title="Crear Nuevo Usuario">
+                <UserForm onClose={closeModal} onSubmit={handleCreateUser} />
+            </Modal>
+
+            <Modal show={showEditModal} onClose={closeModal} title="Editar Usuario">
+                {/* Asegúrate de que UserForm pueda manejar tanto is_active como status */}
+                <UserForm user={currentUser} onClose={closeModal} onSubmit={handleUpdateUser} />
+            </Modal>
+
+            <Modal show={showViewModal} onClose={closeModal} title="Detalles del Usuario">
+                <UserDetail user={currentUser} onClose={closeModal} />
+            </Modal>
+
+            <Modal show={showChangePasswordModal} onClose={closeModal} title={`Cambiar Contraseña para ${currentUser?.username || ''}`}>
+                {currentUser && <ChangePasswordForm userId={currentUser.id} onClose={closeModal} />}
+            </Modal>
+        </div>
+    );
 }
 
 export default UserCrud;

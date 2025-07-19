@@ -1,29 +1,15 @@
 // src/components/ChangePasswordForm.js
 import React, { useState } from 'react';
-import axios from 'axios';
+import api from '../api';
 import { useNavigate } from 'react-router-dom';
-
-const API_BASE_URL = 'http://127.0.0.1:8000/api';
+import { toast } from 'react-toastify';
 
 function ChangePasswordForm({ userId, onClose }) {
   const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState(''); // Estado para confirmPassword
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-
-  const getAuthHeaders = () => {
-    const token = localStorage.getItem('accessToken');
-    if (!token) {
-      navigate('/login');
-      return {};
-    }
-    return {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    };
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -31,33 +17,39 @@ function ChangePasswordForm({ userId, onClose }) {
 
     if (newPassword !== confirmPassword) {
       setError('Las contraseñas no coinciden.');
+      toast.error('Las contraseñas no coinciden.');
       return;
     }
 
     if (newPassword.length < 8) {
       setError('La contraseña debe tener al menos 8 caracteres.');
+      toast.error('La contraseña debe tener al menos 8 caracteres.');
       return;
     }
 
     setLoading(true);
     try {
-      // Envía la nueva contraseña al endpoint que creaste en Django
-      await axios.post(
-        `${API_BASE_URL}/users/${userId}/change-password/`,
-        { new_password: newPassword },
-        getAuthHeaders()
+      await api.post(
+        `/users/${userId}/change-password/`,
+        {
+          new_password: newPassword,
+          confirm_new_password: confirmPassword, // <-- ¡Añade este campo!
+        }
       );
-      alert('Contraseña actualizada exitosamente.');
-      onClose(); // Cierra el modal al éxito
+      toast.success('Contraseña actualizada exitosamente.');
+      onClose();
     } catch (err) {
       if (err.response && err.response.status === 401) {
-        alert('Sesión expirada o no autorizada. Por favor, inicia sesión de nuevo.');
+        toast.error('Sesión expirada o no autorizada. Por favor, inicia sesión de nuevo.');
         localStorage.clear();
         navigate('/login');
-      } else if (err.response && err.response.data && err.response.data.detail) {
-        setError(err.response.data.detail); // Mensaje de error desde el backend (ej. permisos)
+      } else if (err.response && err.response.data) {
+        const errorMsg = err.response.data.detail || Object.values(err.response.data).flat().join(' ');
+        setError(errorMsg);
+        toast.error('Error al cambiar la contraseña: ' + errorMsg);
       } else {
         setError('Error al cambiar la contraseña. Inténtalo de nuevo.');
+        toast.error('Error al cambiar la contraseña. Inténtalo de nuevo.');
       }
       console.error("Error changing password:", err.response || err);
     } finally {

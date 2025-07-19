@@ -45,7 +45,7 @@ class CustomUser(AbstractUser):
     puesto = models.CharField(max_length=50, choices=PUESTO_CHOICES, blank=True, null=True)
     departamento = models.CharField(max_length=50, choices=DEPARTAMENTO_CHOICES, blank=True, null=True)
     region = models.CharField(max_length=50, choices=REGION_CHOICES, blank=True, null=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Activo')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Activo') # Este campo se mantiene
 
     # Las definiciones de groups y user_permissions con related_name deben ir aquí
     groups = models.ManyToManyField(

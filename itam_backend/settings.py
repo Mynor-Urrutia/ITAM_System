@@ -44,6 +44,8 @@ INSTALLED_APPS = [
     'corsheaders',  # ¡Agrega esta línea!
 ]
 
+AUTH_USER_MODEL = 'users.CustomUser' # ¡Esto es CRÍTICO!
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'corsheaders.middleware.CorsMiddleware',  # ¡Agrega esta línea, idealmente aquí!
@@ -141,19 +143,22 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated',
+        #'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.permissions.AllowAny',  # Permite acceso a todos por ahora, ajusta según tus necesidades
     )
 }
+
+from datetime import timedelta
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15), # Token de acceso expira en 15 minutos
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),   # Token de refresco expira en 7 días
     'ROTATE_REFRESH_TOKENS': False,
-    'BLACKLIST_AFTER_ROTATION': False,
+    'BLACKLIST_AFTER_ROTATION': True,
     'UPDATE_LAST_LOGIN': False,
 
     'ALGORITHM': 'HS256',
-    'SIGNING_KEY': 'django-insecure-tu_llave_secreta_aqui', # ¡REEMPLAZA POR TU SECRET_KEY DE DJANGO O UNA NUEVA!
+    'SIGNING_KEY': 'django-insecure-v^2u)3-%-0vsy75g0bbafaqj&7g0nxg6dsbr(t$ue7bkta6ike', # ¡REEMPLAZA POR TU SECRET_KEY DE DJANGO O UNA NUEVA!
     'VERIFYING_KEY': None,
     'AUDIENCE': None,
     'ISSUER': None,
