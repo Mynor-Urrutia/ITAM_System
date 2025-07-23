@@ -2,21 +2,23 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { useAuth } from '../context/AuthContext'; // Importa useAuth para hasPermission
 import {
-    faTachometerAlt, // Dashboard
-    faUserCog,        // Gestión de Usuarios (dentro de Configuración)
+    faHome,           // Icono para Home
+    faUserCog,        // Gestión de Usuarios
     faCog,            // Icono para el dropdown de Configuraciones
     faInfoCircle,     // Acerca de
     faEnvelope,       // Contacto
     faChartBar,       // Reportes
-    faCogs,           // Mantenimiento de Activos (Ejemplo de otro módulo)
-    faUsers,          // Otro módulo, quizás un listado general de usuarios si "Gestión de Usuarios" es más específico CRUD
+    faCogs,           // Mantenimiento de Activos
+    faUsers,          // Gestión de Roles (o un icono más específico si lo encuentras)
     faChevronDown,    // Para el dropdown
     faChevronUp       // Para el dropdown
 } from '@fortawesome/free-solid-svg-icons';
 
 function Sidebar() {
     const [showSettingsDropdown, setShowSettingsDropdown] = useState(false);
+    const { hasPermission } = useAuth(); // Obtén hasPermission
 
     return (
         <div className="bg-gray-800 text-white w-64 space-y-6 py-7 px-2 absolute inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 transition duration-200 ease-in-out">
@@ -27,77 +29,95 @@ function Sidebar() {
 
             <nav>
                 <NavLink
-                    to="/dashboard"
+                    to="/home" // <-- CAMBIADO: Enlace a /home
                     className={({ isActive }) =>
                         `block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 hover:text-white ${
                             isActive ? 'bg-gray-700 text-white' : ''
                         }`
                     }
                 >
-                    <FontAwesomeIcon icon={faTachometerAlt} className="mr-3" />
-                    Dashboard
+                    <FontAwesomeIcon icon={faHome} className="mr-3" /> {/* Icono para Home */}
+                    Home
                 </NavLink>
 
                 {/* --- Dropdown de Configuraciones --- */}
-                <div className="relative">
-                    <button
-                        onClick={() => setShowSettingsDropdown(!showSettingsDropdown)}
-                        className="w-full text-left flex items-center py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 hover:text-white focus:outline-none"
-                    >
-                        <FontAwesomeIcon icon={faCog} className="mr-3" />
-                        Configuraciones
-                        <span className="ml-auto">
-                            {/* Icono de flecha para el dropdown */}
-                            <FontAwesomeIcon icon={showSettingsDropdown ? faChevronUp : faChevronDown} />
-                        </span>
-                    </button>
-                    {showSettingsDropdown && (
-                        <div className="ml-6 mt-1 bg-gray-700 rounded-md shadow-lg">
-                            <NavLink
-                                to="/users"
-                                className={({ isActive }) =>
-                                    `block py-2 px-4 rounded transition duration-200 hover:bg-gray-600 hover:text-white ${
-                                        isActive ? 'bg-gray-600 text-white' : ''
-                                    }`
-                                }
-                                // Cierra el dropdown al hacer clic
-                                onClick={() => setShowSettingsDropdown(false)}
-                            >
-                                <FontAwesomeIcon icon={faUserCog} className="mr-3" />
-                                Gestión de Usuarios
-                            </NavLink>
-                            {/* Añade más opciones de configuración aquí si las tienes */}
-                            {/* <NavLink to="/roles" className="block py-2 px-4 rounded transition duration-200 hover:bg-gray-600 hover:text-white">
-                                <FontAwesomeIcon icon={faUserTag} className="mr-3" /> Gestión de Roles
-                            </NavLink> */}
-                        </div>
-                    )}
-                </div>
+                {/* El dropdown de configuraciones solo se muestra si el usuario tiene permiso para ver al menos una de sus opciones */}
+                {(hasPermission('users.view_customuser') || hasPermission('auth.view_group')) && (
+                    <div className="relative">
+                        <button
+                            onClick={() => setShowSettingsDropdown(!showSettingsDropdown)}
+                            className="w-full text-left flex items-center py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 hover:text-white focus:outline-none"
+                        >
+                            <FontAwesomeIcon icon={faCog} className="mr-3" />
+                            Configuraciones
+                            <span className="ml-auto">
+                                <FontAwesomeIcon icon={showSettingsDropdown ? faChevronUp : faChevronDown} />
+                            </span>
+                        </button>
+                        {showSettingsDropdown && (
+                            <div className="ml-6 mt-1 bg-gray-700 rounded-md shadow-lg">
+                                {hasPermission('users.view_customuser') && (
+                                    <NavLink
+                                        to="/users"
+                                        className={({ isActive }) =>
+                                            `block py-2 px-4 rounded transition duration-200 hover:bg-gray-600 hover:text-white ${
+                                                isActive ? 'bg-gray-600 text-white' : ''
+                                            }`
+                                        }
+                                        onClick={() => setShowSettingsDropdown(false)}
+                                    >
+                                        <FontAwesomeIcon icon={faUserCog} className="mr-3" />
+                                        Gestión de Usuarios
+                                    </NavLink>
+                                )}
+                                {hasPermission('auth.view_group') && ( // <-- ¡NUEVO ENLACE! para Gestión de Roles
+                                    <NavLink
+                                        to="/roles-management"
+                                        className={({ isActive }) =>
+                                            `block py-2 px-4 rounded transition duration-200 hover:bg-gray-600 hover:text-white ${
+                                                isActive ? 'bg-gray-600 text-white' : ''
+                                            }`
+                                        }
+                                        onClick={() => setShowSettingsDropdown(false)}
+                                    >
+                                        <FontAwesomeIcon icon={faUsers} className="mr-3" /> {/* Puedes usar faUsers o faUserTag */}
+                                        Gestión de Roles
+                                    </NavLink>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                )}
                 {/* --- Fin del Dropdown de Configuraciones --- */}
 
                 {/* Otros enlaces con iconos */}
-                <NavLink
-                    to="/reports"
-                    className={({ isActive }) =>
-                        `block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 hover:text-white ${
-                            isActive ? 'bg-gray-700 text-white' : ''
-                        }`
-                    }
-                >
-                    <FontAwesomeIcon icon={faChartBar} className="mr-3" />
-                    Reportes
-                </NavLink>
-                <NavLink
-                    to="/assets"
-                    className={({ isActive }) =>
-                        `block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 hover:text-white ${
-                            isActive ? 'bg-gray-700 text-white' : ''
-                        }`
-                    }
-                >
-                    <FontAwesomeIcon icon={faCogs} className="mr-3" />
-                    Mantenimiento de Activos
-                </NavLink>
+                {hasPermission('reports.view_report') && ( // Asumiendo este permiso
+                    <NavLink
+                        to="/reports"
+                        className={({ isActive }) =>
+                            `block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 hover:text-white ${
+                                isActive ? 'bg-gray-700 text-white' : ''
+                            }`
+                        }
+                    >
+                        <FontAwesomeIcon icon={faChartBar} className="mr-3" />
+                        Reportes
+                    </NavLink>
+                )}
+                {hasPermission('assets.view_asset') && ( // Asumiendo este permiso
+                    <NavLink
+                        to="/assets"
+                        className={({ isActive }) =>
+                            `block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 hover:text-white ${
+                                isActive ? 'bg-gray-700 text-white' : ''
+                            }`
+                        }
+                    >
+                        <FontAwesomeIcon icon={faCogs} className="mr-3" />
+                        Mantenimiento de Activos
+                    </NavLink>
+                )}
+                {/* Estos enlaces podrían no requerir permisos específicos, o podrías añadir 'view_about', 'view_contact' si los creas */}
                 <NavLink
                     to="/about"
                     className={({ isActive }) =>

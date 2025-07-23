@@ -1,6 +1,6 @@
 // C:\Proyectos\ITAM_System\itam_frontend\src\App.js
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'; // Importa Navigate
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -8,10 +8,11 @@ import 'react-toastify/dist/ReactToastify.css';
 // Importa tus componentes
 import Login from './components/Login';
 import Home from './components/Home';
-import Navbar from './components/Navbar';   // Asegúrate de que estén importados
-import Sidebar from './components/Sidebar'; // Asegúrate de que estén importados
+import Navbar from './components/Navbar';
+import Sidebar from './components/Sidebar';
 import UserCrud from './components/UserCrud';
-// Importa cualquier otro componente de gestión aquí
+import RoleManagement from './components/RoleManagement'; // <-- ¡IMPORTA EL NUEVO COMPONENTE!
+import PrivateRoute from './components/PrivateRoute'; // Asegúrate de que PrivateRoute está disponible
 
 // Este componente AppContent usará el AuthContext
 const AppContent = () => {
@@ -31,22 +32,76 @@ const AppContent = () => {
                         <Navbar /> {/* El Navbar en la parte superior del contenido principal */}
                         <main className="flex-1 p-6 overflow-auto bg-gray-100"> {/* Contenido principal */}
                             <Routes>
-                                <Route path="/home" element={<Home />} />
-                                <Route path="/users" element={<UserCrud />} />
+                                {/* Rutas Protegidas */}
+                                <Route path="/home" element={<Home />} /> {/* Ruta para el Home */}
+                                
+                                {/* Ruta para Gestión de Usuarios con PrivateRoute */}
+                                <Route
+                                    path="/users"
+                                    element={
+                                        <PrivateRoute requiredPermissions={['users.view_customuser']}>
+                                            <UserCrud />
+                                        </PrivateRoute>
+                                    }
+                                />
+                                {/* Ruta para Gestión de Roles con PrivateRoute */}
+                                <Route
+                                    path="/roles-management"
+                                    element={
+                                        <PrivateRoute requiredPermissions={['auth.view_group']}>
+                                            <RoleManagement /> {/* Renderiza el componente RoleManagement */}
+                                        </PrivateRoute>
+                                    }
+                                />
                                 {/* Agrega aquí más rutas protegidas para componentes de gestión */}
-                                <Route path="/" element={<Home />} /> {/* Ruta por defecto para autenticados */}
+                                {/* Ejemplo de otras rutas */}
+                                <Route
+                                    path="/reports"
+                                    element={
+                                        <PrivateRoute requiredPermissions={['reports.view_report']}>
+                                            <div>Página de Reportes</div>
+                                        </PrivateRoute>
+                                    }
+                                />
+                                <Route
+                                    path="/assets"
+                                    element={
+                                        <PrivateRoute requiredPermissions={['assets.view_asset']}> {/* Asumiendo un permiso para activos */}
+                                            <div>Mantenimiento de Activos</div>
+                                        </PrivateRoute>
+                                    }
+                                />
+                                <Route
+                                    path="/about"
+                                    element={
+                                        <PrivateRoute> {/* Podría no requerir permisos específicos */}
+                                            <div>Acerca de</div>
+                                        </PrivateRoute>
+                                    }
+                                />
+                                <Route
+                                    path="/contact"
+                                    element={
+                                        <PrivateRoute> {/* Podría no requerir permisos específicos */}
+                                            <div>Contacto</div>
+                                        </PrivateRoute>
+                                    }
+                                />
+
+                                {/* Ruta por defecto para autenticados */}
+                                <Route path="/" element={<Navigate to="/home" replace />} />
                                 {/* Si el usuario ya está autenticado y va a /login, redirigir a /home */}
-                                <Route path="/login" element={<Home />} />
+                                <Route path="/login" element={<Navigate to="/home" replace />} />
                             </Routes>
                         </main>
                     </div>
                 </div>
             ) : (
-                // Si no está autenticado, solo muestra la ruta de Login
+                // Si no está autenticado, solo muestra la ruta de Login y redirige todo lo demás a login
                 <Routes>
                     <Route path="/login" element={<Login />} />
                     {/* Cualquier otra ruta si no está autenticado, redirige a login */}
-                    <Route path="*" element={<Login />} />
+                    <Route path="*" element={<Navigate to="/login" replace />} />
                 </Routes>
             )}
         </>
