@@ -1,7 +1,7 @@
 // C:\Proyectos\ITAM_System\itam_frontend\src\context\AuthContext.js
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { jwtDecode } from 'jwt-decode'; // Keep this, though we're mostly using /users/me/ now for data
-import api from '../api'; // Your custom axios instance
+import { jwtDecode } from 'jwt-decode';
+import api from '../api';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 
@@ -10,9 +10,9 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
     const navigate = useNavigate();
     const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [user, setUser] = useState(null);
+    const [user, setUser] = useState(null); // This will now include is_staff, is_superuser
     const [loading, setLoading] = useState(true);
-    // NEW: State to store user permissions as a Set for efficient lookups
+    // State to store user permissions as a Set for efficient lookups
     const [userPermissions, setUserPermissions] = useState(new Set());
 
     const logout = useCallback(() => {
@@ -21,7 +21,6 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem('user_data');
         setIsAuthenticated(false);
         setUser(null);
-        // NEW: Clear permissions on logout
         setUserPermissions(new Set());
         toast.info('Sesión cerrada.');
         navigate('/login');
@@ -32,14 +31,20 @@ export const AuthProvider = ({ children }) => {
             const response = await api.get('/users/me/');
             const userData = response.data;
             localStorage.setItem('user_data', JSON.stringify(userData));
-            setUser(userData);
+            
+            // --- IMPORTANT: Ensure user state includes is_staff and is_superuser ---
+            setUser({
+                ...userData, // Spread existing user data
+                is_staff: userData.is_staff, // Explicitly capture these flags
+                is_superuser: userData.is_superuser,
+            });
+            // ----------------------------------------------------------------------
+            
             setIsAuthenticated(true);
 
-            // NEW: Extract and set user permissions from fetched user data
-            if (Array.isArray(userData.user_permissions)) { // Assuming 'user_permissions' field from /users/me/
+            // Extract and set user permissions from fetched user data
+            if (Array.isArray(userData.user_permissions)) {
                 setUserPermissions(new Set(userData.user_permissions));
-            } else if (Array.isArray(userData.permissions)) { // Fallback if your field is named 'permissions'
-                 setUserPermissions(new Set(userData.permissions));
             } else {
                 setUserPermissions(new Set()); // No permissions or invalid format
             }
@@ -97,7 +102,6 @@ export const AuthProvider = ({ children }) => {
             toast.error(errorMessage);
             setIsAuthenticated(false);
             setUser(null);
-            // NEW: Clear permissions on login failure
             setUserPermissions(new Set());
             localStorage.removeItem('access_token');
             localStorage.removeItem('refresh_token');
@@ -107,28 +111,51 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    // NEW: hasPermission function
+    // hasPermission function
     const hasPermission = useCallback((permissionCode) => {
-        // console.log("Checking permission:", permissionCode, "User permissions:", Array.from(userPermissions)); // For debugging
+        // Superusers always have all permissions
+        if (user && user.is_superuser) {
+            return true;
+        }
+        // Staff users (non-superusers) usually don't have all permissions unless specifically granted
+        // If 'is_staff' grants specific permissions, they should be reflected in userPermissions.
+        
         return userPermissions.has(permissionCode);
-    }, [userPermissions]);
+    }, [user, userPermissions]); // Added user to dependencies
 
     useEffect(() => {
         const loadInitialAuth = async () => {
             const storedAccessToken = localStorage.getItem('access_token');
             const storedRefreshToken = localStorage.getItem('refresh_token');
+            const storedUserData = localStorage.getItem('user_data');
 
             if (storedAccessToken && storedRefreshToken) {
                 try {
-                    // Attempt to fetch user details first if access token seems valid
-                    // This avoids a refresh cycle if the access token is still good
+                    // Try to decode access token locally for quick check
                     const decodedToken = jwtDecode(storedAccessToken);
                     const currentTime = Date.now() / 1000;
 
                     if (decodedToken.exp > currentTime + 60) { // Token valid for more than 60 seconds
-                        console.log("AuthContext: Access token valid, fetching user details.");
-                        await fetchUserDetails();
-                        setLoading(false); // Set loading to false here if valid
+                        console.log("AuthContext: Access token valid, attempting to use stored user data or fetch.");
+                        if (storedUserData) {
+                            const parsedUserData = JSON.parse(storedUserData);
+                            setUser({
+                                ...parsedUserData,
+                                is_staff: parsedUserData.is_staff,
+                                is_superuser: parsedUserData.is_superuser
+                            });
+                            setIsAuthenticated(true);
+                            if (Array.isArray(parsedUserData.user_permissions)) {
+                                setUserPermissions(new Set(parsedUserData.user_permissions));
+                            } else {
+                                setUserPermissions(new Set());
+                            }
+                            setLoading(false); // Set loading to false here
+                        } else {
+                            // If no stored user data, fetch it
+                            await fetchUserDetails();
+                            setLoading(false);
+                        }
                     } else { // Token expired or expiring soon, try refreshing
                         console.log("AuthContext: Access token expired or expiring, refreshing.");
                         await updateToken();
@@ -154,7 +181,7 @@ export const AuthProvider = ({ children }) => {
         }, fourMinutes);
 
         return () => clearInterval(interval); // Cleanup interval on unmount
-    }, [updateToken, fetchUserDetails, isAuthenticated]); // Added isAuthenticated to dependencies
+    }, [updateToken, fetchUserDetails, isAuthenticated]);
 
     const authContextValue = {
         isAuthenticated,
@@ -163,8 +190,8 @@ export const AuthProvider = ({ children }) => {
         login,
         logout,
         fetchUserDetails,
-        hasPermission, // NEW: Expose hasPermission
-        userPermissions, // Optional: expose for debugging or display
+        hasPermission,
+        userPermissions,
     };
 
     if (loading) {

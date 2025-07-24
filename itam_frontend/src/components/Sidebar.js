@@ -4,21 +4,26 @@ import { NavLink } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useAuth } from '../context/AuthContext'; // Importa useAuth para hasPermission
 import {
-    faHome,           // Icono para Home
-    faUserCog,        // Gestión de Usuarios
-    faCog,            // Icono para el dropdown de Configuraciones
-    faInfoCircle,     // Acerca de
-    faEnvelope,       // Contacto
-    faChartBar,       // Reportes
-    faCogs,           // Mantenimiento de Activos
-    faUsers,          // Gestión de Roles (o un icono más específico si lo encuentras)
-    faChevronDown,    // Para el dropdown
-    faChevronUp       // Para el dropdown
+    faHome,         // Icono para Home
+    faUserCog,      // Gestión de Usuarios
+    faCog,          // Icono para el dropdown de Configuraciones
+    faInfoCircle,   // Acerca de
+    faEnvelope,     // Contacto
+    faChartBar,     // Reportes
+    faCogs,         // Mantenimiento de Activos
+    faUsers,        // Gestión de Roles (o un icono más específico si lo encuentras)
+    faChevronDown,  // Para el dropdown
+    faChevronUp     // Para el dropdown
 } from '@fortawesome/free-solid-svg-icons';
 
 function Sidebar() {
     const [showSettingsDropdown, setShowSettingsDropdown] = useState(false);
-    const { hasPermission } = useAuth(); // Obtén hasPermission
+    // Get user and hasPermission from AuthContext
+    const { user, hasPermission } = useAuth(); 
+
+    // Determine if the settings dropdown should be visible at all
+    // It should be visible if the user has permission to view users OR view groups.
+    const canViewSettings = hasPermission('users.view_customuser') || hasPermission('auth.view_group');
 
     return (
         <div className="bg-gray-800 text-white w-64 space-y-6 py-7 px-2 absolute inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 transition duration-200 ease-in-out">
@@ -29,20 +34,20 @@ function Sidebar() {
 
             <nav>
                 <NavLink
-                    to="/home" // <-- CAMBIADO: Enlace a /home
+                    to="/home"
                     className={({ isActive }) =>
                         `block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 hover:text-white ${
                             isActive ? 'bg-gray-700 text-white' : ''
                         }`
                     }
                 >
-                    <FontAwesomeIcon icon={faHome} className="mr-3" /> {/* Icono para Home */}
+                    <FontAwesomeIcon icon={faHome} className="mr-3" />
                     Home
                 </NavLink>
 
                 {/* --- Dropdown de Configuraciones --- */}
-                {/* El dropdown de configuraciones solo se muestra si el usuario tiene permiso para ver al menos una de sus opciones */}
-                {(hasPermission('users.view_customuser') || hasPermission('auth.view_group')) && (
+                {/* Only show the settings dropdown button if the user has any relevant permission */}
+                {canViewSettings && (
                     <div className="relative">
                         <button
                             onClick={() => setShowSettingsDropdown(!showSettingsDropdown)}
@@ -56,6 +61,7 @@ function Sidebar() {
                         </button>
                         {showSettingsDropdown && (
                             <div className="ml-6 mt-1 bg-gray-700 rounded-md shadow-lg">
+                                {/* Only show 'Gestión de Usuarios' if user has 'users.view_customuser' permission */}
                                 {hasPermission('users.view_customuser') && (
                                     <NavLink
                                         to="/users"
@@ -70,7 +76,8 @@ function Sidebar() {
                                         Gestión de Usuarios
                                     </NavLink>
                                 )}
-                                {hasPermission('auth.view_group') && ( // <-- ¡NUEVO ENLACE! para Gestión de Roles
+                                {/* Only show 'Gestión de Roles' if user has 'auth.view_group' permission */}
+                                {hasPermission('auth.view_group') && (
                                     <NavLink
                                         to="/roles-management"
                                         className={({ isActive }) =>
@@ -80,7 +87,7 @@ function Sidebar() {
                                         }
                                         onClick={() => setShowSettingsDropdown(false)}
                                     >
-                                        <FontAwesomeIcon icon={faUsers} className="mr-3" /> {/* Puedes usar faUsers o faUserTag */}
+                                        <FontAwesomeIcon icon={faUsers} className="mr-3" />
                                         Gestión de Roles
                                     </NavLink>
                                 )}
@@ -117,7 +124,6 @@ function Sidebar() {
                         Mantenimiento de Activos
                     </NavLink>
                 )}
-                {/* Estos enlaces podrían no requerir permisos específicos, o podrías añadir 'view_about', 'view_contact' si los creas */}
                 <NavLink
                     to="/about"
                     className={({ isActive }) =>

@@ -1,11 +1,10 @@
-# C:\Proyectos\ITAM_System\itam_backend\users\models.py
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 class CustomUser(AbstractUser):
     email = models.EmailField(unique=True)
 
-    # === ¡ASEGÚRATE DE QUE LAS CHOICES ESTÉN DEFINIDAS AQUÍ! ===
+    # === CHOICES para campos personalizados (Mantenidas si las usas) ===
     PUESTO_CHOICES = [
         ('Gerente', 'Gerente'),
         ('Coordinador', 'Coordinador'),
@@ -45,9 +44,11 @@ class CustomUser(AbstractUser):
     puesto = models.CharField(max_length=50, choices=PUESTO_CHOICES, blank=True, null=True)
     departamento = models.CharField(max_length=50, choices=DEPARTAMENTO_CHOICES, blank=True, null=True)
     region = models.CharField(max_length=50, choices=REGION_CHOICES, blank=True, null=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Activo') # Este campo se mantiene
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Activo')
 
     # Las definiciones de groups y user_permissions con related_name deben ir aquí
+    # (Ya están bien definidas en AbstractUser, solo asegúrate de no duplicarlas a menos que necesites cambiar related_name)
+    # Si las tienes explícitamente aquí por related_name, están bien.
     groups = models.ManyToManyField(
         'auth.Group',
         verbose_name='groups',

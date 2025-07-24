@@ -31,4 +31,6 @@ urlpatterns = [
 
     # Si usas una RegisterView personalizada
     # path('register/', RegisterView.as_view(), name='register'),
+    
+    
 ]

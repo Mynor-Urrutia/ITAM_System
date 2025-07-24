@@ -1,11 +1,9 @@
-// src/components/UserForm.js
 import React, { useState, useEffect } from 'react';
-// import axios from 'axios'; // <-- ¡ELIMINA ESTA IMPORTACIÓN!
-import api from '../api'; // <-- ¡IMPORTA TU INSTANCIA 'api' CONFIGURADA!
+import api from '../api';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify'; // Importa toast para notificaciones
+import { toast } from 'react-toastify';
 
-// Opciones para los campos de selección (deben coincidir con tus CHOICES en Django)
+// Opciones para los campos de selección (mantener estos si son estáticos)
 const PUESTO_CHOICES = [
   'Gerente', 'Coordinador', 'Analista', 'Técnico', 'Desarrollador', 'Soporte', 'Otro'
 ];
@@ -18,8 +16,6 @@ const REGION_CHOICES = [
 const STATUS_CHOICES = [
   'Activo', 'Inactivo', 'Vacaciones', 'Licencia'
 ];
-
-// const API_BASE_URL = 'http://127.0.0.1:8000/api'; // <-- ¡ESTO YA NO ES NECESARIO! 'api' ya tiene la baseURL
 
 function UserForm({ user, onClose }) {
   const isEditing = !!user;
@@ -34,48 +30,59 @@ function UserForm({ user, onClose }) {
     departamento: '',
     region: '',
     status: 'Activo',
+    assigned_role_id: '',
+    // --- ¡NUEVOS CAMPOS EN EL ESTADO! ---
+    is_staff: false,
+    is_superuser: false,
+    // ------------------------------------
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [roles, setRoles] = useState([]); // Almacenará los objetos de rol {id, name}
   const navigate = useNavigate();
 
   // Precargar datos si estamos editando
   useEffect(() => {
     if (isEditing && user) {
+      // Si el usuario tiene un rol asignado (role_id), precárgalo
       setFormData({
         username: user.username || '',
         email: user.email || '',
-        password: '', // La contraseña no se precarga por seguridad, se maneja por separado
+        password: '', // No precargamos la contraseña por seguridad
         first_name: user.first_name || '',
         last_name: user.last_name || '',
         puesto: user.puesto || '',
         departamento: user.departamento || '',
         region: user.region || '',
         status: user.status || 'Activo',
+        assigned_role_id: user.role_id || '', // role_id es el campo de solo lectura del serializador
+        // --- ¡PRECargar los nuevos campos! ---
+        is_staff: user.is_staff || false,
+        is_superuser: user.is_superuser || false,
+        // --------------------------------------
       });
     }
   }, [isEditing, user]);
 
-  // === ¡ELIMINAMOS ESTA FUNCIÓN! La instancia 'api' ya maneja los headers ===
-  // const getAuthHeaders = () => {
-  //   const token = localStorage.getItem('accessToken'); // <-- CLAVE INCORRECTA
-  //   if (!token) {
-  //     navigate('/login');
-  //     return {};
-  //   }
-  //   return {
-  //     headers: {
-  //       Authorization: `Bearer ${token}`,
-  //     },
-  //   };
-  // };
-  // =========================================================================
+  // useEffect para cargar los roles (grupos) desde el backend
+  useEffect(() => {
+    const fetchRoles = async () => {
+      try {
+        const response = await api.get('/roles/');
+        setRoles(response.data);
+      } catch (err) {
+        console.error("Error al cargar los roles:", err.response || err);
+        toast.error('Error al cargar la lista de roles.');
+      }
+    };
+    fetchRoles();
+  }, []); // Se ejecuta solo una vez al montar
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target; // Captura 'type' y 'checked' para checkboxes
     setFormData((prevData) => ({
       ...prevData,
-      [name]: value,
+      [name]: type === 'checkbox' ? checked : value, // Maneja checkboxes correctamente
     }));
   };
 
@@ -85,41 +92,47 @@ function UserForm({ user, onClose }) {
     setLoading(true);
 
     try {
-      if (isEditing) {
-        // Para edición: preparamos los datos, eliminando la contraseña si no se va a cambiar
-        const dataToSend = { ...formData };
-        if (!dataToSend.password) {
-          delete dataToSend.password; // No enviar contraseña si está vacía
-        }
+      const dataToSend = { ...formData };
 
-        // === ¡USAR 'api.put' DIRECTAMENTE! El token se adjunta automáticamente ===
+      // Si la contraseña está vacía y estamos editando, no la enviamos.
+      // Si estamos creando y la contraseña está vacía, mostramos error (ya manejado antes).
+      if (isEditing && !dataToSend.password) {
+        delete dataToSend.password;
+      }
+      if (!isEditing && !dataToSend.password) {
+        setError('La contraseña es obligatoria para nuevos usuarios.');
+        toast.error('La contraseña es obligatoria para nuevos usuarios.');
+        setLoading(false);
+        return;
+      }
+
+      // CRUCIAL: Mapea el assigned_role_id a un array de IDs para el backend
+      if (dataToSend.assigned_role_id) {
+        dataToSend.assigned_role_id = [parseInt(dataToSend.assigned_role_id, 10)];
+      } else {
+        dataToSend.assigned_role_id = [];
+      }
+
+      if (isEditing) {
         await api.put(`/users/${user.id}/`, dataToSend);
         toast.success('Usuario actualizado exitosamente!');
       } else {
-        // Para creación: la contraseña es obligatoria.
-        if (!formData.password) {
-          setError('La contraseña es obligatoria para nuevos usuarios.');
-          setLoading(false);
-          return;
-        }
-        // === ¡USAR 'api.post' DIRECTAMENTE! El token se adjunta automáticamente ===
-        await api.post('/users/', formData);
+        await api.post('/users/', dataToSend);
         toast.success('Usuario creado exitosamente!');
       }
-      onClose(); // Cierra el modal y refresca la lista de usuarios
+      onClose();
     } catch (err) {
       if (err.response && err.response.status === 401) {
-        // Los interceptores deberían manejar esto, pero si no, este es el fallback
         toast.error('Sesión expirada o no autorizada. Por favor, inicia sesión de nuevo.');
         localStorage.clear();
         navigate('/login');
       } else {
         const errorMsg = err.response?.data
-          ? Object.values(err.response.data).flat().join(' ') // Extrae mensajes de error de Django
+          ? Object.values(err.response.data).flat().join(' ')
           : err.message;
         setError('Error: ' + errorMsg);
         console.error("Error submitting user form:", err.response || err);
-        toast.error('Error al guardar usuario: ' + errorMsg); // Notificación de error
+        toast.error('Error al guardar usuario: ' + errorMsg);
       }
     } finally {
       setLoading(false);
@@ -144,7 +157,7 @@ function UserForm({ user, onClose }) {
           onChange={handleChange}
           required
           className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
-          disabled={isEditing} // No permitir cambiar el username al editar
+          disabled={isEditing}
         />
       </div>
 
@@ -161,7 +174,6 @@ function UserForm({ user, onClose }) {
         />
       </div>
 
-      {/* La contraseña es obligatoria solo en la creación */}
       {!isEditing && (
         <div>
           <label htmlFor="password" className="block text-sm font-medium text-gray-700">Contraseña <span className="text-red-500">*</span></label>
@@ -214,7 +226,6 @@ function UserForm({ user, onClose }) {
         />
       </div>
 
-      {/* Selects para los nuevos campos */}
       <div>
         <label htmlFor="puesto" className="block text-sm font-medium text-gray-700">Puesto</label>
         <select
@@ -263,7 +274,56 @@ function UserForm({ user, onClose }) {
         </select>
       </div>
 
-      {isEditing && ( // El status solo se puede cambiar al editar
+      {/* CAMBIADO: Campo de selección para el Rol, ahora dinámico y enviando ID */}
+      <div>
+        <label htmlFor="assigned_role_id" className="block text-sm font-medium text-gray-700">Rol <span className="text-red-500">*</span></label>
+        <select
+          name="assigned_role_id"
+          id="assigned_role_id"
+          value={formData.assigned_role_id}
+          onChange={handleChange}
+          required
+          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
+        >
+          <option value="">Selecciona un rol</option>
+          {roles.map(role => (
+            <option key={role.id} value={role.id}>{role.name}</option>  
+          ))}
+        </select>
+      </div>
+
+      {/* --- ¡NUEVOS CHECKBOXES PARA is_staff e is_superuser! --- */}
+      <div className="flex items-center space-x-4">
+        <div className="flex items-center">
+          <input
+            id="is_staff"
+            name="is_staff"
+            type="checkbox"
+            checked={formData.is_staff}
+            onChange={handleChange}
+            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+          />
+          <label htmlFor="is_staff" className="ml-2 block text-sm text-gray-900">
+            Es miembro del personal (acceso a Django Admin)
+          </label>
+        </div>
+        <div className="flex items-center">
+          <input
+            id="is_superuser"
+            name="is_superuser"
+            type="checkbox"
+            checked={formData.is_superuser}
+            onChange={handleChange}
+            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+          />
+          <label htmlFor="is_superuser" className="ml-2 block text-sm text-gray-900">
+            Es Superusuario (todos los permisos)
+          </label>
+        </div>
+      </div>
+      {/* -------------------------------------------------------- */}
+
+      {isEditing && (
         <div>
           <label htmlFor="status" className="block text-sm font-medium text-gray-700">Estado</label>
           <select
