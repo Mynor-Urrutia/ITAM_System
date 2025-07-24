@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',  # ¡Agrega esta línea!
+    'masterdata',
 ]
 
 AUTH_USER_MODEL = 'users.CustomUser' # ¡Esto es CRÍTICO!

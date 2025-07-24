@@ -1,22 +1,29 @@
 // C:\Proyectos\ITAM_System\itam_frontend\src\App.js
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'; // Importa Navigate
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-// Importa tus componentes
+// Importa tus componentes existentes
 import Login from './components/Login';
 import Home from './components/Home';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 import UserCrud from './components/UserCrud';
-import RoleManagement from './components/RoleManagement'; // <-- ¡IMPORTA EL NUEVO COMPONENTE!
+import RoleManagement from './components/RoleManagement';
 import PrivateRoute from './components/PrivateRoute'; // Asegúrate de que PrivateRoute está disponible
+
+// --- ¡IMPORTA LOS NUEVOS COMPONENTES DE DATOS MAESTROS! ---
+import RegionsPage from './pages/masterdata/RegionsPage';
+import FarmsPage from './pages/masterdata/FarmsPage';
+import DepartmentsPage from './pages/masterdata/DepartmentsPage';
+import AreasPage from './pages/masterdata/AreasPage';
+// ---------------------------------------------------------
 
 // Este componente AppContent usará el AuthContext
 const AppContent = () => {
-    const { isAuthenticated, loading } = useAuth(); // Obtiene el estado de autenticación y carga
+    const { isAuthenticated, loading } = useAuth();
 
     if (loading) {
         return <div className="flex justify-center items-center h-screen text-2xl">Cargando aplicación...</div>;
@@ -26,14 +33,14 @@ const AppContent = () => {
         <>
             {/* Si el usuario está autenticado, renderiza Navbar y Sidebar */}
             {isAuthenticated ? (
-                <div className="flex h-screen"> {/* Contenedor principal para layout flex */}
-                    <Sidebar /> {/* El Sidebar siempre visible a la izquierda */}
-                    <div className="flex-1 flex flex-col"> {/* Contenedor para Navbar y Contenido */}
-                        <Navbar /> {/* El Navbar en la parte superior del contenido principal */}
-                        <main className="flex-1 p-6 overflow-auto bg-gray-100"> {/* Contenido principal */}
+                <div className="flex h-screen">
+                    <Sidebar />
+                    <div className="flex-1 flex flex-col">
+                        <Navbar />
+                        <main className="flex-1 p-6 overflow-auto bg-gray-100">
                             <Routes>
                                 {/* Rutas Protegidas */}
-                                <Route path="/home" element={<Home />} /> {/* Ruta para el Home */}
+                                <Route path="/home" element={<Home />} />
                                 
                                 {/* Ruta para Gestión de Usuarios con PrivateRoute */}
                                 <Route
@@ -49,25 +56,60 @@ const AppContent = () => {
                                     path="/roles-management"
                                     element={
                                         <PrivateRoute requiredPermissions={['auth.view_group']}>
-                                            <RoleManagement /> {/* Renderiza el componente RoleManagement */}
+                                            <RoleManagement />
                                         </PrivateRoute>
                                     }
                                 />
-                                {/* Agrega aquí más rutas protegidas para componentes de gestión */}
-                                {/* Ejemplo de otras rutas */}
+
+                                {/* --- ¡NUEVAS RUTAS PARA DATOS MAESTROS CON PrivateRoute! --- */}
+                                <Route
+                                    path="/masterdata/regions"
+                                    element={
+                                        <PrivateRoute requiredPermissions={['masterdata.view_region']}>
+                                            <RegionsPage />
+                                        </PrivateRoute>
+                                    }
+                                />
+                                <Route
+                                    path="/masterdata/farms"
+                                    element={
+                                        <PrivateRoute requiredPermissions={['masterdata.view_finca']}>
+                                            <FarmsPage />
+                                        </PrivateRoute>
+                                    }
+                                />
+                                <Route
+                                    path="/masterdata/departments"
+                                    element={
+                                        <PrivateRoute requiredPermissions={['masterdata.view_departamento']}>
+                                            <DepartmentsPage />
+                                        </PrivateRoute>
+                                    }
+                                />
+                                <Route
+                                    path="/masterdata/areas"
+                                    element={
+                                        <PrivateRoute requiredPermissions={['masterdata.view_area']}>
+                                            <AreasPage />
+                                        </PrivateRoute>
+                                    }
+                                />
+                                {/* --------------------------------------------------------- */}
+
+                                {/* Ejemplo de otras rutas existentes */}
                                 <Route
                                     path="/reports"
                                     element={
                                         <PrivateRoute requiredPermissions={['reports.view_report']}>
-                                            <div>Página de Reportes</div>
+                                            <div>Página de Reportes</div> {/* Puedes reemplazar con tu componente real */}
                                         </PrivateRoute>
                                     }
                                 />
                                 <Route
                                     path="/assets"
                                     element={
-                                        <PrivateRoute requiredPermissions={['assets.view_asset']}> {/* Asumiendo un permiso para activos */}
-                                            <div>Mantenimiento de Activos</div>
+                                        <PrivateRoute requiredPermissions={['assets.view_asset']}>
+                                            <div>Mantenimiento de Activos</div> {/* Puedes reemplazar con tu componente real */}
                                         </PrivateRoute>
                                     }
                                 />
