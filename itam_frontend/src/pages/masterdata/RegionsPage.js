@@ -3,12 +3,12 @@ import React, { useState, useEffect } from 'react';
 import axios from '../../axiosConfig';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthContext';
+import RegionFormModal from './RegionFormModal'; // Importa el nuevo componente del modal
 
 function RegionsPage() {
     const [regions, setRegions] = useState([]);
-    const [newRegionName, setNewRegionName] = useState('');
-    const [newRegionDescription, setNewRegionDescription] = useState('');
-    const [editingRegion, setEditingRegion] = useState(null);
+    const [showModal, setShowModal] = useState(false); // Nuevo estado para controlar la visibilidad del modal
+    const [regionToEdit, setRegionToEdit] = useState(null); // Nuevo estado para la región a editar
     const { hasPermission } = useAuth();
 
     const canAddRegion = hasPermission('masterdata.add_region');
@@ -29,47 +29,24 @@ function RegionsPage() {
         }
     };
 
-    // --- FUNCIONES QUE FALTABAN ---
-    const handleCreateRegion = async (e) => {
-        e.preventDefault();
-        if (!newRegionName.trim()) {
-            toast.error('El nombre de la región no puede estar vacío.');
-            return;
-        }
-
-        try {
-            await axios.post('masterdata/regions/', {
-                name: newRegionName,
-                description: newRegionDescription,
-            });
-            setNewRegionName('');
-            setNewRegionDescription('');
-            toast.success('Región creada exitosamente!');
-            fetchRegions(); // Vuelve a cargar todas las regiones para actualizar la tabla
-        } catch (error) {
-            console.error('Error creating region:', error.response?.data || error.message);
-            toast.error('Error al crear la región: ' + (error.response?.data?.name || 'Error desconocido'));
-        }
+    const handleEditClick = (region) => {
+        setRegionToEdit(region);
+        setShowModal(true);
     };
 
-    const handleUpdateRegion = async (e) => {
-        e.preventDefault();
-        if (!editingRegion.name.trim()) {
-            toast.error('El nombre de la región no puede estar vacío.');
-            return;
-        }
-
-        try {
-            await axios.put(`masterdata/regions/${editingRegion.id}/`, editingRegion);
-            setEditingRegion(null);
-            toast.success('Región actualizada exitosamente!');
-            fetchRegions(); // Vuelve a cargar todas las regiones para actualizar la tabla
-        } catch (error) {
-            console.error('Error updating region:', error.response?.data || error.message);
-            toast.error('Error al actualizar la región: ' + (error.response?.data?.name || 'Error desconocido'));
-        }
+    const handleCreateClick = () => {
+        setRegionToEdit(null); // Asegúrate de que no haya ninguna región para editar
+        setShowModal(true);
     };
-    // ----------------------------
+
+    const handleModalClose = () => {
+        setShowModal(false);
+        setRegionToEdit(null); // Limpia la región a editar al cerrar el modal
+    };
+
+    const handleSaveSuccess = () => {
+        fetchRegions(); // Refresca la lista después de guardar con éxito
+    };
 
     const handleDeleteRegion = async (regionId) => {
         if (!window.confirm('¿Estás seguro de que quieres eliminar esta región? Si tiene fincas asignadas, no se podrá eliminar.')) {
@@ -94,48 +71,13 @@ function RegionsPage() {
             <h1 className="text-3xl font-bold text-gray-800 mb-6">Gestión de Regiones</h1>
 
             {canAddRegion && (
-                <div className="mb-8 p-4 border rounded-lg bg-gray-50">
-                    <h2 className="text-2xl font-semibold text-gray-700 mb-4">{editingRegion ? 'Editar Región' : 'Crear Nueva Región'}</h2>
-                    <form onSubmit={editingRegion ? handleUpdateRegion : handleCreateRegion} className="space-y-4">
-                        <div>
-                            <label htmlFor="regionName" className="block text-sm font-medium text-gray-700">Nombre de la Región</label>
-                            <input
-                                type="text"
-                                id="regionName"
-                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
-                                value={editingRegion ? editingRegion.name : newRegionName}
-                                onChange={(e) => editingRegion ? setEditingRegion({ ...editingRegion, name: e.target.value }) : setNewRegionName(e.target.value)}
-                                required
-                            />
-                        </div>
-                        <div>
-                            <label htmlFor="regionDescription" className="block text-sm font-medium text-gray-700">Descripción (Opcional)</label>
-                            <textarea
-                                id="regionDescription"
-                                rows="3"
-                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
-                                value={editingRegion ? editingRegion.description || '' : newRegionDescription}
-                                onChange={(e) => editingRegion ? setEditingRegion({ ...editingRegion, description: e.target.value }) : setNewRegionDescription(e.target.value)}
-                            ></textarea>
-                        </div>
-                        <div className="flex space-x-2">
-                            <button
-                                type="submit"
-                                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                            >
-                                {editingRegion ? 'Actualizar Región' : 'Crear Región'}
-                            </button>
-                            {editingRegion && (
-                                <button
-                                    type="button"
-                                    onClick={() => setEditingRegion(null)}
-                                    className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
-                                >
-                                    Cancelar
-                                </button>
-                            )}
-                        </div>
-                    </form>
+                <div className="mb-8">
+                    <button
+                        onClick={handleCreateClick}
+                        className="px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                    >
+                        Crear Nueva Región
+                    </button>
                 </div>
             )}
 
@@ -161,7 +103,7 @@ function RegionsPage() {
                                         <td className="py-3 px-4">
                                             {canChangeRegion && (
                                                 <button
-                                                    onClick={() => setEditingRegion(region)}
+                                                    onClick={() => handleEditClick(region)}
                                                     className="px-3 py-1 bg-yellow-500 text-white rounded-md text-sm hover:bg-yellow-600 mr-2"
                                                 >
                                                     Editar
@@ -183,6 +125,14 @@ function RegionsPage() {
                     </table>
                 </div>
             )}
+
+            {/* El Modal para crear/editar regiones */}
+            <RegionFormModal
+                show={showModal}
+                onClose={handleModalClose}
+                onSaveSuccess={handleSaveSuccess}
+                regionToEdit={regionToEdit}
+            />
         </div>
     );
 }

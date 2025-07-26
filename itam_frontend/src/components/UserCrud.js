@@ -1,4 +1,3 @@
-// C:\Proyectos\ITAM_System\itam_frontend\src\components\UserCrud.js
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import api from '../api';
 import { useNavigate } from 'react-router-dom';
@@ -6,7 +5,7 @@ import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
 
 import Modal from './Modal';
-import UserForm from './UserForm'; // Este es el componente que necesitamos modificar o asegurar que reciba los roles
+import UserForm from './UserForm';
 import UserDetail from './UserDetail';
 import ChangePasswordForm from './ChangePasswordForm';
 
@@ -21,7 +20,7 @@ import {
 
 function UserCrud() {
     const [users, setUsers] = useState([]);
-    const [roles, setRoles] = useState([]); // NUEVO: Estado para almacenar los roles
+    const [roles, setRoles] = useState([]); // Estado para almacenar los roles
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const navigate = useNavigate();
@@ -58,7 +57,7 @@ function UserCrud() {
         }
     }, [navigate]);
 
-    // NUEVO: Función para obtener la lista de roles
+    // Función para obtener la lista de roles
     const fetchRoles = useCallback(async () => {
         try {
             const response = await api.get('/roles/');
@@ -231,7 +230,7 @@ function UserCrud() {
                             </th>
                             <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                 Rol
-                            </th> {/* NUEVO: Columna para el rol */}
+                            </th>
                             <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                 Acceso Activo
                             </th>
@@ -259,14 +258,16 @@ function UserCrud() {
                                     <p className="text-gray-900 whitespace-no-wrap">{user.puesto || 'N/A'}</p>
                                 </td>
                                 <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                                    <p className="text-gray-900 whitespace-no-wrap">{user.departamento || 'N/A'}</p>
+                                    {/* CAMBIADO: Usar user.departamento_name */}
+                                    <p className="text-gray-900 whitespace-no-wrap">{user.departamento_name || 'N/A'}</p>
                                 </td>
                                 <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                                    <p className="text-gray-900 whitespace-no-wrap">{user.region || 'N/A'}</p>
+                                    {/* CAMBIADO: Usar user.region_name */}
+                                    <p className="text-gray-900 whitespace-no-wrap">{user.region_name || 'N/A'}</p>
                                 </td>
                                 <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                                     <p className="text-gray-900 whitespace-no-wrap">{user.role_name || 'Sin Rol'}</p>
-                                </td> {/* Muestra el nombre del rol */}
+                                </td>
                                 <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm text-center">
                                     <button
                                         onClick={() => handleToggleIsActive(user.id, user.is_active)}
@@ -330,12 +331,10 @@ function UserCrud() {
 
             {/* Modales */}
             <Modal show={showCreateModal} onClose={closeModal} title="Crear Nuevo Usuario">
-                {/* Paso los roles al UserForm para que pueda renderizar el dropdown */}
                 <UserForm onClose={closeModal} onSubmit={handleCreateUser} roles={roles} />
             </Modal>
 
             <Modal show={showEditModal} onClose={closeModal} title="Editar Usuario">
-                {/* Paso el usuario actual y los roles al UserForm */}
                 <UserForm user={currentUser} onClose={closeModal} onSubmit={handleUpdateUser} roles={roles} />
             </Modal>
 

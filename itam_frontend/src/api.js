@@ -67,4 +67,23 @@ api.interceptors.response.use(
     }
 );
 
+// --- Funciones para la gestión de Regiones (ya deberían existir) ---
+// Si no las tienes en este archivo, puedes añadirlas aquí o en otro archivo de servicios
+export const getRegions = () => api.get('masterdata/regions/');
+export const createRegion = (regionData) => api.post('masterdata/regions/', regionData);
+export const updateRegion = (id, regionData) => api.put(`masterdata/regions/${id}/`, regionData);
+export const deleteRegion = (id) => api.delete(`masterdata/regions/${id}/`);
+
+// --- ¡NUEVAS FUNCIONES PARA DEPARTAMENTOS! ---
+export const getDepartamentos = () => api.get('masterdata/departamentos/');
+export const createDepartamento = (departamentoData) => api.post('masterdata/departamentos/', departamentoData);
+export const updateDepartamento = (id, departamentoData) => api.put(`masterdata/departamentos/${id}/`, departamentoData);
+export const deleteDepartamento = (id) => api.delete(`masterdata/departamentos/${id}/`);
+
+// --- ¡NUEVAS FUNCIONES PARA ÁREAS! ---
+export const getAreas = () => api.get('masterdata/areas/');
+export const createArea = (areaData) => api.post('masterdata/areas/', areaData);
+export const updateArea = (id, areaData) => api.put(`masterdata/areas/${id}/`, areaData);
+export const deleteArea = (id) => api.delete(`masterdata/areas/${id}/`);
+
 export default api;

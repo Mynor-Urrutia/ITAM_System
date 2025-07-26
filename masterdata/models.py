@@ -35,9 +35,10 @@ class Finca(models.Model):
     def __str__(self):
         return self.name
 
+
 class Departamento(models.Model):
-    name = models.CharField(max_length=100, unique=True)
-    # Puedes añadir más campos como descripción, código, etc.
+    name = models.CharField(max_length=100, unique=True, verbose_name="Nombre del Departamento")
+    description = models.TextField(blank=True, null=True, verbose_name="Descripción") # <--- ASEGÚRATE DE QUE ESTA LÍNEA ESTÉ AQUÍ
 
     class Meta:
         verbose_name = "Departamento"
@@ -48,14 +49,24 @@ class Departamento(models.Model):
         return self.name
 
 class Area(models.Model):
-    name = models.CharField(max_length=100, unique=True)
-    department = models.ForeignKey(Departamento, on_delete=models.SET_NULL, null=True, blank=True, related_name='areas')
-    # Puedes añadir más campos como descripción, tipo de área, etc.
+    name = models.CharField(max_length=100, verbose_name="Nombre del Área")
+    description = models.TextField(blank=True, null=True, verbose_name="Descripción")
+    # ForeignKey a Departamento:
+    # on_delete=models.CASCADE significa que si un departamento es borrado, todas sus áreas también lo serán.
+    # related_name='areas' permite acceder a las áreas desde un departamento (ej: departamento.areas.all())
+    departamento = models.ForeignKey(
+        Departamento,
+        on_delete=models.CASCADE,
+        related_name='areas',
+        verbose_name="Departamento al que pertenece"
+    )
 
     class Meta:
         verbose_name = "Área"
         verbose_name_plural = "Áreas"
+        # Asegura que no haya dos áreas con el mismo nombre dentro del mismo departamento
+        unique_together = ('name', 'departamento')
         ordering = ['name']
 
     def __str__(self):
-        return self.name
+        return f"{self.name} ({self.departamento.name})"

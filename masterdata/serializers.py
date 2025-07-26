@@ -30,3 +30,23 @@ class FincaCreateUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Finca
         fields = ['id', 'name', 'region', 'address'] # Define los campos que se pueden crear/actualizar
+        
+class DepartamentoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Departamento
+        fields = ['id', 'name', 'description']
+
+class AreaSerializer(serializers.ModelSerializer):
+    # Para lectura: Mostrar el nombre del departamento
+    departamento_name = serializers.CharField(source='departamento.name', read_only=True)
+    
+    # Para escritura: Aceptar el ID del departamento
+    departamento = serializers.PrimaryKeyRelatedField(
+        queryset=Departamento.objects.all(), # Permite seleccionar cualquier Departamento existente
+        write_only=True,                     # Solo se usa para escribir (enviar el ID)
+        required=True                        # Es un campo obligatorio
+    )
+
+    class Meta:
+        model = Area
+        fields = ['id', 'name', 'description', 'departamento', 'departamento_name']

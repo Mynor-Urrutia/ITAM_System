@@ -1,54 +1,42 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from masterdata.models import Region, Departamento # Asegúrate de importar Departamento aquí también
 
 class CustomUser(AbstractUser):
     email = models.EmailField(unique=True)
 
-    # === CHOICES para campos personalizados (Mantenidas si las usas) ===
     PUESTO_CHOICES = [
-        ('Gerente', 'Gerente'),
-        ('Coordinador', 'Coordinador'),
-        ('Analista', 'Analista'),
-        ('Técnico', 'Técnico'),
-        ('Desarrollador', 'Desarrollador'),
-        ('Soporte', 'Soporte'),
-        ('Otro', 'Otro'),
+        ('Gerente', 'Gerente'), ('Coordinador', 'Coordinador'), ('Analista', 'Analista'),
+        ('Técnico', 'Técnico'), ('Desarrollador', 'Desarrollador'), ('Soporte', 'Soporte'), ('Otro', 'Otro'),
     ]
-    DEPARTAMENTO_CHOICES = [
-        ('TI', 'Tecnologías de la Información'),
-        ('Recursos Humanos', 'Recursos Humanos'),
-        ('Finanzas', 'Finanzas'),
-        ('Marketing', 'Marketing'),
-        ('Ventas', 'Ventas'),
-        ('Operaciones', 'Operaciones'),
-        ('Otro', 'Otro'),
-    ]
-    REGION_CHOICES = [
-        ('Norte', 'Norte'),
-        ('Centro', 'Centro'),
-        ('Sur', 'Sur'),
-        ('Este', 'Este'),
-        ('Oeste', 'Oeste'),
-        ('Nacional', 'Nacional'),
-        ('Internacional', 'Internacional'),
-        ('Otro', 'Otro'),
-    ]
+    # ELIMINA DEPARTAMENTO_CHOICES ya que será dinámico
+    # DEPARTAMENTO_CHOICES = [
+    #     ('TI', 'Tecnologías de la Información'), ('Recursos Humanos', 'Recursos Humanos'),
+    #     ('Finanzas', 'Finanzas'), ('Marketing', 'Marketing'), ('Ventas', 'Ventas'),
+    #     ('Operaciones', 'Operaciones'), ('Otro', 'Otro'),
+    # ]
     STATUS_CHOICES = [
-        ('Activo', 'Activo'),
-        ('Inactivo', 'Inactivo'),
-        ('Vacaciones', 'Vacaciones'),
-        ('Licencia', 'Licencia'),
+        ('Activo', 'Activo'), ('Inactivo', 'Inactivo'), ('Vacaciones', 'Vacaciones'), ('Licencia', 'Licencia'),
     ]
-    # =========================================================
 
     puesto = models.CharField(max_length=50, choices=PUESTO_CHOICES, blank=True, null=True)
-    departamento = models.CharField(max_length=50, choices=DEPARTAMENTO_CHOICES, blank=True, null=True)
-    region = models.CharField(max_length=50, choices=REGION_CHOICES, blank=True, null=True)
+    # CAMBIADO: Ahora es una clave foránea a Departamento
+    departamento = models.ForeignKey(
+        Departamento,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='users_in_departamento' # Nombre de relación para evitar conflictos
+    )
+    region = models.ForeignKey(
+        Region,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='users_in_region'
+    )
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Activo')
 
-    # Las definiciones de groups y user_permissions con related_name deben ir aquí
-    # (Ya están bien definidas en AbstractUser, solo asegúrate de no duplicarlas a menos que necesites cambiar related_name)
-    # Si las tienes explícitamente aquí por related_name, están bien.
     groups = models.ManyToManyField(
         'auth.Group',
         verbose_name='groups',

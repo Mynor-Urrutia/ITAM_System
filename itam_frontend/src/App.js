@@ -14,12 +14,11 @@ import UserCrud from './components/UserCrud';
 import RoleManagement from './components/RoleManagement';
 import PrivateRoute from './components/PrivateRoute'; // Asegúrate de que PrivateRoute está disponible
 
-// --- ¡IMPORTA LOS NUEVOS COMPONENTES DE DATOS MAESTROS! ---
+// Importa las páginas de Datos Maestros
 import RegionsPage from './pages/masterdata/RegionsPage';
 import FarmsPage from './pages/masterdata/FarmsPage';
-import DepartmentsPage from './pages/masterdata/DepartmentsPage';
-import AreasPage from './pages/masterdata/AreasPage';
-// ---------------------------------------------------------
+import DepartmentsPage from './pages/masterdata/DepartmentsPage'; // ¡NUEVO!
+import AreasPage from './pages/masterdata/AreasPage'; // ¡NUEVO!
 
 // Este componente AppContent usará el AuthContext
 const AppContent = () => {
@@ -42,7 +41,6 @@ const AppContent = () => {
                                 {/* Rutas Protegidas */}
                                 <Route path="/home" element={<Home />} />
                                 
-                                {/* Ruta para Gestión de Usuarios con PrivateRoute */}
                                 <Route
                                     path="/users"
                                     element={
@@ -51,7 +49,6 @@ const AppContent = () => {
                                         </PrivateRoute>
                                     }
                                 />
-                                {/* Ruta para Gestión de Roles con PrivateRoute */}
                                 <Route
                                     path="/roles-management"
                                     element={
@@ -61,7 +58,7 @@ const AppContent = () => {
                                     }
                                 />
 
-                                {/* --- ¡NUEVAS RUTAS PARA DATOS MAESTROS CON PrivateRoute! --- */}
+                                {/* Rutas para Datos Maestros */}
                                 <Route
                                     path="/masterdata/regions"
                                     element={
@@ -79,7 +76,7 @@ const AppContent = () => {
                                     }
                                 />
                                 <Route
-                                    path="/masterdata/departments"
+                                    path="/masterdata/departments" // ¡NUEVA RUTA!
                                     element={
                                         <PrivateRoute requiredPermissions={['masterdata.view_departamento']}>
                                             <DepartmentsPage />
@@ -87,21 +84,20 @@ const AppContent = () => {
                                     }
                                 />
                                 <Route
-                                    path="/masterdata/areas"
+                                    path="/masterdata/areas" // ¡NUEVA RUTA!
                                     element={
                                         <PrivateRoute requiredPermissions={['masterdata.view_area']}>
                                             <AreasPage />
                                         </PrivateRoute>
                                     }
                                 />
-                                {/* --------------------------------------------------------- */}
 
                                 {/* Ejemplo de otras rutas existentes */}
                                 <Route
                                     path="/reports"
                                     element={
                                         <PrivateRoute requiredPermissions={['reports.view_report']}>
-                                            <div>Página de Reportes</div> {/* Puedes reemplazar con tu componente real */}
+                                            <div>Página de Reportes</div>
                                         </PrivateRoute>
                                     }
                                 />
@@ -109,14 +105,14 @@ const AppContent = () => {
                                     path="/assets"
                                     element={
                                         <PrivateRoute requiredPermissions={['assets.view_asset']}>
-                                            <div>Mantenimiento de Activos</div> {/* Puedes reemplazar con tu componente real */}
+                                            <div>Mantenimiento de Activos</div>
                                         </PrivateRoute>
                                     }
                                 />
                                 <Route
                                     path="/about"
                                     element={
-                                        <PrivateRoute> {/* Podría no requerir permisos específicos */}
+                                        <PrivateRoute>
                                             <div>Acerca de</div>
                                         </PrivateRoute>
                                     }
@@ -124,7 +120,7 @@ const AppContent = () => {
                                 <Route
                                     path="/contact"
                                     element={
-                                        <PrivateRoute> {/* Podría no requerir permisos específicos */}
+                                        <PrivateRoute>
                                             <div>Contacto</div>
                                         </PrivateRoute>
                                     }

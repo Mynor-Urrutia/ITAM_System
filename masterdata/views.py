@@ -6,7 +6,7 @@ from rest_framework.response import Response # Importar Response
 from django.db.models import ProtectedError # Importar ProtectedError si lo usas, aunque para tu caso no es necesario para Finca
 
 from .models import Region, Finca, Departamento, Area
-from .serializers import RegionSerializer, FincaSerializer, FincaCreateUpdateSerializer
+from .serializers import RegionSerializer, FincaSerializer, FincaCreateUpdateSerializer, DepartamentoSerializer, AreaSerializer
 
 class RegionViewSet(viewsets.ModelViewSet):
     queryset = Region.objects.all()
@@ -45,3 +45,19 @@ class FincaViewSet(viewsets.ModelViewSet):
     #             status=status.HTTP_400_BAD_REQUEST
     #         )
     #     return super().destroy(request, *args, **kwargs)
+    
+class DepartamentoViewSet(viewsets.ModelViewSet):
+    queryset = Departamento.objects.all()
+    serializer_class = DepartamentoSerializer
+    # Permite buscar departamentos por nombre
+    search_fields = ['name']
+
+class AreaViewSet(viewsets.ModelViewSet):
+    # Usamos select_related para optimizar la consulta y evitar N+1 problems
+    # al acceder al nombre del departamento en el serializador.
+    queryset = Area.objects.select_related('departamento').all()
+    serializer_class = AreaSerializer
+    # Permite buscar áreas por nombre
+    search_fields = ['name', 'departamento__name'] # Permite buscar también por nombre de departamento
+    # Permite filtrar áreas por departamento_id
+    filterset_fields = ['departamento']

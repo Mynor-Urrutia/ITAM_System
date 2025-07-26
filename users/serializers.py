@@ -1,9 +1,8 @@
-# C:\Proyectos\ITAM_System\itam_backend\users\serializers.py
-
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from masterdata.models import Region, Departamento
 
 User = get_user_model()
 
@@ -12,94 +11,118 @@ class UserSerializer(serializers.ModelSerializer):
     role_id = serializers.SerializerMethodField(read_only=True)
     role_name = serializers.SerializerMethodField(read_only=True)
     
-    # NUEVO: Campo para las listas de permisos del usuario
+    # Campo para las listas de permisos del usuario
     user_permissions = serializers.SerializerMethodField()
     
     # Campo de escritura para asignar el rol (grupo) al usuario
-    # Espera una lista de IDs de grupo (aunque en el frontend enviaremos solo uno)
     assigned_role_id = serializers.PrimaryKeyRelatedField(
         queryset=Group.objects.all(), source='groups', many=True, write_only=True, required=False, allow_null=True
     )
+
+    # Campo de departamento para escritura (recibe ID)
+    departamento = serializers.PrimaryKeyRelatedField(
+        queryset=Departamento.objects.all(),
+        allow_null=True,
+        required=False
+    )
+    # Campo de solo lectura para mostrar el nombre del departamento
+    departamento_name = serializers.CharField(source='departamento.name', read_only=True)
+
+    # Campo de región para escritura (recibe ID)
+    region = serializers.PrimaryKeyRelatedField(
+        queryset=Region.objects.all(),
+        allow_null=True,
+        required=False
+    )
+    # Campo de solo lectura para mostrar el nombre de la región
+    region_name = serializers.CharField(source='region.name', read_only=True)
+    # --------------------------------------------------------------------------
 
     class Meta:
         model = User
         fields = [
             'id', 'username', 'email', 'first_name', 'last_name',
-            'puesto', 'departamento', 'region',
+            'puesto',
+            'departamento',      # <-- Para enviar/recibir el ID del departamento
+            'departamento_name', # <-- ¡Asegúrate de que esté aquí para la lectura!
+            'region',            # <-- Para enviar/recibir el ID de la región
+            'region_name',       # <-- ¡Asegúrate de que esté aquí para la lectura!
             'status',
             'is_active',
-            # --- ¡CAMPOS AÑADIDOS! ---
-            'is_staff',       # Permite acceso al admin de Django y uso con IsAdminUser en DRF
-            'is_superuser',   # Otorga todos los permisos
-            # ------------------------
+            'is_staff',
+            'is_superuser',
             'role_id', 'role_name',
             'assigned_role_id',
             'user_permissions',
             'password', 
         ]
-        read_only_fields = ['id', 'user_permissions']
+        # Asegúrate de que 'departamento_name' y 'region_name' estén en read_only_fields
+        read_only_fields = ['id', 'user_permissions', 'departamento_name', 'region_name'] 
         extra_kwargs = {
             'password': {'write_only': True, 'required': False},
-            # Asegura que is_staff e is_superuser sean read_only si no quieres que se puedan editar directamente
-            # Si quieres que se puedan editar, remueve estas líneas:
-            # 'is_staff': {'read_only': True}, 
-            # 'is_superuser': {'read_only': True}
         }
 
-    # Sobreescribir el init para manejar el 'username' como read-only en edición
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if self.instance: # Si es una instancia existente (edición)
+        if self.instance:
             self.fields['username'].read_only = True
-            # Password es manejado por extra_kwargs, pero si fuera necesario aquí también:
-            # self.fields['password'].required = False
-
 
     def get_role_id(self, obj):
-        # Retorna el ID del primer grupo al que pertenece el usuario
         return obj.groups.first().id if obj.groups.exists() else None
 
     def get_role_name(self, obj):
-        # Retorna el nombre del primer grupo al que pertenece el usuario
         return obj.groups.first().name if obj.groups.exists() else 'Sin Rol'
 
     def get_user_permissions(self, obj):
-        """
-        Retorna una lista de todas las 'codenames' de los permisos que el usuario tiene,
-        tanto los asignados directamente como los heredados de sus grupos.
-        """
         if not obj.is_active:
             return []
-
-        # Usar get_all_permissions para obtener todos los permisos incluyendo los de grupos
         all_permissions = obj.get_all_permissions()
         return sorted(list(all_permissions))
 
     def update(self, instance, validated_data):
         groups_data = validated_data.pop('groups', None)
-        password = validated_data.pop('password', None) # Extraer la contraseña
+        password = validated_data.pop('password', None)
         
-        # Primero actualizamos los campos directos del usuario, incluyendo is_staff e is_superuser
+        # El PrimaryKeyRelatedField ya se encarga de que 'departamento' y 'region'
+        # sean objetos del modelo Departamento/Region, no solo IDs.
+        # No necesitas hacer pop de ellos explícitamente aquí para asignarlos,
+        # ya que `setattr` con el mismo nombre del campo los manejará.
+        # Solo necesitas asegurarte de que estén en validated_data si se enviaron.
+        
+        # Modificación: No necesitas hacer pop de region_obj o departamento_obj aquí.
+        # Simplemente deja que validated_data contenga el objeto de la BD.
+        # El for-loop de abajo se encargará de asignar directamente `instance.departamento = obj_departamento`.
+        
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
-        
-        if password: # Si se proporcionó una nueva contraseña
+            
+        if password:
             instance.set_password(password)
             
-        instance.save()
+        instance.save() # Guarda los cambios a departamento y region
 
-        # Luego asignamos los grupos (roles)
-        if groups_data is not None: # Si se envió información de grupos
-            instance.groups.set(groups_data) # Asigna los grupos al usuario
+        if groups_data is not None:
+            instance.groups.set(groups_data)
 
         return instance
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
-    # Permite asignar un rol al registrar un usuario
     assigned_role_id = serializers.PrimaryKeyRelatedField(
         queryset=Group.objects.all(), source='groups', many=True, write_only=True, required=False, allow_null=True
+    )
+    # Campo de departamento para registro (recibe ID)
+    departamento = serializers.PrimaryKeyRelatedField(
+        queryset=Departamento.objects.all(),
+        allow_null=True,
+        required=False
+    )
+    # Campo de región para registro (recibe ID)
+    region = serializers.PrimaryKeyRelatedField(
+        queryset=Region.objects.all(),
+        allow_null=True,
+        required=False
     )
 
     class Meta:
@@ -111,26 +134,27 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             'first_name',
             'last_name',
             'puesto',
-            'departamento',
-            'region',
+            'departamento', # <-- Para enviar el ID del departamento
+            'region',       # <-- Para enviar el ID de la región
             'status',
-            'assigned_role_id', # <-- Agregado para el registro
-            # --- ¡CAMPOS AÑADIDOS PARA REGISTRO! ---
+            'assigned_role_id',
             'is_staff',
             'is_superuser',
-            # -------------------------------------
         ]
         extra_kwargs = {'password': {'write_only': True}}
 
     def create(self, validated_data):
-        # Captura el rol/grupo si se envió
         groups_data = validated_data.pop('groups', None)
-        
-        # --- ¡CAPTURA LOS NUEVOS CAMPOS! ---
         is_staff_val = validated_data.pop('is_staff', False)
         is_superuser_val = validated_data.pop('is_superuser', False)
-        # -----------------------------------
-
+        # Los campos `departamento` y `region` ya contienen los objetos de BD
+        # porque son PrimaryKeyRelatedField. No necesitas hacer pop y reasignar,
+        # solo asegúrate de que se pasen al create_user.
+        
+        # Modificación: No es necesario hacer pop de 'departamento' y 'region'
+        # para luego asignarlos, ya están en validated_data como objetos.
+        # Simplemente pasa validated_data directamente.
+        
         user = User.objects.create_user(
             username=validated_data['username'],
             email=validated_data['email'],
@@ -138,20 +162,16 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             first_name=validated_data.get('first_name', ''),
             last_name=validated_data.get('last_name', ''),
             puesto=validated_data.get('puesto'),
-            departamento=validated_data.get('departamento'),
-            region=validated_data.get('region'),
+            departamento=validated_data.get('departamento'), # Se pasa directamente el objeto
+            region=validated_data.get('region'),             # Se pasa directamente el objeto
             status=validated_data.get('status', 'Activo'),
-            # --- ¡ASIGNA LOS NUEVOS CAMPOS AL CREAR EL USUARIO! ---
             is_staff=is_staff_val,
             is_superuser=is_superuser_val,
-            # ---------------------------------------------------
         )
 
-        # Asigna el rol al usuario si se proporcionó
         if groups_data:
             user.groups.set(groups_data)
         return user
-
 
 class ChangePasswordSerializer(serializers.Serializer):
     new_password = serializers.CharField(required=True, write_only=True, min_length=8)
@@ -226,9 +246,4 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 {"detail": "Tu cuenta ha sido deshabilitada. Contacta al administrador."}
             )
         token = super().get_token(user)
-        # You can add user details to the token if you still need them here for quick access
-        # but for sensitive permissions, relying on /users/me/ is more secure.
-        # token['is_staff'] = user.is_staff
-        # token['is_superuser'] = user.is_superuser
-        # token['username'] = user.username # Example
         return token

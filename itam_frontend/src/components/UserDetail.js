@@ -1,4 +1,3 @@
-// src/components/UserDetail.js
 import React from 'react';
 
 function UserDetail({ user, onClose }) {
@@ -26,11 +25,13 @@ function UserDetail({ user, onClose }) {
       </div>
       <div>
         <p className="font-semibold text-gray-800">Departamento:</p>
-        <p>{user.departamento || 'N/A'}</p>
+        {/* CAMBIADO: Usar user.departamento_name */}
+        <p>{user.departamento_name || 'N/A'}</p>
       </div>
       <div>
         <p className="font-semibold text-gray-800">Región:</p>
-        <p>{user.region || 'N/A'}</p>
+        {/* CAMBIADO: Usar user.region_name */}
+        <p>{user.region_name || 'N/A'}</p>
       </div>
       <div>
         <p className="font-semibold text-gray-800">Estado:</p>
