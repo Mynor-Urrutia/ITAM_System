@@ -32,7 +32,8 @@ function Navbar() {
                                 {user.first_name} {user.last_name}
                             </p>
                             <p className="text-gray-600 text-sm leading-tight -mt-0.5">
-                                ({user.puesto || 'N/A'}, {user.departamento || 'N/A'}, {getRoleName()})
+                                {/* CAMBIADO: Usar user.departamento_name */}
+                                ({user.puesto || 'N/A'}, {user.departamento_name || 'N/A'}, {getRoleName()})
                             </p>
                         </div>
                     </div>
