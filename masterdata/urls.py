@@ -1,7 +1,7 @@
 # itam_backend/masterdata/urls.py
 
 from rest_framework.routers import DefaultRouter
-from .views import RegionViewSet, FincaViewSet, DepartamentoViewSet, AreaViewSet, TipoActivoViewSet, MarcaViewSet, ModeloActivoViewSet, AuditLogViewSet
+from .views import RegionViewSet, FincaViewSet, DepartamentoViewSet, AreaViewSet, TipoActivoViewSet, MarcaViewSet, ModeloActivoViewSet, ProveedorViewSet, AuditLogViewSet
 
 
 router = DefaultRouter()
@@ -12,6 +12,7 @@ router.register(r'areas', AreaViewSet)             # Nueva ruta
 router.register(r'tipos-activos', TipoActivoViewSet)
 router.register(r'marcas', MarcaViewSet)
 router.register(r'modelos-activo', ModeloActivoViewSet)
+router.register(r'proveedores', ProveedorViewSet)
 router.register(r'audit-logs', AuditLogViewSet)
 
 urlpatterns = router.urls

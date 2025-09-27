@@ -23,6 +23,7 @@ import AreasPage from './pages/masterdata/AreasPage'; // ¡NUEVO!
 import TipoActivosPage from './pages/masterdata/TiposActivosPage'; // ¡NUEVO!
 import MarcasPage from './pages/masterdata/MarcasPage'; // ¡NUEVO!
 import ModelosActivoPage from './pages/masterdata/ModelosActivoPage'; // Asegúrate de que el nombre coincida
+import ProveedoresPage from './pages/masterdata/ProveedoresPage'; // ¡NUEVO!
 import AuditLogsPage from './pages/masterdata/AuditLogsPage'; // ¡NUEVO!
 
 
@@ -117,6 +118,14 @@ const AppContent = () => {
                                     element={
                                         <PrivateRoute requiredPermissions={['masterdata.view_modeloactivo']}>
                                             <ModelosActivoPage />
+                                        </PrivateRoute>
+                                    }
+                                />
+                                <Route
+                                    path="/masterdata/proveedores"
+                                    element={
+                                        <PrivateRoute requiredPermissions={['masterdata.view_proveedor']}>
+                                            <ProveedoresPage />
                                         </PrivateRoute>
                                     }
                                 />

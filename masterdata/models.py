@@ -207,6 +207,32 @@ class ModeloActivo(models.Model):
         return 'periferico'
 
 
+class Proveedor(models.Model):
+    nombre_empresa = models.CharField(max_length=255, unique=True, verbose_name="Nombre de la Empresa")
+    nit = models.CharField(max_length=20, unique=True, verbose_name="NIT")
+    direccion = models.TextField(verbose_name="Dirección")
+    nombre_contacto = models.CharField(max_length=255, verbose_name="Nombre de Contacto")
+
+    # Contacto de ventas
+    telefono_ventas = models.CharField(max_length=20, blank=True, null=True, verbose_name="Teléfono de Ventas")
+    correo_ventas = models.EmailField(blank=True, null=True, verbose_name="Correo de Ventas")
+
+    # Contacto de soporte
+    telefono_soporte = models.CharField(max_length=20, blank=True, null=True, verbose_name="Teléfono de Soporte")
+    correo_soporte = models.EmailField(blank=True, null=True, verbose_name="Correo de Soporte")
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Proveedor"
+        verbose_name_plural = "Proveedores"
+        ordering = ['nombre_empresa']
+
+    def __str__(self):
+        return self.nombre_empresa
+
+
 class AuditLog(models.Model):
     ACTIVITY_CHOICES = [
         ('CREATE', 'Create'),

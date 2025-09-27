@@ -110,6 +110,12 @@ export const createModeloActivo = (data) => api.post('/masterdata/modelos-activo
 export const updateModeloActivo = (id, data) => api.put(`/masterdata/modelos-activo/${id}/`, data);
 export const deleteModeloActivo = (id) => api.delete(`/masterdata/modelos-activo/${id}/`);
 
+// --- Funciones para la gestión de Proveedores ---
+export const getProveedores = (params = {}) => api.get('/masterdata/proveedores/', { params });
+export const createProveedor = (data) => api.post('/masterdata/proveedores/', data);
+export const updateProveedor = (id, data) => api.put(`/masterdata/proveedores/${id}/`, data);
+export const deleteProveedor = (id) => api.delete(`/masterdata/proveedores/${id}/`);
+
 // --- Funciones para la gestión de Usuarios ---
 export const getUsers = (params = {}) => api.get('/users/', { params });
 export const createUser = (userData) => api.post('/users/', userData);

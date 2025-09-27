@@ -9,8 +9,8 @@ from django.forms.models import model_to_dict
 from django.core.serializers.json import DjangoJSONEncoder
 import json
 
-from .models import Region, Finca, Departamento, Area, TipoActivo, Marca, ModeloActivo, AuditLog
-from .serializers import RegionSerializer, FincaSerializer, FincaCreateUpdateSerializer, DepartamentoSerializer, AreaSerializer, TipoActivoSerializer, MarcaSerializer, ModeloActivoSerializer, AuditLogSerializer
+from .models import Region, Finca, Departamento, Area, TipoActivo, Marca, ModeloActivo, Proveedor, AuditLog
+from .serializers import RegionSerializer, FincaSerializer, FincaCreateUpdateSerializer, DepartamentoSerializer, AreaSerializer, TipoActivoSerializer, MarcaSerializer, ModeloActivoSerializer, ProveedorSerializer, AuditLogSerializer
 
 class StandardResultsSetPagination(PageNumberPagination):
     page_size = 5  # Default page size
@@ -170,6 +170,14 @@ class ModeloActivoViewSet(AuditLogMixin, viewsets.ModelViewSet):
     # Permite buscar por nombre del modelo, marca y tipo de activo
     search_fields = ['name', 'marca__name', 'tipo_activo__name']
     filterset_fields = ['marca', 'tipo_activo']
+
+class ProveedorViewSet(AuditLogMixin, viewsets.ModelViewSet):
+    queryset = Proveedor.objects.all()
+    serializer_class = ProveedorSerializer
+    pagination_class = StandardResultsSetPagination
+    # Usar permisos del modelo: requiere permisos específicos como masterdata.add_proveedor, etc.
+    permission_classes = [permissions.IsAuthenticated, permissions.DjangoModelPermissions]
+    search_fields = ['nombre_empresa', 'nit', 'nombre_contacto']
 
 class AuditLogViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = AuditLog.objects.select_related('user', 'content_type').order_by('-timestamp')

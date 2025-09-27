@@ -22,6 +22,7 @@ import {
     faTags,
     faLaptop,
     faHistory,
+    faTruck,
 } from '@fortawesome/free-solid-svg-icons';
 
 function Sidebar() {
@@ -40,6 +41,7 @@ function Sidebar() {
         hasPermission('masterdata.view_tipoactivo') ||
         hasPermission('masterdata.view_marca') ||
         hasPermission('masterdata.view_modeloactivo') ||
+        hasPermission('masterdata.view_proveedor') ||
         hasPermission('masterdata.view_auditlog');
 
 
@@ -170,6 +172,19 @@ function Sidebar() {
                                     >
                                         <FontAwesomeIcon icon={faLaptop} className="mr-3" />
                                         Modelos de Activo
+                                    </NavLink>
+                                )}
+                                {hasPermission('masterdata.view_proveedor') && (
+                                    <NavLink
+                                        to="/masterdata/proveedores"
+                                        className={({ isActive }) =>
+                                            `block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-600 hover:text-white ${
+                                                isActive ? 'bg-gray-600 text-white' : ''
+                                            }`
+                                        }
+                                    >
+                                        <FontAwesomeIcon icon={faTruck} className="mr-3" />
+                                        Proveedores
                                     </NavLink>
                                 )}
                                 {hasPermission('masterdata.view_auditlog') && (

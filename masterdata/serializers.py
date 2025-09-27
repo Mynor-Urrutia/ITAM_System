@@ -1,7 +1,7 @@
 # itam_backend/masterdata/serializers.py
 
 from rest_framework import serializers
-from .models import Region, Finca, Departamento, Area, TipoActivo, Marca, ModeloActivo, AuditLog    # Asegúrate de importar todos tus modelos
+from .models import Region, Finca, Departamento, Area, TipoActivo, Marca, ModeloActivo, Proveedor, AuditLog    # Asegúrate de importar todos tus modelos
 from rest_framework.validators import UniqueTogetherValidator
 
 class RegionSerializer(serializers.ModelSerializer):
@@ -98,6 +98,11 @@ class ModeloActivoSerializer(serializers.ModelSerializer):
             'marca': {'write_only': True},
             'tipo_activo': {'write_only': True},
         }
+
+class ProveedorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Proveedor
+        fields = '__all__'
 
 class AuditLogSerializer(serializers.ModelSerializer):
     user_username = serializers.CharField(source='user.username', read_only=True)
