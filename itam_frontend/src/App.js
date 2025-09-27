@@ -1,4 +1,5 @@
 // C:\Proyectos\ITAM_System\itam_frontend\src\App.js
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -19,30 +20,34 @@ import RegionsPage from './pages/masterdata/RegionsPage';
 import FarmsPage from './pages/masterdata/FarmsPage';
 import DepartmentsPage from './pages/masterdata/DepartmentsPage'; // ¡NUEVO!
 import AreasPage from './pages/masterdata/AreasPage'; // ¡NUEVO!
+import TipoActivosPage from './pages/masterdata/TiposActivosPage'; // ¡NUEVO!
+import MarcasPage from './pages/masterdata/MarcasPage'; // ¡NUEVO!
+import ModelosActivoPage from './pages/masterdata/ModelosActivoPage'; // Asegúrate de que el nombre coincida
+import AuditLogsPage from './pages/masterdata/AuditLogsPage'; // ¡NUEVO!
+
+
 
 // Este componente AppContent usará el AuthContext
 const AppContent = () => {
     const { isAuthenticated, loading } = useAuth();
 
     if (loading) {
-        return <div className="flex justify-center items-center h-screen text-2xl">Cargando aplicación...</div>;
+        return <div className="flex justify-center items-center h-screen text-2xl">Cargando...</div>;
     }
 
     return (
         <>
-            {/* Si el usuario está autenticado, renderiza Navbar y Sidebar */}
             {isAuthenticated ? (
-                <div className="flex h-screen">
+                <div className="flex min-h-screen bg-gray-100">
                     <Sidebar />
-                    <div className="flex-1 flex flex-col">
+                    <div className="flex-1 flex flex-col overflow-hidden">
                         <Navbar />
-                        <main className="flex-1 p-6 overflow-auto bg-gray-100">
+                        <main className="flex-1 overflow-x-hidden overflow-y-auto p-6">
                             <Routes>
-                                {/* Rutas Protegidas */}
                                 <Route path="/home" element={<Home />} />
-                                
+                                {/* Rutas de Administración */}
                                 <Route
-                                    path="/users"
+                                    path="/admin/users"
                                     element={
                                         <PrivateRoute requiredPermissions={['users.view_customuser']}>
                                             <UserCrud />
@@ -50,15 +55,15 @@ const AppContent = () => {
                                     }
                                 />
                                 <Route
-                                    path="/roles-management"
+                                    path="/admin/roles"
                                     element={
                                         <PrivateRoute requiredPermissions={['auth.view_group']}>
                                             <RoleManagement />
                                         </PrivateRoute>
                                     }
                                 />
-
-                                {/* Rutas para Datos Maestros */}
+                                
+                                {/* Rutas de Datos Maestros */}
                                 <Route
                                     path="/masterdata/regions"
                                     element={
@@ -76,7 +81,7 @@ const AppContent = () => {
                                     }
                                 />
                                 <Route
-                                    path="/masterdata/departments" // ¡NUEVA RUTA!
+                                    path="/masterdata/departments"
                                     element={
                                         <PrivateRoute requiredPermissions={['masterdata.view_departamento']}>
                                             <DepartmentsPage />
@@ -84,47 +89,59 @@ const AppContent = () => {
                                     }
                                 />
                                 <Route
-                                    path="/masterdata/areas" // ¡NUEVA RUTA!
+                                    path="/masterdata/areas"
                                     element={
                                         <PrivateRoute requiredPermissions={['masterdata.view_area']}>
                                             <AreasPage />
                                         </PrivateRoute>
                                     }
                                 />
-
-                                {/* Ejemplo de otras rutas existentes */}
                                 <Route
-                                    path="/reports"
+                                    path="/masterdata/tipo-activos"
                                     element={
-                                        <PrivateRoute requiredPermissions={['reports.view_report']}>
-                                            <div>Página de Reportes</div>
+                                        <PrivateRoute requiredPermissions={['masterdata.view_tipoactivo']}>
+                                            <TipoActivosPage />
                                         </PrivateRoute>
                                     }
                                 />
                                 <Route
-                                    path="/assets"
+                                    path="/masterdata/marcas"
                                     element={
-                                        <PrivateRoute requiredPermissions={['assets.view_asset']}>
+                                        <PrivateRoute requiredPermissions={['masterdata.view_marca']}>
+                                            <MarcasPage />
+                                        </PrivateRoute>
+                                    }
+                                />
+                                <Route
+                                    path="/masterdata/modelos-activo"
+                                    element={
+                                        <PrivateRoute requiredPermissions={['masterdata.view_modeloactivo']}>
+                                            <ModelosActivoPage />
+                                        </PrivateRoute>
+                                    }
+                                />
+                                <Route
+                                    path="/masterdata/audit-logs"
+                                    element={
+                                        <PrivateRoute requiredPermissions={['masterdata.view_auditlog']}>
+                                            <AuditLogsPage />
+                                        </PrivateRoute>
+                                    }
+                                />
+
+                                {/* Rutas de Activos */}
+                                <Route
+                                    path="/assets/maintenance"
+                                    element={
+                                        <PrivateRoute requiredPermissions={['assets.view_mantenimiento']}>
                                             <div>Mantenimiento de Activos</div>
                                         </PrivateRoute>
                                     }
                                 />
-                                <Route
-                                    path="/about"
-                                    element={
-                                        <PrivateRoute>
-                                            <div>Acerca de</div>
-                                        </PrivateRoute>
-                                    }
-                                />
-                                <Route
-                                    path="/contact"
-                                    element={
-                                        <PrivateRoute>
-                                            <div>Contacto</div>
-                                        </PrivateRoute>
-                                    }
-                                />
+
+                                {/* Rutas de Información */}
+                                <Route path="/about" element={<div>Acerca de</div>} />
+                                <Route path="/contact" element={<div>Contacto</div>} />
 
                                 {/* Ruta por defecto para autenticados */}
                                 <Route path="/" element={<Navigate to="/home" replace />} />

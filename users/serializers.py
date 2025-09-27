@@ -7,109 +7,95 @@ from masterdata.models import Region, Departamento
 User = get_user_model()
 
 class UserSerializer(serializers.ModelSerializer):
-    # Campos de solo lectura para mostrar el ID y nombre del rol (grupo principal)
-    role_id = serializers.SerializerMethodField(read_only=True)
-    role_name = serializers.SerializerMethodField(read_only=True)
-    
+    # Campos de solo lectura para mostrar los IDs y nombres de los roles (grupos)
+    role_ids = serializers.SerializerMethodField(read_only=True)
+    role_names = serializers.SerializerMethodField(read_only=True)
+
     # Campo para las listas de permisos del usuario
     user_permissions = serializers.SerializerMethodField()
-    
-    # Campo de escritura para asignar el rol (grupo) al usuario
-    assigned_role_id = serializers.PrimaryKeyRelatedField(
+
+    # Campo de escritura para asignar los roles (grupos) al usuario
+    assigned_role_ids = serializers.PrimaryKeyRelatedField(
         queryset=Group.objects.all(), source='groups', many=True, write_only=True, required=False, allow_null=True
     )
 
-    # Campo de departamento para escritura (recibe ID)
+    # Campo de departamento y región
     departamento = serializers.PrimaryKeyRelatedField(
-        queryset=Departamento.objects.all(),
-        allow_null=True,
-        required=False
+        queryset=Departamento.objects.all(), allow_null=True, required=False
     )
-    # Campo de solo lectura para mostrar el nombre del departamento
     departamento_name = serializers.CharField(source='departamento.name', read_only=True)
-
-    # Campo de región para escritura (recibe ID)
     region = serializers.PrimaryKeyRelatedField(
-        queryset=Region.objects.all(),
-        allow_null=True,
-        required=False
+        queryset=Region.objects.all(), allow_null=True, required=False
     )
-    # Campo de solo lectura para mostrar el nombre de la región
     region_name = serializers.CharField(source='region.name', read_only=True)
-    # --------------------------------------------------------------------------
+
 
     class Meta:
         model = User
-        fields = [
-            'id', 'username', 'email', 'first_name', 'last_name',
-            'puesto',
-            'departamento',      # <-- Para enviar/recibir el ID del departamento
-            'departamento_name', # <-- ¡Asegúrate de que esté aquí para la lectura!
-            'region',            # <-- Para enviar/recibir el ID de la región
-            'region_name',       # <-- ¡Asegúrate de que esté aquí para la lectura!
-            'status',
-            'is_active',
-            'is_staff',
-            'is_superuser',
-            'role_id', 'role_name',
-            'assigned_role_id',
-            'user_permissions',
-            'password', 
-        ]
-        # Asegúrate de que 'departamento_name' y 'region_name' estén en read_only_fields
-        read_only_fields = ['id', 'user_permissions', 'departamento_name', 'region_name'] 
-        extra_kwargs = {
-            'password': {'write_only': True, 'required': False},
-        }
+        fields = (
+            'id', 'username', 'email', 'password', 'first_name', 'last_name',
+            'puesto', 'departamento', 'departamento_name', 'region', 'region_name',
+            'status', 'is_staff', 'is_superuser',
+            'role_ids', 'role_names', 'assigned_role_ids', 'user_permissions'
+        )
+        read_only_fields = ('role_ids', 'role_names', 'user_permissions')
+        # Crucial: Oculta la contraseña al leer, la hace opcional y añade un mínimo de 8 caracteres
+        extra_kwargs = {'password': {'write_only': True, 'min_length': 8, 'required': False}}
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        if self.instance:
-            self.fields['username'].read_only = True
+    def get_role_ids(self, obj):
+        return list(obj.groups.values_list('id', flat=True))
 
-    def get_role_id(self, obj):
-        return obj.groups.first().id if obj.groups.exists() else None
-
-    def get_role_name(self, obj):
-        return obj.groups.first().name if obj.groups.exists() else 'Sin Rol'
+    def get_role_names(self, obj):
+        return list(obj.groups.values_list('name', flat=True))
 
     def get_user_permissions(self, obj):
-        if not obj.is_active:
-            return []
-        all_permissions = obj.get_all_permissions()
-        return sorted(list(all_permissions))
+        return sorted(list(obj.get_all_permissions()))
 
-    def update(self, instance, validated_data):
-        groups_data = validated_data.pop('groups', None)
+
+    # MÉTODO CRUCIAL PARA LA CREACIÓN (HASHING)
+    def create(self, validated_data):
+        # 1. Extrae la contraseña y los grupos (roles)
         password = validated_data.pop('password', None)
-        
-        # El PrimaryKeyRelatedField ya se encarga de que 'departamento' y 'region'
-        # sean objetos del modelo Departamento/Region, no solo IDs.
-        # No necesitas hacer pop de ellos explícitamente aquí para asignarlos,
-        # ya que `setattr` con el mismo nombre del campo los manejará.
-        # Solo necesitas asegurarte de que estén en validated_data si se enviaron.
-        
-        # Modificación: No necesitas hacer pop de region_obj o departamento_obj aquí.
-        # Simplemente deja que validated_data contenga el objeto de la BD.
-        # El for-loop de abajo se encargará de asignar directamente `instance.departamento = obj_departamento`.
-        
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-            
-        if password:
-            instance.set_password(password)
-            
-        instance.save() # Guarda los cambios a departamento y region
+        groups = validated_data.pop('groups', None)
 
-        if groups_data is not None:
-            instance.groups.set(groups_data)
+        # 2. Crea el usuario con el resto de los datos
+        # Nota: Usamos create_user si es un CustomUser Manager, pero ModelSerializer por defecto llama a objects.create.
+        user = User.objects.create(**validated_data)
+
+        # 3. Cifra y guarda la contraseña si se proporcionó
+        if password is not None:
+            user.set_password(password) # ¡Cifrado de la contraseña!
+            user.save()
+
+        # 4. Asigna los grupos (roles)
+        if groups is not None:
+            user.groups.set(groups)
+
+        return user
+
+    # MÉTODO CRUCIAL PARA LA ACTUALIZACIÓN (HASHING)
+    def update(self, instance, validated_data):
+        # 1. Extrae la contraseña y los grupos
+        password = validated_data.pop('password', None)
+        groups = validated_data.pop('groups', None)
+
+        # 2. Actualiza todos los demás campos
+        instance = super().update(instance, validated_data)
+
+        # 3. Cifra y guarda la contraseña SOLO si se proporcionó en el payload
+        if password is not None:
+            instance.set_password(password) # ¡Cifrado de la contraseña!
+            instance.save()
+
+        # 4. Actualiza los grupos
+        if groups is not None:
+            instance.groups.set(groups)
 
         return instance
 
-
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
-    assigned_role_id = serializers.PrimaryKeyRelatedField(
+    assigned_role_ids = serializers.PrimaryKeyRelatedField(
         queryset=Group.objects.all(), source='groups', many=True, write_only=True, required=False, allow_null=True
     )
     # Campo de departamento para registro (recibe ID)
@@ -137,7 +123,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             'departamento', # <-- Para enviar el ID del departamento
             'region',       # <-- Para enviar el ID de la región
             'status',
-            'assigned_role_id',
+            'assigned_role_ids',
             'is_staff',
             'is_superuser',
         ]

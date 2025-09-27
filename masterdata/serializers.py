@@ -1,7 +1,8 @@
 # itam_backend/masterdata/serializers.py
 
 from rest_framework import serializers
-from .models import Region, Finca, Departamento, Area # Asegúrate de importar todos tus modelos
+from .models import Region, Finca, Departamento, Area, TipoActivo, Marca, ModeloActivo, AuditLog    # Asegúrate de importar todos tus modelos
+from rest_framework.validators import UniqueTogetherValidator
 
 class RegionSerializer(serializers.ModelSerializer):
     class Meta:
@@ -50,3 +51,59 @@ class AreaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Area
         fields = ['id', 'name', 'description', 'departamento', 'departamento_name']
+
+class TipoActivoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TipoActivo
+        fields = '__all__'
+        
+class MarcaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Marca
+        fields = '__all__'
+        
+class ModeloActivoSerializer(serializers.ModelSerializer):
+    # Campos de solo lectura para mostrar el nombre en el frontend
+    marca_name = serializers.CharField(source='marca.name', read_only=True)
+    tipo_activo_name = serializers.CharField(source='tipo_activo.name', read_only=True)
+
+    # Campos de escritura para recibir los IDs de las claves foráneas
+    marca = serializers.PrimaryKeyRelatedField(
+        queryset=Marca.objects.all(),
+        write_only=True,
+        required=True
+    )
+    tipo_activo = serializers.PrimaryKeyRelatedField(
+        queryset=TipoActivo.objects.all(),
+        allow_null=True,
+        required=False,
+        write_only=True
+    )
+
+    class Meta:
+        model = ModeloActivo
+        fields = [
+            'id', 'name',
+            'marca', 'marca_name',
+            'tipo_activo', 'tipo_activo_name',
+            # Campos para equipo de computo
+            'procesador', 'ram', 'almacenamiento', 'tarjeta_grafica', 'wifi', 'ethernet',
+            # Campos para equipos de red
+            'puertos_ethernet', 'puertos_sfp', 'puerto_consola', 'puertos_poe', 'alimentacion', 'administrable',
+            # Campos para perifericos
+            'tamano', 'color', 'conectores', 'cables',
+            'created_at', 'updated_at'
+        ]
+        extra_kwargs = {
+            'marca': {'write_only': True},
+            'tipo_activo': {'write_only': True},
+        }
+
+class AuditLogSerializer(serializers.ModelSerializer):
+    user_username = serializers.CharField(source='user.username', read_only=True)
+    record_model = serializers.CharField(source='content_type.model', read_only=True)
+    record_id = serializers.IntegerField(source='object_id', read_only=True)
+
+    class Meta:
+        model = AuditLog
+        fields = ['id', 'timestamp', 'activity_type', 'description', 'user_username', 'record_model', 'record_id', 'old_data', 'new_data']

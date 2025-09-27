@@ -1,110 +1,102 @@
-// C:\Proyectos\ITAM_System\itam_frontend\src\pages\masterdata\DepartmentsPage.js
+// itam_frontend/src/pages/masterdata/MarcasPage.js
+
 import React, { useState, useEffect } from 'react';
-import { getDepartamentos, deleteDepartamento } from '../../api'; // Importa las funciones API
-import DepartmentFormModal from './DepartmentFormModal'; // Importa el modal del formulario
+import { getMarcas, deleteMarca } from '../../api';
+import MarcaFormModal from './MarcaFormModal';
 import Pagination from '../../components/Pagination';
 import { toast } from 'react-toastify';
-import { useAuth } from '../../context/AuthContext'; // Para permisos
+import { useAuth } from '../../context/AuthContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus, faEdit, faTrash } from '@fortawesome/free-solid-svg-icons';
 
-function DepartmentsPage() {
-    const [departamentos, setDepartamentos] = useState([]);
+function MarcasPage() {
+    const [marcas, setMarcas] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [currentDepartamento, setCurrentDepartamento] = useState(null); // Para editar
-
-    // Pagination states
+    const [currentMarca, setCurrentMarca] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
-    const [pageSize, setPageSize] = useState(10);
-    const [totalPages, setTotalPages] = useState(1);
+    const [pageSize, setPageSize] = useState(5);
     const [totalCount, setTotalCount] = useState(0);
-    const pageSizeOptions = [5, 10, 25, 50, 100, 200];
-
+    const [totalPages, setTotalPages] = useState(0);
     const { hasPermission } = useAuth();
 
-    const canAddDepartamento = hasPermission('masterdata.add_departamento');
-    const canChangeDepartamento = hasPermission('masterdata.change_departamento');
-    const canDeleteDepartamento = hasPermission('masterdata.delete_departamento');
+    const canAddMarca = hasPermission('masterdata.add_marca');
+    const canChangeMarca = hasPermission('masterdata.change_marca');
+    const canDeleteMarca = hasPermission('masterdata.delete_marca');
 
     useEffect(() => {
-        fetchDepartamentos();
+        fetchMarcas(currentPage, pageSize);
     }, [currentPage, pageSize]);
 
-    const fetchDepartamentos = async () => {
+    const fetchMarcas = async (page = 1, size = 5) => {
         try {
-            const params = {
-                page: currentPage,
-                page_size: pageSize
-            };
-            const response = await getDepartamentos(params);
-            setDepartamentos(response.data.results || response.data);
-            setTotalPages(Math.ceil((response.data.count || response.data.length) / pageSize));
-            setTotalCount(response.data.count || response.data.length);
+            const response = await getMarcas({ page, page_size: size });
+            setMarcas(response.data.results);
+            setTotalCount(response.data.count);
+            setTotalPages(Math.ceil(response.data.count / size));
         } catch (error) {
-            console.error('Error fetching departamentos:', error);
-            toast.error('Error al cargar los departamentos.');
+            console.error('Error fetching marcas:', error);
+            toast.error('Error al cargar las marcas.');
         }
     };
 
     const handleAddClick = () => {
-        setCurrentDepartamento(null); // Para formulario de creación
+        setCurrentMarca(null);
         setIsModalOpen(true);
     };
 
-    const handleEditClick = (departamento) => {
-        setCurrentDepartamento(departamento); // Para formulario de edición
+    const handleEditClick = (marca) => {
+        setCurrentMarca(marca);
         setIsModalOpen(true);
     };
 
     const handleDeleteClick = async (id) => {
-        if (!window.confirm('¿Estás seguro de que quieres eliminar este departamento? Esto eliminará también todas las áreas asociadas.')) {
+        if (!window.confirm('¿Estás seguro de que quieres eliminar esta marca?')) {
             return;
         }
         try {
-            await deleteDepartamento(id);
-            toast.success('Departamento eliminado correctamente.');
-            fetchDepartamentos(); // Refrescar la lista
+            await deleteMarca(id);
+            toast.success('Marca eliminada correctamente.');
+            fetchMarcas();
         } catch (error) {
-            console.error('Error deleting departamento:', error.response?.data || error.message);
-            const errorMessage = error.response?.data?.detail || 'Error al eliminar el departamento.';
+            console.error('Error deleting marca:', error.response?.data || error.message);
+            const errorMessage = error.response?.data?.detail || 'Error al eliminar la marca.';
             toast.error(errorMessage);
         }
+    };
+
+    const handleSaveSuccess = () => {
+        fetchMarcas(currentPage, pageSize);
+    };
+
+    const handleCloseModal = () => {
+        setIsModalOpen(false);
+        setCurrentMarca(null);
     };
 
     const handlePageChange = (page) => {
         setCurrentPage(page);
     };
 
-    const handlePageSizeChange = (newPageSize) => {
-        setPageSize(newPageSize);
-        setCurrentPage(1); // Reset to first page when changing page size
-    };
-
-    const handleSaveSuccess = () => {
-        fetchDepartamentos(); // Refresca la lista después de guardar/actualizar
-    };
-
-    const handleCloseModal = () => {
-        setIsModalOpen(false);
-        setCurrentDepartamento(null); // Limpia el estado de edición al cerrar
+    const handlePageSizeChange = (size) => {
+        setPageSize(size);
+        setCurrentPage(1);
     };
 
     return (
         <div className="p-4">
-            <h1 className="text-3xl font-bold mb-6 text-gray-800">Gestión de Departamentos</h1>
+            <h1 className="text-3xl font-bold mb-6 text-gray-800">Gestión de Marcas</h1>
 
             <div className="flex justify-end mb-4">
-                {canAddDepartamento && (
+                {canAddMarca && (
                     <button
                         onClick={handleAddClick}
                         className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
                     >
                         <FontAwesomeIcon icon={faPlus} className="mr-2" />
-                        Crear Nuevo Departamento
+                        Crear Nueva Marca
                     </button>
                 )}
             </div>
-
             <div className="bg-white shadow overflow-hidden rounded-lg">
                 <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
@@ -115,41 +107,41 @@ function DepartmentsPage() {
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Descripción
                             </th>
-                            {(canChangeDepartamento || canDeleteDepartamento) && <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            {(canChangeMarca || canDeleteMarca) && <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Acciones
                             </th>}
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {departamentos.length === 0 ? (
+                        {marcas.length === 0 ? (
                             <tr>
-                                <td colSpan={(canChangeDepartamento || canDeleteDepartamento) ? 3 : 2} className="px-6 py-4 text-center text-gray-500">
-                                    No hay departamentos disponibles.
+                                <td colSpan={(canChangeMarca || canDeleteMarca) ? 3 : 2} className="px-6 py-4 text-center text-gray-500">
+                                    No hay marcas disponibles.
                                 </td>
                             </tr>
                         ) : (
-                            departamentos.map((dept) => (
-                                <tr key={dept.id} className="hover:bg-gray-50">
+                            marcas.map((marca) => (
+                                <tr key={marca.id} className="hover:bg-gray-50">
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                        {dept.name}
+                                        {marca.name}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {dept.description || 'N/A'}
+                                        {marca.description || 'N/A'}
                                     </td>
-                                    {(canChangeDepartamento || canDeleteDepartamento) && (
+                                    {(canChangeMarca || canDeleteMarca) && (
                                         <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                                            {canChangeDepartamento && (
+                                            {canChangeMarca && (
                                                 <button
-                                                    onClick={() => handleEditClick(dept)}
+                                                    onClick={() => handleEditClick(marca)}
                                                     className="text-indigo-600 hover:text-indigo-900 p-2"
                                                     title="Editar"
                                                 >
                                                     <FontAwesomeIcon icon={faEdit} />
                                                 </button>
                                             )}
-                                            {canDeleteDepartamento && (
+                                            {canDeleteMarca && (
                                                 <button
-                                                    onClick={() => handleDeleteClick(dept.id)}
+                                                    onClick={() => handleDeleteClick(marca.id)}
                                                     className="text-red-600 hover:text-red-900 p-2 ml-2"
                                                     title="Eliminar"
                                                 >
@@ -165,26 +157,25 @@ function DepartmentsPage() {
                 </table>
             </div>
 
-            {/* Pagination Component */}
-            {totalCount > 0 && (
+            {totalPages > 0 && (
                 <Pagination
                     currentPage={currentPage}
                     totalPages={totalPages}
                     pageSize={pageSize}
-                    pageSizeOptions={pageSizeOptions}
+                    pageSizeOptions={[5, 10, 20, 50]}
                     onPageChange={handlePageChange}
                     onPageSizeChange={handlePageSizeChange}
                 />
             )}
 
-            <DepartmentFormModal
+            <MarcaFormModal
                 show={isModalOpen}
                 onClose={handleCloseModal}
                 onSaveSuccess={handleSaveSuccess}
-                departamentoToEdit={currentDepartamento}
+                marcaToEdit={currentMarca}
             />
         </div>
     );
 }
 
-export default DepartmentsPage;
+export default MarcasPage;

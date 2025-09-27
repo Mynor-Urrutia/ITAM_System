@@ -1,9 +1,13 @@
 // C:\Proyectos\ITAM_System\itam_frontend\src\components\RoleManagement.js
 
 import React, { useState, useEffect } from 'react';
-import api from '../api'; // Asegúrate de que tu instancia de Axios esté correctamente importada
+import { getRoles, getPermissions, createRole, updateRole, deleteRole } from '../api';
 import { toast } from 'react-toastify';
-// ... otras importaciones necesarias como useAuth, etc.
+import { useAuth } from '../context/AuthContext';
+import Modal from './Modal';
+import Pagination from './Pagination';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPlus, faEdit, faTrash } from '@fortawesome/free-solid-svg-icons';
 
 const RoleManagement = () => {
     const [roles, setRoles] = useState([]);
@@ -15,16 +19,36 @@ const RoleManagement = () => {
     const [selectedPermissionIds, setSelectedPermissionIds] = useState(new Set());
     const [isEditMode, setIsEditMode] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const [showModal, setShowModal] = useState(false);
+
+    // Pagination states
+    const [currentPage, setCurrentPage] = useState(1);
+    const [pageSize, setPageSize] = useState(5);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalCount, setTotalCount] = useState(0);
+    const pageSizeOptions = [5, 10, 25, 50, 100, 200];
+
+    const { hasPermission } = useAuth();
+
+    const canAddRole = hasPermission('auth.add_group');
+    const canChangeRole = hasPermission('auth.change_group');
+    const canDeleteRole = hasPermission('auth.delete_group');
 
     useEffect(() => {
         fetchRoles();
         fetchPermissions();
-    }, []);
+    }, [currentPage, pageSize]);
 
     const fetchRoles = async () => {
         try {
-            const response = await api.get('/roles/');
-            setRoles(response.data);
+            const params = {
+                page: currentPage,
+                page_size: pageSize
+            };
+            const response = await getRoles(params);
+            setRoles(response.data.results || response.data);
+            setTotalPages(Math.ceil((response.data.count || response.data.length) / pageSize));
+            setTotalCount(response.data.count || response.data.length);
         } catch (error) {
             console.error("Error fetching roles:", error);
             toast.error("Error al cargar los roles.");
@@ -33,38 +57,32 @@ const RoleManagement = () => {
 
     const fetchPermissions = async () => {
         try {
-            const response = await api.get('/permissions/');
+            const response = await getPermissions();
             const fetchedPermissions = response.data;
             setPermissions(fetchedPermissions);
 
             // ------------------------------------------------------------------
-            // INICIO DE LA NUEVA LÓGICA DE AGRUPAMIENTO ANIDADO (¡COPIA ESTO!)
+            // AGRUPAMIENTO POR MODELO CON ACCIONES HORIZONTALES
             // ------------------------------------------------------------------
             const grouped = fetchedPermissions.reduce((acc, perm) => {
-                const appLabel = perm.app_label_display || 'Otros'; // Usamos el nuevo campo
-                const modelName = perm.model_name || 'General';     // Usamos el nuevo campo
+                const modelName = perm.model_name || 'General';
 
-                if (!acc[appLabel]) {
-                    acc[appLabel] = {}; // Cada appLabel tendrá un objeto para los modelos
+                if (!acc[modelName]) {
+                    acc[modelName] = [];
                 }
-                if (!acc[appLabel][modelName]) {
-                    acc[appLabel][modelName] = []; // Cada modelName tendrá un array de permisos
-                }
-                acc[appLabel][modelName].push(perm);
+                acc[modelName].push(perm);
                 return acc;
             }, {});
 
-            // Opcional: Ordenar las acciones dentro de cada modelo (Add, Change, Delete, View)
-            for (const app in grouped) {
-                for (const model in grouped[app]) {
-                    grouped[app][model].sort((a, b) => {
-                        const order = { 'Add': 1, 'Change': 2, 'Delete': 3, 'View': 4 };
-                        return (order[a.action_type] || 99) - (order[b.action_type] || 99);
-                    });
-                }
+            // Ordenar las acciones dentro de cada modelo (Add, Change, Delete, View)
+            for (const model in grouped) {
+                grouped[model].sort((a, b) => {
+                    const order = { 'Add': 1, 'Change': 2, 'Delete': 3, 'View': 4 };
+                    return (order[a.action_type] || 99) - (order[b.action_type] || 99);
+                });
             }
             // ------------------------------------------------------------------
-            // FIN DE LA NUEVA LÓGICA DE AGRUPAMIENTO ANIDADO
+            // FIN DEL AGRUPAMIENTO POR MODELO
             // ------------------------------------------------------------------
 
             setGroupedPermissions(grouped);
@@ -74,6 +92,15 @@ const RoleManagement = () => {
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const handlePageChange = (page) => {
+        setCurrentPage(page);
+    };
+
+    const handlePageSizeChange = (newPageSize) => {
+        setPageSize(newPageSize);
+        setCurrentPage(1); // Reset to first page when changing page size
     };
 
     const handlePermissionChange = (permissionId) => {
@@ -88,6 +115,39 @@ const RoleManagement = () => {
         });
     };
 
+    const handleSelectAllInGroup = (modelName) => {
+        const groupPermissions = groupedPermissions[modelName] || [];
+        const groupPermissionIds = groupPermissions.map(p => p.id);
+        const allSelected = groupPermissionIds.every(id => selectedPermissionIds.has(id));
+
+        setSelectedPermissionIds((prev) => {
+            const newSet = new Set(prev);
+            if (allSelected) {
+                // Deselect all in group
+                groupPermissionIds.forEach(id => newSet.delete(id));
+            } else {
+                // Select all in group
+                groupPermissionIds.forEach(id => newSet.add(id));
+            }
+            return newSet;
+        });
+    };
+
+    const handleSelectAllPermissions = () => {
+        const allPermissionIds = Object.values(groupedPermissions).flat().map(p => p.id);
+        const allSelected = allPermissionIds.every(id => selectedPermissionIds.has(id));
+
+        setSelectedPermissionIds((prev) => {
+            if (allSelected) {
+                // Deselect all
+                return new Set();
+            } else {
+                // Select all
+                return new Set(allPermissionIds);
+            }
+        });
+    };
+
     const handleCreateEditRole = async (e) => {
         e.preventDefault();
         const payload = {
@@ -97,10 +157,10 @@ const RoleManagement = () => {
 
         try {
             if (isEditMode) {
-                await api.put(`/roles/${currentRole.id}/`, payload);
+                await updateRole(currentRole.id, payload);
                 toast.success("Rol actualizado exitosamente!");
             } else {
-                await api.post('/roles/', payload);
+                await createRole(payload);
                 toast.success("Rol creado exitosamente!");
             }
             resetForm();
@@ -111,18 +171,27 @@ const RoleManagement = () => {
         }
     };
 
+    const handleAddClick = () => {
+        setCurrentRole(null);
+        setRoleName('');
+        setSelectedPermissionIds(new Set());
+        setIsEditMode(false);
+        setShowModal(true);
+    };
+
     const handleEditClick = (role) => {
         setCurrentRole(role);
         setRoleName(role.name);
         // Inicializa los permisos seleccionados con los permisos actuales del rol
         setSelectedPermissionIds(new Set(role.permissions.map((p) => p.id)));
         setIsEditMode(true);
+        setShowModal(true);
     };
 
     const handleDeleteClick = async (roleId) => {
         if (window.confirm("¿Estás seguro de que quieres eliminar este rol?")) {
             try {
-                await api.delete(`/roles/${roleId}/`);
+                await deleteRole(roleId);
                 toast.success("Rol eliminado exitosamente!");
                 fetchRoles();
             } catch (error) {
@@ -137,6 +206,11 @@ const RoleManagement = () => {
         setRoleName('');
         setSelectedPermissionIds(new Set());
         setIsEditMode(false);
+        setShowModal(false);
+    };
+
+    const handleCloseModal = () => {
+        resetForm();
     };
 
     if (isLoading) {
@@ -144,46 +218,171 @@ const RoleManagement = () => {
     }
 
     return (
-        <div className="container mx-auto p-6 bg-white shadow-md rounded-lg">
-            <h2 className="text-3xl font-bold mb-6 text-gray-800">Gestión de Roles</h2>
+        <div className="p-4">
+            <h1 className="text-3xl font-bold mb-6 text-gray-800">Gestión de Roles y Permisos</h1>
 
-            {/* Formulario de Creación/Edición de Rol */}
-            <form onSubmit={handleCreateEditRole} className="mb-8 p-6 bg-gray-50 rounded-lg shadow-sm">
-                <h3 className="text-2xl font-semibold mb-4 text-gray-700">
-                    {isEditMode ? 'Editar Rol' : 'Crear Nuevo Rol'}
-                </h3>
-                <div className="mb-4">
-                    <label htmlFor="roleName" className="block text-sm font-medium text-gray-700 mb-2">
-                        Nombre del Rol
-                    </label>
-                    <input
-                        type="text"
-                        id="roleName"
-                        className="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                        value={roleName}
-                        onChange={(e) => setRoleName(e.target.value)}
-                        required
-                    />
-                </div>
+            <div className="flex justify-end mb-4">
+                {canAddRole && (
+                    <button
+                        onClick={handleAddClick}
+                        className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+                    >
+                        <FontAwesomeIcon icon={faPlus} className="mr-2" />
+                        Crear Nuevo Rol
+                    </button>
+                )}
+            </div>
 
-                <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-3">Permisos</label>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 bg-white p-4 rounded-md border border-gray-200 h-96 overflow-y-auto">
-                        {/* Iterar sobre los grupos de permisos por aplicación */}
-                        {Object.keys(groupedPermissions).sort().map((appLabelDisplay) => (
-                            <div key={appLabelDisplay} className="mb-4 p-2 border border-gray-200 rounded-md bg-gray-50">
-                                <h4 className="text-xl font-bold text-gray-900 mb-3 border-b-2 pb-2">
-                                    {appLabelDisplay}
-                                </h4>
-                                {/* Iterar sobre los modelos dentro de cada aplicación */}
-                                {Object.keys(groupedPermissions[appLabelDisplay]).sort().map((modelName) => (
-                                    <div key={modelName} className="mb-3 pl-2">
-                                        <h5 className="text-lg font-semibold text-gray-800 mb-2 mt-2">
-                                            {modelName.replace(/_/g, ' ').replace('Customuser', 'Usuario')}
-                                            {/* Reemplaza 'Customuser' por 'Usuario' para un mejor display */}
+            <div className="bg-white shadow overflow-hidden rounded-lg">
+                <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                        <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Nombre del Rol
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Permisos Asignados
+                            </th>
+                            {(canChangeRole || canDeleteRole) && <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Acciones
+                            </th>}
+                        </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                        {roles.length === 0 ? (
+                            <tr>
+                                <td colSpan={(canChangeRole || canDeleteRole) ? 3 : 2} className="px-6 py-4 text-center text-gray-500">
+                                    No hay roles disponibles.
+                                </td>
+                            </tr>
+                        ) : (
+                            roles.map((role) => (
+                                <tr key={role.id} className="hover:bg-gray-50">
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                        {role.name}
+                                    </td>
+                                    <td className="px-6 py-4 text-sm text-gray-900">
+                                        {(() => {
+                                            // Group permissions by model
+                                            const groupedPerms = role.permissions.reduce((acc, perm) => {
+                                                const modelName = perm.model_name || 'General';
+                                                if (!acc[modelName]) acc[modelName] = [];
+                                                acc[modelName].push(perm);
+                                                return acc;
+                                            }, {});
+
+                                            // Sort actions within each model
+                                            Object.keys(groupedPerms).forEach(model => {
+                                                groupedPerms[model].sort((a, b) => {
+                                                    const order = { 'Add': 1, 'Change': 2, 'Delete': 3, 'View': 4 };
+                                                    return (order[a.action_type] || 99) - (order[b.action_type] || 99);
+                                                });
+                                            });
+
+                                            // Format as JSX with bold model names
+                                            return Object.keys(groupedPerms).sort().map((modelName, index) => {
+                                                const displayName = modelName.replace(/_/g, ' ').replace('Customuser', 'Usuario');
+                                                const actions = groupedPerms[modelName].map(p => p.action_type.toLowerCase()).join(', ');
+                                                return (
+                                                    <span key={modelName}>
+                                                        <strong>{displayName}:</strong> {actions}
+                                                        {index < Object.keys(groupedPerms).length - 1 && '; '}
+                                                    </span>
+                                                );
+                                            });
+                                        })()}
+                                    </td>
+                                    {(canChangeRole || canDeleteRole) && (
+                                        <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                                            {canChangeRole && (
+                                                <button
+                                                    onClick={() => handleEditClick(role)}
+                                                    className="text-indigo-600 hover:text-indigo-900 p-2"
+                                                    title="Editar"
+                                                >
+                                                    <FontAwesomeIcon icon={faEdit} />
+                                                </button>
+                                            )}
+                                            {canDeleteRole && (
+                                                <button
+                                                    onClick={() => handleDeleteClick(role.id)}
+                                                    className="text-red-600 hover:text-red-900 p-2 ml-2"
+                                                    title="Eliminar"
+                                                >
+                                                    <FontAwesomeIcon icon={faTrash} />
+                                                </button>
+                                            )}
+                                        </td>
+                                    )}
+                                </tr>
+                            ))
+                        )}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* Pagination Component */}
+            {totalCount > 0 && (
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    pageSize={pageSize}
+                    pageSizeOptions={pageSizeOptions}
+                    onPageChange={handlePageChange}
+                    onPageSizeChange={handlePageSizeChange}
+                />
+            )}
+
+            <Modal show={showModal} onClose={handleCloseModal} title={isEditMode ? 'Editar Rol' : 'Crear Nuevo Rol'} size="large">
+                <form onSubmit={handleCreateEditRole}>
+                    <div className="mb-4">
+                        <label htmlFor="roleName" className="block text-sm font-medium text-gray-700 mb-2">
+                            Nombre del Rol
+                        </label>
+                        <input
+                            type="text"
+                            id="roleName"
+                            className="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                            value={roleName}
+                            onChange={(e) => setRoleName(e.target.value)}
+                            required
+                        />
+                    </div>
+
+                    <div className="mb-6">
+                        <div className="flex justify-between items-center mb-3">
+                            <label className="block text-sm font-medium text-gray-700">Permisos</label>
+                            <button
+                                type="button"
+                                onClick={handleSelectAllPermissions}
+                                className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                                {Object.values(groupedPermissions).flat().every(p => selectedPermissionIds.has(p.id))
+                                    ? 'Deseleccionar Todos'
+                                    : 'Seleccionar Todos los Permisos'}
+                            </button>
+                        </div>
+                        <div className="bg-white p-4 rounded-md border border-gray-200 max-h-96 overflow-y-auto">
+                            {/* Iterar sobre los modelos agrupados */}
+                            {Object.keys(groupedPermissions).sort().map((modelName) => (
+                                <div key={modelName} className="mb-4 p-3 border border-gray-200 rounded-md bg-gray-50">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <h5 className="text-lg font-semibold text-gray-800">
+                                            {modelName.replace(/_/g, ' ').replace('Customuser', 'Usuario')}:
                                         </h5>
-                                        {groupedPermissions[appLabelDisplay][modelName].map((perm) => (
-                                            <div key={perm.id} className="flex items-center mb-1">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleSelectAllInGroup(modelName)}
+                                            className="px-2 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700 focus:outline-none focus:ring-1 focus:ring-gray-500"
+                                        >
+                                            {groupedPermissions[modelName].every(p => selectedPermissionIds.has(p.id))
+                                                ? 'Deseleccionar Todo'
+                                                : 'Seleccionar Todo'}
+                                        </button>
+                                    </div>
+                                    <div className="flex flex-wrap gap-4">
+                                        {groupedPermissions[modelName].map((perm) => (
+                                            <div key={perm.id} className="flex items-center">
                                                 <input
                                                     type="checkbox"
                                                     id={`perm-${perm.id}`}
@@ -191,76 +390,34 @@ const RoleManagement = () => {
                                                     checked={selectedPermissionIds.has(perm.id)}
                                                     onChange={() => handlePermissionChange(perm.id)}
                                                 />
-                                                <label htmlFor={`perm-${perm.id}`} className="ml-2 text-sm text-gray-700 cursor-pointer">
-                                                    {perm.action_type}: {perm.name.replace(`Can ${perm.action_type.toLowerCase()} `, '')}
-                                                    {/* Muestra "Ver: grupo", "Añadir: usuario" */}
+                                                <label htmlFor={`perm-${perm.id}`} className="ml-2 text-sm text-gray-700 cursor-pointer capitalize">
+                                                    {perm.action_type.toLowerCase()}
                                                 </label>
                                             </div>
                                         ))}
                                     </div>
-                                ))}
-                            </div>
-                        ))}
+                                </div>
+                            ))}
+                        </div>
                     </div>
-                </div>
 
-                <div className="flex space-x-4">
-                    <button
-                        type="submit"
-                        className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-200"
-                    >
-                        {isEditMode ? 'Guardar Cambios' : 'Crear Rol'}
-                    </button>
-                    <button
-                        type="button"
-                        onClick={resetForm}
-                        className="px-6 py-3 bg-gray-300 text-gray-800 font-semibold rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition duration-200"
-                    >
-                        Cancelar
-                    </button>
-                </div>
-            </form>
-
-            {/* Lista de Roles Existentes */}
-            <h3 className="text-2xl font-semibold mb-4 text-gray-700">Roles Existentes</h3>
-            <div className="overflow-x-auto">
-                <table className="min-w-full bg-white border border-gray-200 rounded-lg">
-                    <thead>
-                        <tr className="bg-gray-100 text-left text-gray-600 uppercase text-sm leading-normal">
-                            <th className="py-3 px-6">ID</th>
-                            <th className="py-3 px-6">Nombre del Rol</th>
-                            <th className="py-3 px-6">Permisos Asignados</th>
-                            <th className="py-3 px-6 text-center">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody className="text-gray-700 text-sm font-light">
-                        {roles.map((role) => (
-                            <tr key={role.id} className="border-b border-gray-200 hover:bg-gray-50">
-                                <td className="py-3 px-6 whitespace-nowrap">{role.id}</td>
-                                <td className="py-3 px-6">{role.name}</td>
-                                <td className="py-3 px-6">
-                                    {/* Mostrar solo el nombre legible del permiso, sin el 'Can add/change/delete/view' */}
-                                    {role.permissions.map(p => p.name.replace(/Can (add|change|delete|view) /, '')).join(', ')}
-                                </td>
-                                <td className="py-3 px-6 text-center">
-                                    <button
-                                        onClick={() => handleEditClick(role)}
-                                        className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded mr-2 transition duration-200"
-                                    >
-                                        Editar
-                                    </button>
-                                    <button
-                                        onClick={() => handleDeleteClick(role.id)}
-                                        className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition duration-200"
-                                    >
-                                        Eliminar
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+                    <div className="flex space-x-4">
+                        <button
+                            type="submit"
+                            className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-200"
+                        >
+                            {isEditMode ? 'Guardar Cambios' : 'Crear Rol'}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={resetForm}
+                            className="px-6 py-3 bg-gray-300 text-gray-800 font-semibold rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition duration-200"
+                        >
+                            Cancelar
+                        </button>
+                    </div>
+                </form>
+            </Modal>
         </div>
     );
 };

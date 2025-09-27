@@ -32,8 +32,8 @@ function Navbar() {
                                 {user.first_name} {user.last_name}
                             </p>
                             <p className="text-gray-600 text-sm leading-tight -mt-0.5">
-                                {/* CAMBIADO: Usar user.departamento_name */}
-                                ({user.puesto || 'N/A'}, {user.departamento_name || 'N/A'}, {getRoleName()})
+                                {/* Mostrar puesto, departamento y región */}
+                                ({user.puesto || 'N/A'}, {user.departamento_name || 'N/A'}, {user.region_name || 'N/A'})
                             </p>
                         </div>
                     </div>

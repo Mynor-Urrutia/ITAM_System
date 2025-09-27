@@ -37,6 +37,11 @@ class CustomUser(AbstractUser):
     )
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Activo')
 
+    def save(self, *args, **kwargs):
+        # Sync is_active with status
+        self.is_active = self.status == 'Activo'
+        super().save(*args, **kwargs)
+
     groups = models.ManyToManyField(
         'auth.Group',
         verbose_name='groups',

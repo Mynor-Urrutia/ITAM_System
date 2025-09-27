@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import api from '../api';
+import { getUsers, getRoles, createUser, updateUser, changeUserPassword } from '../api';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
@@ -8,14 +8,14 @@ import Modal from './Modal';
 import UserForm from './UserForm';
 import UserDetail from './UserDetail';
 import ChangePasswordForm from './ChangePasswordForm';
+import Pagination from './Pagination';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
     faPlus,
     faEye,
     faEdit,
-    faKey,
-    faToggleOn, faToggleOff
+    faKey
 } from '@fortawesome/free-solid-svg-icons';
 
 function UserCrud() {
@@ -25,22 +25,37 @@ function UserCrud() {
     const [error, setError] = useState('');
     const navigate = useNavigate();
 
+    // Pagination states
+    const [currentPage, setCurrentPage] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalCount, setTotalCount] = useState(0);
+    const pageSizeOptions = [5, 10, 25, 50, 100, 200];
+
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [showViewModal, setShowViewModal] = useState(false);
     const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
     const [currentUser, setCurrentUser] = useState(null);
 
-    const { user: loggedInUser, fetchUserDetails } = useAuth();
+    const { user: loggedInUser, fetchUserDetails, hasPermission } = useAuth();
 
-    const effectRan = useRef(false);
+    const canAddUser = hasPermission('users.add_customuser');
+    const canChangeUser = hasPermission('users.change_customuser');
+    const canDeleteUser = hasPermission('users.delete_customuser');
 
-    const fetchUsers = useCallback(async () => {
+    const fetchUsers = async () => {
         setLoading(true);
         setError('');
         try {
-            const response = await api.get('/users/');
-            setUsers(response.data);
+            const params = {
+                page: currentPage,
+                page_size: pageSize
+            };
+            const response = await getUsers(params);
+            setUsers(response.data.results || response.data);
+            setTotalPages(Math.ceil((response.data.count || response.data.length) / pageSize));
+            setTotalCount(response.data.count || response.data.length);
             // toast.success('Usuarios cargados exitosamente.'); // Descomentar si quieres un toast cada vez que se cargan los usuarios
         } catch (err) {
             if (err.response && err.response.status === 401) {
@@ -55,26 +70,23 @@ function UserCrud() {
         } finally {
             setLoading(false);
         }
-    }, [navigate]);
+    };
 
     // Función para obtener la lista de roles
-    const fetchRoles = useCallback(async () => {
+    const fetchRoles = async () => {
         try {
-            const response = await api.get('/roles/');
-            setRoles(response.data);
+            const response = await getRoles();
+            setRoles(response.data.results || response.data);
         } catch (err) {
             console.error("Error fetching roles:", err);
             toast.error('Error al cargar los roles.');
         }
-    }, []);
+    };
 
     useEffect(() => {
-        if (effectRan.current === false) {
-            fetchUsers();
-            fetchRoles(); // Carga los roles al montar el componente
-            effectRan.current = true;
-        }
-    }, [fetchUsers, fetchRoles]);
+        fetchUsers();
+        fetchRoles();
+    }, [currentPage, pageSize]);
 
     const handleCreateUserClick = () => {
         setCurrentUser(null);
@@ -96,6 +108,15 @@ function UserCrud() {
         setShowChangePasswordModal(true);
     };
 
+    const handlePageChange = (page) => {
+        setCurrentPage(page);
+    };
+
+    const handlePageSizeChange = (newPageSize) => {
+        setPageSize(newPageSize);
+        setCurrentPage(1); // Reset to first page when changing page size
+    };
+
     const closeModal = () => {
         setShowCreateModal(false);
         setShowEditModal(false);
@@ -106,17 +127,13 @@ function UserCrud() {
 
     const handleCreateUser = async (newUserData) => {
         try {
-            // Asegúrate de que assigned_role_id sea un array de IDs (si no es nulo/vacío)
             const payload = { ...newUserData };
-            if (payload.assigned_role_id) {
-                payload.assigned_role_id = [parseInt(payload.assigned_role_id, 10)];
-            } else {
-                payload.assigned_role_id = []; // Si no se selecciona rol, envía un array vacío
-            }
+            // assigned_role_ids ya es un array
+            payload.assigned_role_ids = payload.assigned_role_ids || [];
 
-            const response = await api.post('/users/', payload);
+            const response = await createUser(payload);
             toast.success('Usuario creado exitosamente!');
-            setUsers(prevUsers => [...prevUsers, response.data]);
+            fetchUsers(); // Refresh the list instead of manually updating
             setShowCreateModal(false);
         } catch (err) {
             const errorMsg = err.response?.data?.detail || Object.values(err.response?.data || {}).flat().join(' ') || 'Error al crear el usuario.';
@@ -127,17 +144,13 @@ function UserCrud() {
 
     const handleUpdateUser = async (updatedUserData) => {
         try {
-            // Asegúrate de que assigned_role_id sea un array de IDs (si no es nulo/vacío)
             const payload = { ...updatedUserData };
-            if (payload.assigned_role_id) {
-                payload.assigned_role_id = [parseInt(payload.assigned_role_id, 10)];
-            } else {
-                payload.assigned_role_id = []; // Si no se selecciona rol, envía un array vacío
-            }
+            // assigned_role_ids ya es un array
+            payload.assigned_role_ids = payload.assigned_role_ids || [];
 
-            const response = await api.put(`/users/${updatedUserData.id}/`, payload);
+            const response = await updateUser(updatedUserData.id, payload);
             toast.success('Usuario actualizado exitosamente!');
-            setUsers(prevUsers => prevUsers.map(u => u.id === updatedUserData.id ? response.data : u));
+            fetchUsers(); // Refresh the list instead of manually updating
             setShowEditModal(false);
 
             if (loggedInUser && loggedInUser.id === updatedUserData.id) {
@@ -154,180 +167,152 @@ function UserCrud() {
         }
     };
 
-    const handleToggleIsActive = async (userId, currentIsActive) => { // Función para alternar 'is_active'
-        const newIsActive = !currentIsActive;
-        const actionText = newIsActive ? 'habilitar' : 'deshabilitar';
-
-        if (!window.confirm(`¿Estás seguro de que quieres ${actionText} este usuario (afectará su inicio de sesión)?`)) {
-            return;
-        }
-
-        try {
-            const response = await api.patch(`/users/${userId}/`, { is_active: newIsActive });
-            toast.success(`Usuario ${actionText === 'habilitar' ? 'habilitado' : 'deshabilitado'} exitosamente.`);
-
-            setUsers(prevUsers => prevUsers.map(u =>
-                u.id === userId ? { ...u, is_active: newIsActive } : u
-            ));
-
-            if (loggedInUser && loggedInUser.id === userId) {
-                console.log("Alternando el estado de actividad del usuario actual, recargando detalles...");
-                await fetchUserDetails();
-                toast.info("Tu estado de cuenta ha sido actualizado.");
-            }
-
-        } catch (err) {
-            if (err.response && err.response.status === 401) {
-                toast.error('Sesión expirada o no autorizada. Por favor, inicia sesión de nuevo.');
-                localStorage.clear();
-                navigate('/login');
-            } else {
-                setError('Error al actualizar el estado de actividad: ' + (err.response?.data?.detail || err.message));
-                console.error("Error updating user active status:", err);
-                toast.error('Error al actualizar el estado de actividad del usuario.');
-            }
-        }
-    };
 
     if (loading) return <div className="text-center mt-8">Cargando usuarios...</div>;
     if (error) return <div className="text-center mt-8 text-red-500">{error}</div>;
 
     return (
-        <div className="container mx-auto p-4">
-            <h1 className="text-3xl font-bold text-gray-800 mb-6">Gestión de Usuarios</h1>
+        <div className="p-4">
+            <h1 className="text-3xl font-bold mb-6 text-gray-800">Gestión de Usuarios</h1>
 
-            <div className="flex justify-between items-center mb-4">
-                <button
-                    onClick={handleCreateUserClick}
-                    className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-150 flex items-center"
-                >
-                    <FontAwesomeIcon icon={faPlus} className="mr-2" />
-                    Crear Nuevo Usuario
-                </button>
+            <div className="flex justify-end mb-4">
+                {canAddUser && (
+                    <button
+                        onClick={handleCreateUserClick}
+                        className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+                    >
+                        <FontAwesomeIcon icon={faPlus} className="mr-2" />
+                        Crear Nuevo Usuario
+                    </button>
+                )}
             </div>
 
-            <div className="overflow-x-auto bg-white shadow-md rounded-lg">
-                <table className="min-w-full leading-normal">
-                    <thead>
+            <div className="bg-white shadow overflow-hidden rounded-lg">
+                <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
                         <tr>
-                            <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Usuario
                             </th>
-                            <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Email
                             </th>
-                            <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Nombre
                             </th>
-                            <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Puesto
                             </th>
-                            <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Departamento
                             </th>
-                            <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Región
                             </th>
-                            <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                Rol
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Roles
                             </th>
-                            <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                Acceso Activo
-                            </th>
-                            <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Estado Org.
                             </th>
-                            <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            {(canChangeUser) && <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Acciones
-                            </th>
+                            </th>}
                         </tr>
                     </thead>
-                    <tbody>
-                        {users.map((user) => (
-                            <tr key={user.id}>
-                                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                                    <p className="text-gray-900 whitespace-no-wrap">{user.username}</p>
-                                </td>
-                                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                                    <p className="text-gray-900 whitespace-no-wrap">{user.email}</p>
-                                </td>
-                                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                                    <p className="text-gray-900 whitespace-no-wrap">{user.first_name} {user.last_name}</p>
-                                </td>
-                                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                                    <p className="text-gray-900 whitespace-no-wrap">{user.puesto || 'N/A'}</p>
-                                </td>
-                                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                                    {/* CAMBIADO: Usar user.departamento_name */}
-                                    <p className="text-gray-900 whitespace-no-wrap">{user.departamento_name || 'N/A'}</p>
-                                </td>
-                                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                                    {/* CAMBIADO: Usar user.region_name */}
-                                    <p className="text-gray-900 whitespace-no-wrap">{user.region_name || 'N/A'}</p>
-                                </td>
-                                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                                    <p className="text-gray-900 whitespace-no-wrap">{user.role_name || 'Sin Rol'}</p>
-                                </td>
-                                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm text-center">
-                                    <button
-                                        onClick={() => handleToggleIsActive(user.id, user.is_active)}
-                                        className={`${
-                                            user.is_active ? 'text-green-600 hover:text-green-800' : 'text-red-600 hover:text-red-800'
-                                        } p-1 text-2xl`}
-                                        title={user.is_active ? 'Deshabilitar acceso' : 'Habilitar acceso'}
-                                    >
-                                        <FontAwesomeIcon icon={user.is_active ? faToggleOn : faToggleOff} />
-                                    </button>
-                                </td>
-                                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                                    <span
-                                        className={`relative inline-block px-3 py-1 font-semibold leading-tight ${
-                                            user.status === 'Activo' ? 'text-green-900' :
-                                            user.status === 'Inactivo' ? 'text-red-900' :
-                                            'text-blue-900' // O el color que quieras para otros estados
-                                        }`}
-                                    >
-                                        <span
-                                            aria-hidden
-                                            className={`absolute inset-0 opacity-50 rounded-full ${
-                                                user.status === 'Activo' ? 'bg-green-200' :
-                                                user.status === 'Inactivo' ? 'bg-red-200' :
-                                                'bg-blue-200'
-                                            }`}
-                                        ></span>
-                                        <span className="relative">{user.status}</span>
-                                    </span>
-                                </td>
-                                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm text-right">
-                                    <div className="flex justify-end space-x-2">
-                                        <button
-                                            onClick={() => handleViewUserClick(user)}
-                                            className="text-blue-600 hover:text-blue-900 p-1"
-                                            title="Ver Detalles"
-                                        >
-                                            <FontAwesomeIcon icon={faEye} />
-                                        </button>
-                                        <button
-                                            onClick={() => handleEditUserClick(user)}
-                                            className="text-yellow-600 hover:text-yellow-900 p-1"
-                                            title="Editar Usuario"
-                                        >
-                                            <FontAwesomeIcon icon={faEdit} />
-                                        </button>
-                                        <button
-                                            onClick={() => handleChangePasswordClick(user)}
-                                            className="text-purple-600 hover:text-purple-900 p-1"
-                                            title="Cambiar Contraseña"
-                                        >
-                                            <FontAwesomeIcon icon={faKey} />
-                                        </button>
-                                    </div>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                        {users.length === 0 ? (
+                            <tr>
+                                <td colSpan={(canChangeUser) ? 9 : 8} className="px-6 py-4 text-center text-gray-500">
+                                    No hay usuarios disponibles.
                                 </td>
                             </tr>
-                        ))}
+                        ) : (
+                            users.map((user) => (
+                                <tr key={user.id} className="hover:bg-gray-50">
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                        {user.username}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        {user.email}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        {user.first_name} {user.last_name}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        {user.puesto || 'N/A'}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        {user.departamento_name || 'N/A'}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        {user.region_name || 'N/A'}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        {user.role_names && user.role_names.length > 0 ? user.role_names.join(', ') : 'Sin Roles'}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        <span
+                                            className={`relative inline-block px-3 py-1 font-semibold leading-tight ${
+                                                user.status === 'Activo' ? 'text-green-900' :
+                                                user.status === 'Inactivo' ? 'text-red-900' :
+                                                'text-blue-900'
+                                            }`}
+                                        >
+                                            <span
+                                                aria-hidden
+                                                className={`absolute inset-0 opacity-50 rounded-full ${
+                                                    user.status === 'Activo' ? 'bg-green-200' :
+                                                    user.status === 'Inactivo' ? 'bg-red-200' :
+                                                    'bg-blue-200'
+                                                }`}
+                                            ></span>
+                                            <span className="relative">{user.status}</span>
+                                        </span>
+                                    </td>
+                                    {canChangeUser && (
+                                        <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                                            <button
+                                                onClick={() => handleViewUserClick(user)}
+                                                className="text-blue-600 hover:text-blue-900 p-2"
+                                                title="Ver Detalles"
+                                            >
+                                                <FontAwesomeIcon icon={faEye} />
+                                            </button>
+                                            <button
+                                                onClick={() => handleEditUserClick(user)}
+                                                className="text-indigo-600 hover:text-indigo-900 p-2"
+                                                title="Editar Usuario"
+                                            >
+                                                <FontAwesomeIcon icon={faEdit} />
+                                            </button>
+                                            <button
+                                                onClick={() => handleChangePasswordClick(user)}
+                                                className="text-purple-600 hover:text-purple-900 p-2 ml-2"
+                                                title="Cambiar Contraseña"
+                                            >
+                                                <FontAwesomeIcon icon={faKey} />
+                                            </button>
+                                        </td>
+                                    )}
+                                </tr>
+                            ))
+                        )}
                     </tbody>
                 </table>
             </div>
+
+            {/* Pagination Component */}
+            {totalCount > 0 && (
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    pageSize={pageSize}
+                    pageSizeOptions={pageSizeOptions}
+                    onPageChange={handlePageChange}
+                    onPageSizeChange={handlePageSizeChange}
+                />
+            )}
 
             {/* Modales */}
             <Modal show={showCreateModal} onClose={closeModal} title="Crear Nuevo Usuario">

@@ -1,4 +1,3 @@
-// C:\Proyectos\ITAM_System\itam_frontend\src\components\Sidebar.js
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -19,31 +18,39 @@ import {
     faHouseDamage,
     faBuilding,
     faVectorSquare,
+    faCube,
+    faTags,
+    faLaptop,
+    faHistory,
 } from '@fortawesome/free-solid-svg-icons';
 
 function Sidebar() {
     const [showSettingsDropdown, setShowSettingsDropdown] = useState(false);
     const [showMasterDataDropdown, setShowMasterDataDropdown] = useState(false);
 
-    const { user, hasPermission } = useAuth();
+    const { hasPermission } = useAuth(); // No necesitas 'user' aquí si no lo usas
 
     const canViewSettings = hasPermission('users.view_customuser') || hasPermission('auth.view_group');
 
-    // ACTUALIZADO: Usando 'masterdata' como app_label
     const canViewMasterData =
         hasPermission('masterdata.view_region') ||
         hasPermission('masterdata.view_finca') ||
         hasPermission('masterdata.view_departamento') ||
-        hasPermission('masterdata.view_area');
+        hasPermission('masterdata.view_area') ||
+        hasPermission('masterdata.view_tipoactivo') ||
+        hasPermission('masterdata.view_marca') ||
+        hasPermission('masterdata.view_modeloactivo') ||
+        hasPermission('masterdata.view_auditlog');
+
 
     return (
-        <div className="bg-gray-800 text-white w-64 space-y-6 py-7 px-2 absolute inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 transition duration-200 ease-in-out">
-            <div className="text-white flex items-center px-4">
-                <img src="/path/to/your/logo.png" alt="Logo" className="h-8 w-8 mr-2" />
-                <span className="text-2xl font-extrabold">ITAM System</span>
+        <div className="flex flex-col w-64 bg-gray-800 text-white min-h-screen">
+            <div className="flex items-center justify-center h-16 shadow-md">
+                <span className="text-xl font-bold uppercase tracking-wider">ITAM System</span>
             </div>
 
-            <nav>
+            <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+                {/* Home */}
                 <NavLink
                     to="/home"
                     className={({ isActive }) =>
@@ -53,152 +60,189 @@ function Sidebar() {
                     }
                 >
                     <FontAwesomeIcon icon={faHome} className="mr-3" />
-                    Home
+                    Inicio
                 </NavLink>
-
-                {/* --- Dropdown de Configuraciones --- */}
-                {canViewSettings && (
-                    <div className="relative">
+                
+                {/* --------------------------- */}
+                {/* Menú Desplegable: DATOS MAESTROS */}
+                {/* --------------------------- */}
+                {canViewMasterData && (
+                    <div className="space-y-1">
                         <button
-                            onClick={() => setShowSettingsDropdown(!showSettingsDropdown)}
-                            className="w-full text-left flex items-center py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 hover:text-white focus:outline-none"
+                            onClick={() => setShowMasterDataDropdown(!showMasterDataDropdown)}
+                            className="flex justify-between items-center w-full py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 hover:text-white focus:outline-none"
                         >
-                            <FontAwesomeIcon icon={faCog} className="mr-3" />
-                            Configuraciones
-                            <span className="ml-auto">
-                                <FontAwesomeIcon icon={showSettingsDropdown ? faChevronUp : faChevronDown} />
+                            <span className="flex items-center">
+                                <FontAwesomeIcon icon={faDatabase} className="mr-3" />
+                                Datos Maestros
                             </span>
+                            <FontAwesomeIcon icon={showMasterDataDropdown ? faChevronUp : faChevronDown} />
                         </button>
-                        {showSettingsDropdown && (
-                            <div className="ml-6 mt-1 bg-gray-700 rounded-md shadow-lg">
-                                {hasPermission('users.view_customuser') && (
+                        {showMasterDataDropdown && (
+                            <div className="pl-6 space-y-1 text-sm bg-gray-700 rounded">
+                                {hasPermission('masterdata.view_region') && (
                                     <NavLink
-                                        to="/users"
+                                        to="/masterdata/regions"
                                         className={({ isActive }) =>
-                                            `block py-2 px-4 rounded transition duration-200 hover:bg-gray-600 hover:text-white ${
+                                            `block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-600 hover:text-white ${
                                                 isActive ? 'bg-gray-600 text-white' : ''
                                             }`
                                         }
-                                        onClick={() => setShowSettingsDropdown(false)}
                                     >
-                                        <FontAwesomeIcon icon={faUserCog} className="mr-3" />
-                                        Gestión de Usuarios
+                                        <FontAwesomeIcon icon={faMapMarkedAlt} className="mr-3" />
+                                        Regiones
+                                    </NavLink>
+                                )}
+                                {hasPermission('masterdata.view_finca') && (
+                                    <NavLink
+                                        to="/masterdata/farms"
+                                        className={({ isActive }) =>
+                                            `block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-600 hover:text-white ${
+                                                isActive ? 'bg-gray-600 text-white' : ''
+                                            }`
+                                        }
+                                    >
+                                        <FontAwesomeIcon icon={faHouseDamage} className="mr-3" />
+                                        Fincas
+                                    </NavLink>
+                                )}
+                                {hasPermission('masterdata.view_departamento') && (
+                                    <NavLink
+                                        to="/masterdata/departments"
+                                        className={({ isActive }) =>
+                                            `block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-600 hover:text-white ${
+                                                isActive ? 'bg-gray-600 text-white' : ''
+                                            }`
+                                        }
+                                    >
+                                        <FontAwesomeIcon icon={faBuilding} className="mr-3" />
+                                        Departamentos
+                                    </NavLink>
+                                )}
+                                {hasPermission('masterdata.view_area') && (
+                                    <NavLink
+                                        to="/masterdata/areas"
+                                        className={({ isActive }) =>
+                                            `block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-600 hover:text-white ${
+                                                isActive ? 'bg-gray-600 text-white' : ''
+                                            }`
+                                        }
+                                    >
+                                        <FontAwesomeIcon icon={faVectorSquare} className="mr-3" />
+                                        Áreas
+                                    </NavLink>
+                                )}
+                                {hasPermission('masterdata.view_tipoactivo') && (
+                                    <NavLink
+                                        to="/masterdata/tipo-activos"
+                                        className={({ isActive }) =>
+                                            `block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-600 hover:text-white ${
+                                                isActive ? 'bg-gray-600 text-white' : ''
+                                            }`
+                                        }
+                                    >
+                                        <FontAwesomeIcon icon={faCube} className="mr-3" />
+                                        Tipos de Activos
+                                    </NavLink>
+                                )}
+                                {hasPermission('masterdata.view_marca') && (
+                                    <NavLink
+                                        to="/masterdata/marcas"
+                                        className={({ isActive }) =>
+                                            `block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-600 hover:text-white ${
+                                                isActive ? 'bg-gray-600 text-white' : ''
+                                            }`
+                                        }
+                                    >
+                                        <FontAwesomeIcon icon={faTags} className="mr-3" />
+                                        Marcas
+                                    </NavLink>
+                                )}
+                                
+                                {hasPermission('masterdata.view_modeloactivo') && (
+                                    <NavLink
+                                        to="/masterdata/modelos-activo"
+                                        className={({ isActive }) =>
+                                            `block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-600 hover:text-white ${
+                                                isActive ? 'bg-gray-600 text-white' : ''
+                                            }`
+                                        }
+                                    >
+                                        <FontAwesomeIcon icon={faLaptop} className="mr-3" />
+                                        Modelos de Activo
+                                    </NavLink>
+                                )}
+                                {hasPermission('masterdata.view_auditlog') && (
+                                    <NavLink
+                                        to="/masterdata/audit-logs"
+                                        className={({ isActive }) =>
+                                            `block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-600 hover:text-white ${
+                                                isActive ? 'bg-gray-600 text-white' : ''
+                                            }`
+                                        }
+                                    >
+                                        <FontAwesomeIcon icon={faHistory} className="mr-3" />
+                                        Registros de Auditoría
+                                    </NavLink>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                )}
+                
+                {/* --------------------------- */}
+                {/* Menú Desplegable: AJUSTES (Usuarios y Roles) */}
+                {/* --------------------------- */}
+                {canViewSettings && (
+                    <div className="space-y-1">
+                        <button
+                            onClick={() => setShowSettingsDropdown(!showSettingsDropdown)}
+                            className="flex justify-between items-center w-full py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 hover:text-white focus:outline-none"
+                        >
+                            <span className="flex items-center">
+                                <FontAwesomeIcon icon={faCog} className="mr-3" />
+                                Configuración
+                            </span>
+                            <FontAwesomeIcon icon={showSettingsDropdown ? faChevronUp : faChevronDown} />
+                        </button>
+                        {showSettingsDropdown && (
+                            <div className="pl-6 space-y-1 text-sm bg-gray-700 rounded">
+                                {hasPermission('users.view_customuser') && (
+                                    <NavLink
+                                        to="/admin/users"
+                                        className={({ isActive }) =>
+                                            `block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-600 hover:text-white ${
+                                                isActive ? 'bg-gray-600 text-white' : ''
+                                            }`
+                                        }
+                                    >
+                                        <FontAwesomeIcon icon={faUsers} className="mr-3" />
+                                        Usuarios
                                     </NavLink>
                                 )}
                                 {hasPermission('auth.view_group') && (
                                     <NavLink
-                                        to="/roles-management"
+                                        to="/admin/roles"
                                         className={({ isActive }) =>
-                                            `block py-2 px-4 rounded transition duration-200 hover:bg-gray-600 hover:text-white ${
+                                            `block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-600 hover:text-white ${
                                                 isActive ? 'bg-gray-600 text-white' : ''
                                             }`
                                         }
-                                        onClick={() => setShowSettingsDropdown(false)}
                                     >
-                                        <FontAwesomeIcon icon={faUsers} className="mr-3" />
-                                        Gestión de Roles
+                                        <FontAwesomeIcon icon={faUserCog} className="mr-3" />
+                                        Roles y Permisos
                                     </NavLink>
                                 )}
                             </div>
                         )}
                     </div>
                 )}
-                {/* --- Fin del Dropdown de Configuraciones --- */}
 
-                {/* --- NUEVO: Dropdown de Datos Maestros --- */}
-                {canViewMasterData && (
-                    <div className="relative">
-                        <button
-                            onClick={() => setShowMasterDataDropdown(!showMasterDataDropdown)}
-                            className="w-full text-left flex items-center py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 hover:text-white focus:outline-none"
-                        >
-                            <FontAwesomeIcon icon={faDatabase} className="mr-3" />
-                            Datos Maestros
-                            <span className="ml-auto">
-                                <FontAwesomeIcon icon={showMasterDataDropdown ? faChevronUp : faChevronDown} />
-                            </span>
-                        </button>
-                        {showMasterDataDropdown && (
-                            <div className="ml-6 mt-1 bg-gray-700 rounded-md shadow-lg">
-                                {hasPermission('masterdata.view_region') && ( // ACTUALIZADO
-                                    <NavLink
-                                        to="/masterdata/regions"
-                                        className={({ isActive }) =>
-                                            `block py-2 px-4 rounded transition duration-200 hover:bg-gray-600 hover:text-white ${
-                                                isActive ? 'bg-gray-600 text-white' : ''
-                                            }`
-                                        }
-                                        onClick={() => setShowMasterDataDropdown(false)}
-                                    >
-                                        <FontAwesomeIcon icon={faMapMarkedAlt} className="mr-3" />
-                                        Gestión de Regiones
-                                    </NavLink>
-                                )}
-                                {hasPermission('masterdata.view_finca') && ( // ACTUALIZADO
-                                    <NavLink
-                                        to="/masterdata/farms"
-                                        className={({ isActive }) =>
-                                            `block py-2 px-4 rounded transition duration-200 hover:bg-gray-600 hover:text-white ${
-                                                isActive ? 'bg-gray-600 text-white' : ''
-                                            }`
-                                        }
-                                        onClick={() => setShowMasterDataDropdown(false)}
-                                    >
-                                        <FontAwesomeIcon icon={faHouseDamage} className="mr-3" />
-                                        Gestión de Fincas
-                                    </NavLink>
-                                )}
-                                {hasPermission('masterdata.view_departamento') && ( // ACTUALIZADO
-                                    <NavLink
-                                        to="/masterdata/departments"
-                                        className={({ isActive }) =>
-                                            `block py-2 px-4 rounded transition duration-200 hover:bg-gray-600 hover:text-white ${
-                                                isActive ? 'bg-gray-600 text-white' : ''
-                                            }`
-                                        }
-                                        onClick={() => setShowMasterDataDropdown(false)}
-                                    >
-                                        <FontAwesomeIcon icon={faBuilding} className="mr-3" />
-                                        Gestión de Departamentos
-                                    </NavLink>
-                                )}
-                                {hasPermission('masterdata.view_area') && ( // ACTUALIZADO
-                                    <NavLink
-                                        to="/masterdata/areas"
-                                        className={({ isActive }) =>
-                                            `block py-2 px-4 rounded transition duration-200 hover:bg-gray-600 hover:text-white ${
-                                                isActive ? 'bg-gray-600 text-white' : ''
-                                            }`
-                                        }
-                                        onClick={() => setShowMasterDataDropdown(false)}
-                                    >
-                                        <FontAwesomeIcon icon={faVectorSquare} className="mr-3" />
-                                        Gestión de Áreas
-                                    </NavLink>
-                                )}
-                            </div>
-                        )}
-                    </div>
-                )}
-                {/* --- Fin del Dropdown de Datos Maestros --- */}
 
-                {/* Otros enlaces con iconos */}
-                {hasPermission('reports.view_report') && (
+                {/* Otras Secciones */}
+                {hasPermission('assets.view_activo') && ( // Asume que este permiso aplica a la vista general de activos
                     <NavLink
-                        to="/reports"
-                        className={({ isActive }) =>
-                            `block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 hover:text-white ${
-                                isActive ? 'bg-gray-700 text-white' : ''
-                            }`
-                        }
-                    >
-                        <FontAwesomeIcon icon={faChartBar} className="mr-3" />
-                        Reportes
-                    </NavLink>
-                )}
-                {hasPermission('assets.view_asset') && (
-                    <NavLink
-                        to="/assets"
+                        to="/assets/maintenance"
                         className={({ isActive }) =>
                             `block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 hover:text-white ${
                                 isActive ? 'bg-gray-700 text-white' : ''

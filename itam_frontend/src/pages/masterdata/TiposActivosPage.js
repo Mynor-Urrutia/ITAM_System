@@ -1,106 +1,100 @@
-// C:\Proyectos\ITAM_System\itam_frontend\src\pages\masterdata\AreasPage.js
+// C:\Proyectos\ITAM_System\itam_frontend\src\pages\masterdata\TiposActivosPage.js
 import React, { useState, useEffect } from 'react';
-import { getAreas, deleteArea } from '../../api'; // Importa las funciones API
-import AreaFormModal from './AreaFormModal'; // Importa el modal del formulario
-import Pagination from '../../components/Pagination';
+import { getTiposActivos, deleteTipoActivo } from '../../api'; // Make sure to import the correct API functions
+import TipoActivoFormModal from './TipoActivoFormModal'; // Make sure to import your modal component
 import { toast } from 'react-toastify';
-import { useAuth } from '../../context/AuthContext'; // Para permisos
+import { useAuth } from '../../context/AuthContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus, faEdit, faTrash } from '@fortawesome/free-solid-svg-icons';
+import Pagination from '../../components/Pagination';
 
-function AreasPage() {
-    const [areas, setAreas] = useState([]);
+function TiposActivosPage() {
+    const [tiposActivos, setTiposActivos] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [currentArea, setCurrentArea] = useState(null); // Para editar
-
-    // Pagination states
+    const [currentTipoActivo, setCurrentTipoActivo] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
-    const [pageSize, setPageSize] = useState(10);
-    const [totalPages, setTotalPages] = useState(1);
+    const [pageSize, setPageSize] = useState(5);
     const [totalCount, setTotalCount] = useState(0);
-    const pageSizeOptions = [5, 10, 25, 50, 100, 200];
-
+    const [totalPages, setTotalPages] = useState(0);
     const { hasPermission } = useAuth();
 
-    const canAddArea = hasPermission('masterdata.add_area');
-    const canChangeArea = hasPermission('masterdata.change_area');
-    const canDeleteArea = hasPermission('masterdata.delete_area');
+    // Define the permission variables
+    const canAddTipoActivo = hasPermission('masterdata.add_tipoactivo');
+    const canChangeTipoActivo = hasPermission('masterdata.change_tipoactivo');
+    const canDeleteTipoActivo = hasPermission('masterdata.delete_tipoactivo');
 
     useEffect(() => {
-        fetchAreas();
+        fetchTiposActivos(currentPage, pageSize);
     }, [currentPage, pageSize]);
 
-    const fetchAreas = async () => {
+    const fetchTiposActivos = async (page = 1, size = 5) => {
         try {
-            const params = {
-                page: currentPage,
-                page_size: pageSize
-            };
-            const response = await getAreas(params);
-            setAreas(response.data.results || response.data);
-            setTotalPages(Math.ceil((response.data.count || response.data.length) / pageSize));
-            setTotalCount(response.data.count || response.data.length);
+            const response = await getTiposActivos({ page, page_size: size });
+            setTiposActivos(response.data.results);
+            setTotalCount(response.data.count);
+            setTotalPages(Math.ceil(response.data.count / size));
         } catch (error) {
-            console.error('Error fetching areas:', error);
-            toast.error('Error al cargar las áreas.');
+            console.error('Error fetching tipos de activos:', error);
+            toast.error('Error al cargar los tipos de activos.');
         }
     };
 
     const handleAddClick = () => {
-        setCurrentArea(null); // Para formulario de creación
+        setCurrentTipoActivo(null);
         setIsModalOpen(true);
     };
 
-    const handleEditClick = (area) => {
-        setCurrentArea(area); // Para formulario de edición
+    const handleEditClick = (tipoActivo) => {
+        setCurrentTipoActivo(tipoActivo);
         setIsModalOpen(true);
     };
 
+    // Define the handleDeleteClick function
     const handleDeleteClick = async (id) => {
-        if (!window.confirm('¿Estás seguro de que quieres eliminar esta área?')) {
+        if (!window.confirm('¿Estás seguro de que quieres eliminar este tipo de activo?')) {
             return;
         }
         try {
-            await deleteArea(id);
-            toast.success('Área eliminada correctamente.');
-            fetchAreas(); // Refrescar la lista
+            await deleteTipoActivo(id);
+            toast.success('Tipo de activo eliminado correctamente.');
+            fetchTiposActivos();
         } catch (error) {
-            console.error('Error deleting area:', error.response?.data || error.message);
-            const errorMessage = error.response?.data?.detail || 'Error al eliminar el área.';
+            console.error('Error deleting tipo de activo:', error.response?.data || error.message);
+            const errorMessage = error.response?.data?.detail || 'Error al eliminar el tipo de activo.';
             toast.error(errorMessage);
         }
+    };
+
+    const handleSaveSuccess = () => {
+        fetchTiposActivos(currentPage, pageSize);
+    };
+
+    const handleCloseModal = () => {
+        setIsModalOpen(false);
+        setCurrentTipoActivo(null);
     };
 
     const handlePageChange = (page) => {
         setCurrentPage(page);
     };
 
-    const handlePageSizeChange = (newPageSize) => {
-        setPageSize(newPageSize);
-        setCurrentPage(1); // Reset to first page when changing page size
-    };
-
-    const handleSaveSuccess = () => {
-        fetchAreas(); // Refresca la lista después de guardar/actualizar
-    };
-
-    const handleCloseModal = () => {
-        setIsModalOpen(false);
-        setCurrentArea(null); // Limpia el estado de edición al cerrar
+    const handlePageSizeChange = (size) => {
+        setPageSize(size);
+        setCurrentPage(1);
     };
 
     return (
         <div className="p-4">
-            <h1 className="text-3xl font-bold mb-6 text-gray-800">Gestión de Áreas</h1>
+            <h1 className="text-3xl font-bold mb-6 text-gray-800">Gestión de Tipos de Activos</h1>
 
             <div className="flex justify-end mb-4">
-                {canAddArea && (
+                {canAddTipoActivo && (
                     <button
                         onClick={handleAddClick}
                         className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
                     >
                         <FontAwesomeIcon icon={faPlus} className="mr-2" />
-                        Crear Nueva Área
+                        Crear Nuevo Tipo de Activo
                     </button>
                 )}
             </div>
@@ -113,49 +107,43 @@ function AreasPage() {
                                 Nombre
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Departamento
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Descripción
                             </th>
-                            {(canChangeArea || canDeleteArea) && <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            {(canChangeTipoActivo || canDeleteTipoActivo) && <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Acciones
                             </th>}
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {areas.length === 0 ? (
+                        {tiposActivos.length === 0 ? (
                             <tr>
-                                <td colSpan={(canChangeArea || canDeleteArea) ? 4 : 3} className="px-6 py-4 text-center text-gray-500">
-                                    No hay áreas disponibles.
+                                <td colSpan={(canChangeTipoActivo || canDeleteTipoActivo) ? 3 : 2} className="px-6 py-4 text-center text-gray-500">
+                                    No hay tipos de activos disponibles.
                                 </td>
                             </tr>
                         ) : (
-                            areas.map((area) => (
-                                <tr key={area.id} className="hover:bg-gray-50">
+                            tiposActivos.map((tipoActivo) => (
+                                <tr key={tipoActivo.id} className="hover:bg-gray-50">
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                        {area.name}
+                                        {tipoActivo.name}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {area.departamento_name}
+                                        {tipoActivo.description || 'N/A'}
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {area.description || 'N/A'}
-                                    </td>
-                                    {(canChangeArea || canDeleteArea) && (
+                                    {(canChangeTipoActivo || canDeleteTipoActivo) && (
                                         <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                                            {canChangeArea && (
+                                            {canChangeTipoActivo && (
                                                 <button
-                                                    onClick={() => handleEditClick(area)}
+                                                    onClick={() => handleEditClick(tipoActivo)}
                                                     className="text-indigo-600 hover:text-indigo-900 p-2"
                                                     title="Editar"
                                                 >
                                                     <FontAwesomeIcon icon={faEdit} />
                                                 </button>
                                             )}
-                                            {canDeleteArea && (
+                                            {canDeleteTipoActivo && (
                                                 <button
-                                                    onClick={() => handleDeleteClick(area.id)}
+                                                    onClick={() => handleDeleteClick(tipoActivo.id)}
                                                     className="text-red-600 hover:text-red-900 p-2 ml-2"
                                                     title="Eliminar"
                                                 >
@@ -171,26 +159,25 @@ function AreasPage() {
                 </table>
             </div>
 
-            {/* Pagination Component */}
-            {totalCount > 0 && (
+            {totalPages > 0 && (
                 <Pagination
                     currentPage={currentPage}
                     totalPages={totalPages}
                     pageSize={pageSize}
-                    pageSizeOptions={pageSizeOptions}
+                    pageSizeOptions={[5, 10, 20, 50]}
                     onPageChange={handlePageChange}
                     onPageSizeChange={handlePageSizeChange}
                 />
             )}
 
-            <AreaFormModal
+            <TipoActivoFormModal
                 show={isModalOpen}
                 onClose={handleCloseModal}
                 onSaveSuccess={handleSaveSuccess}
-                areaToEdit={currentArea}
+                tipoActivoToEdit={currentTipoActivo}
             />
         </div>
     );
 }
 
-export default AreasPage;
+export default TiposActivosPage;
