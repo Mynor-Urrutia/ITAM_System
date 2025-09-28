@@ -139,6 +139,14 @@ export const createActivo = (activoData) => api.post('assets/activos/', activoDa
 export const updateActivo = (id, activoData) => api.put(`assets/activos/${id}/`, activoData);
 export const deleteActivo = (id) => api.delete(`assets/activos/${id}/`);
 
+// --- Funciones para Dashboard ---
+export const getDashboardData = () => api.get('assets/dashboard/');
+export const getDashboardModelsData = () => api.get('assets/dashboard-models/');
+export const getDashboardWarrantyData = () => api.get('assets/dashboard-warranty/');
+export const getDashboardSummary = () => api.get('assets/dashboard-summary/');
+export const getDashboardDetailData = (category, ordering = 'serie', page = 1, pageSize = 10) =>
+  api.get(`assets/dashboard-detail/?category=${category}&ordering=${ordering}&page=${page}&page_size=${pageSize}`);
+
 // --- Funciones para la gestión de Audit Logs ---
 export const getAuditLogs = (params = {}) => api.get('masterdata/audit-logs/', { params });
 

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSignOutAlt, faUserCircle } from '@fortawesome/free-solid-svg-icons'; // Importamos faUserCircle para el icono de usuario
@@ -25,7 +26,11 @@ function Navbar() {
             {/* Información del Usuario a la derecha */}
             <div className="flex items-center space-x-4">
                 {user && (
-                    <div className="flex items-center">
+                    <Link
+                        to="/profile"
+                        className="flex items-center hover:bg-gray-100 rounded-lg p-2 transition duration-200"
+                        title="Ver mi perfil"
+                    >
                         <FontAwesomeIcon icon={faUserCircle} className="text-gray-600 text-3xl mr-3" />
                         <div>
                             <p className="text-gray-800 font-semibold text-lg leading-tight">
@@ -36,7 +41,7 @@ function Navbar() {
                                 ({user.puesto || 'N/A'}, {user.departamento_name || 'N/A'}, {user.region_name || 'N/A'})
                             </p>
                         </div>
-                    </div>
+                    </Link>
                 )}
 
                 {/* Botón de Cerrar Sesión (solo icono) */}

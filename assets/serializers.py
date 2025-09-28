@@ -109,6 +109,7 @@ class ActivoSerializer(serializers.ModelSerializer):
             # Other fields
             'serie', 'hostname', 'fecha_registro', 'fecha_fin_garantia',
             'solicitante', 'correo_electronico', 'orden_compra',
+            'cuenta_contable', 'tipo_costo', 'cuotas', 'moneda', 'costo',
             'created_at', 'updated_at'
         ]
         extra_kwargs = {
@@ -120,6 +121,15 @@ class ActivoSerializer(serializers.ModelSerializer):
             'finca': {'write_only': True},
             'departamento': {'write_only': True},
             'area': {'write_only': True},
+            # Allow null/blank values for optional fields
+            'solicitante': {'allow_blank': True, 'allow_null': True, 'required': False},
+            'correo_electronico': {'allow_blank': True, 'allow_null': True, 'required': False},
+            'orden_compra': {'allow_blank': True, 'allow_null': True, 'required': False},
+            'cuenta_contable': {'allow_blank': True, 'allow_null': True, 'required': False},
+            'tipo_costo': {'allow_blank': True, 'allow_null': True, 'required': False},
+            'cuotas': {'allow_null': True, 'required': False},
+            'moneda': {'allow_blank': True, 'allow_null': True, 'required': False},
+            'costo': {'allow_null': True, 'required': False},
         }
 
     def get_asset_type_category(self, obj):

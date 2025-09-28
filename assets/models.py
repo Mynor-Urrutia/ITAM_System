@@ -61,9 +61,40 @@ class Activo(models.Model):
     fecha_fin_garantia = models.DateField(verbose_name="Fecha de Fin de Garantía")
 
     # Other fields
-    solicitante = models.CharField(max_length=255, verbose_name="Solicitante")
-    correo_electronico = models.EmailField(verbose_name="Correo Electrónico")
-    orden_compra = models.CharField(max_length=255, verbose_name="Orden de Compra")
+    solicitante = models.CharField(max_length=255, verbose_name="Solicitante", blank=True, null=True)
+    correo_electronico = models.EmailField(verbose_name="Correo Electrónico", blank=True, null=True)
+    orden_compra = models.CharField(max_length=255, verbose_name="Orden de Compra", blank=True, null=True)
+    cuenta_contable = models.CharField(max_length=255, verbose_name="Cuenta Contable", blank=True, null=True)
+    tipo_costo = models.CharField(
+        max_length=20,
+        choices=[('costo', 'Costo'), ('mensualidad', 'Mensualidad')],
+        verbose_name="Tipo de Costo",
+        blank=True,
+        null=True
+    )
+    cuotas = models.IntegerField(
+        choices=[
+            (1, '1 mes'), (3, '3 meses'), (6, '6 meses'), (12, '12 meses'),
+            (18, '18 meses'), (24, '24 meses'), (36, '36 meses'), (48, '48 meses'), (60, '60 meses')
+        ],
+        verbose_name="Cuotas",
+        blank=True,
+        null=True
+    )
+    moneda = models.CharField(
+        max_length=3,
+        choices=[('USD', 'Dólares'), ('GTQ', 'Quetzales')],
+        verbose_name="Moneda",
+        blank=True,
+        null=True
+    )
+    costo = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Costo",
+        blank=True,
+        null=True
+    )
 
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)

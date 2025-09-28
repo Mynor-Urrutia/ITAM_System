@@ -269,6 +269,36 @@ const ActivoDetailModal = ({ show, onClose, activo }) => {
                                             <span className="text-sm font-medium text-gray-600">Orden de Compra:</span>
                                             <span className="text-sm text-gray-900">{activo.orden_compra}</span>
                                         </div>
+                                        {activo.cuenta_contable && (
+                                            <div className="flex justify-between">
+                                                <span className="text-sm font-medium text-gray-600">Cuenta Contable:</span>
+                                                <span className="text-sm text-gray-900">{activo.cuenta_contable}</span>
+                                            </div>
+                                        )}
+                                        {activo.tipo_costo && (
+                                            <div className="flex justify-between">
+                                                <span className="text-sm font-medium text-gray-600">Tipo de Costo:</span>
+                                                <span className="text-sm text-gray-900">{activo.tipo_costo === 'costo' ? 'Costo' : 'Mensualidad'}</span>
+                                            </div>
+                                        )}
+                                        {activo.cuotas && (
+                                            <div className="flex justify-between">
+                                                <span className="text-sm font-medium text-gray-600">Cuotas:</span>
+                                                <span className="text-sm text-gray-900">{activo.cuotas} meses</span>
+                                            </div>
+                                        )}
+                                        {activo.moneda && (
+                                            <div className="flex justify-between">
+                                                <span className="text-sm font-medium text-gray-600">Moneda:</span>
+                                                <span className="text-sm text-gray-900">{activo.moneda === 'USD' ? 'Dólares' : 'Quetzales'}</span>
+                                            </div>
+                                        )}
+                                        {activo.costo && (
+                                            <div className="flex justify-between">
+                                                <span className="text-sm font-medium text-gray-600">Costo:</span>
+                                                <span className="text-sm text-gray-900">{parseFloat(activo.costo).toLocaleString('es-GT', { style: 'currency', currency: activo.moneda === 'USD' ? 'USD' : 'GTQ' })}</span>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 

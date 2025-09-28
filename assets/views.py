@@ -1,7 +1,9 @@
 from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
-from django.db.models import ProtectedError
+from rest_framework.decorators import api_view, permission_classes
+from django.db.models import ProtectedError, Count, Q
+from datetime import date, timedelta
 from django.contrib.contenttypes.models import ContentType
 from django.forms.models import model_to_dict
 from django.core.serializers.json import DjangoJSONEncoder
@@ -9,6 +11,7 @@ import json
 
 from .models import Activo
 from .serializers import ActivoSerializer
+from masterdata.models import TipoActivo, Region
 
 class StandardResultsSetPagination(PageNumberPagination):
     page_size = 5  # Default page size
@@ -108,3 +111,322 @@ class ActivoViewSet(AuditLogMixin, viewsets.ModelViewSet):
         'tipo_activo', 'proveedor', 'marca', 'modelo',
         'region', 'finca', 'departamento', 'area'
     ]
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def dashboard_warranty_data(request):
+    # Get assets with warranty expiring within 90 days
+    today = date.today()
+    ninety_days_from_now = today + timedelta(days=90)
+
+    # Get assets with warranty expiration in the next 90 days (but not today)
+    expiring_assets = Activo.objects.filter(
+        Q(fecha_fin_garantia__gt=today) & Q(fecha_fin_garantia__lte=ninety_days_from_now)
+    ).select_related('modelo', 'region').order_by('fecha_fin_garantia')
+
+    # Group by exact expiration date
+    warranty_data = {}
+
+    for asset in expiring_assets:
+        expiry_date_str = asset.fecha_fin_garantia.isoformat()
+        region_name = asset.region.name
+        model_name = asset.modelo.name
+
+        if expiry_date_str not in warranty_data:
+            warranty_data[expiry_date_str] = {}
+
+        if region_name not in warranty_data[expiry_date_str]:
+            warranty_data[expiry_date_str][region_name] = {}
+
+        if model_name not in warranty_data[expiry_date_str][region_name]:
+            warranty_data[expiry_date_str][region_name][model_name] = {
+                'count': 0,
+                'assets': []
+            }
+
+        warranty_data[expiry_date_str][region_name][model_name]['count'] += 1
+        warranty_data[expiry_date_str][region_name][model_name]['assets'].append({
+            'id': asset.id,
+            'serie': asset.serie,
+            'hostname': asset.hostname
+        })
+
+    # Convert to list format for easier frontend consumption
+    data = {
+        'warranty_info': []
+    }
+
+    for expiry_date_str, regions in warranty_data.items():
+        for region_name, models in regions.items():
+            for model_name, info in models.items():
+                data['warranty_info'].append({
+                    'expiry_date': expiry_date_str,
+                    'region': region_name,
+                    'model': model_name,
+                    'count': info['count'],
+                    'assets': info['assets']
+                })
+
+    # Sort by expiry date
+    data['warranty_info'].sort(key=lambda x: x['expiry_date'])
+
+    return Response(data)
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def dashboard_summary(request):
+    # Get summary statistics for dashboard cards
+    today = date.today()
+    thirty_days_from_now = today + timedelta(days=30)
+
+    # Total assets card
+    total_assets = Activo.objects.count()
+
+    # Get all asset types that have assets
+    asset_types_data = []
+    tipos_activo = TipoActivo.objects.all()
+
+    for tipo in tipos_activo:
+        # Count total assets for this type
+        total_count = Activo.objects.filter(tipo_activo=tipo).count()
+
+        if total_count > 0:  # Only include types that have assets
+            # Assets with valid warranty (>30 days)
+            valid_warranty = Activo.objects.filter(
+                tipo_activo=tipo,
+                fecha_fin_garantia__gt=thirty_days_from_now
+            ).exclude(fecha_fin_garantia__isnull=True).count()
+
+            # Assets with warranty expiring within 30 days (but not today)
+            expiring_warranty = Activo.objects.filter(
+                tipo_activo=tipo,
+                fecha_fin_garantia__gt=today,
+                fecha_fin_garantia__lte=thirty_days_from_now
+            ).count()
+
+            # Assets without warranty or expired warranty
+            no_warranty = Activo.objects.filter(
+                tipo_activo=tipo
+            ).filter(
+                Q(fecha_fin_garantia__isnull=True) |
+                Q(fecha_fin_garantia__lte=today)
+            ).count()
+
+            asset_types_data.append({
+                'tipo_activo': tipo.name,
+                'total_equipment': total_count,
+                'valid_warranty': valid_warranty,
+                'expiring_warranty': expiring_warranty,
+                'no_warranty': no_warranty
+            })
+
+    data = {
+        'total_assets': total_assets,
+        'asset_types': asset_types_data
+    }
+
+    return Response(data)
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def dashboard_detail_data(request):
+    """Get detailed asset data for a specific category with sorting and pagination"""
+    category = request.GET.get('category', '')
+    ordering = request.GET.get('ordering', 'serie')  # Default sort by serie
+    page = int(request.GET.get('page', 1))
+    page_size = int(request.GET.get('page_size', 10))
+
+    if category == 'total_assets':
+        assets = Activo.objects.select_related('tipo_activo', 'marca', 'modelo', 'region').all()
+    elif category == 'valid_warranty':
+        today = date.today()
+        thirty_days_from_now = today + timedelta(days=30)
+        assets = Activo.objects.select_related('tipo_activo', 'marca', 'modelo', 'region').filter(
+            fecha_fin_garantia__gt=thirty_days_from_now
+        ).exclude(fecha_fin_garantia__isnull=True)
+    elif category == 'expiring_warranty':
+        today = date.today()
+        thirty_days_from_now = today + timedelta(days=30)
+        assets = Activo.objects.select_related('tipo_activo', 'marca', 'modelo', 'region').filter(
+            Q(fecha_fin_garantia__gt=today) & Q(fecha_fin_garantia__lte=thirty_days_from_now)
+        )
+    elif category == 'no_warranty':
+        today = date.today()
+        assets = Activo.objects.select_related('tipo_activo', 'marca', 'modelo', 'region').filter(
+            Q(fecha_fin_garantia__isnull=True) | Q(fecha_fin_garantia__lte=today)
+        )
+    else:
+        # Check if category matches an asset type name
+        try:
+            tipo_activo = TipoActivo.objects.get(name=category)
+            assets = Activo.objects.select_related('tipo_activo', 'marca', 'modelo', 'region').filter(
+                tipo_activo=tipo_activo
+            )
+        except TipoActivo.DoesNotExist:
+            return Response({'error': 'Invalid category'}, status=400)
+
+    # Apply ordering
+    if ordering.startswith('-'):
+        assets = assets.order_by(ordering)
+    else:
+        assets = assets.order_by(ordering)
+
+    # Get total count for pagination
+    total_count = assets.count()
+
+    # Apply pagination
+    start_index = (page - 1) * page_size
+    end_index = start_index + page_size
+    assets_page = assets[start_index:end_index]
+
+    # Serialize the assets
+    data = []
+    for asset in assets_page:
+        data.append({
+            'id': asset.id,
+            'serie': asset.serie,
+            'hostname': asset.hostname,
+            'tipo_activo': asset.tipo_activo.name if asset.tipo_activo else '',
+            'marca': asset.marca.name if asset.marca else '',
+            'modelo': asset.modelo.name if asset.modelo else '',
+            'region': asset.region.name if asset.region else '',
+            'fecha_registro': asset.fecha_registro.isoformat() if asset.fecha_registro else None,
+            'fecha_fin_garantia': asset.fecha_fin_garantia.isoformat() if asset.fecha_fin_garantia else None,
+            'solicitante': asset.solicitante or '',
+            'orden_compra': asset.orden_compra or ''
+        })
+
+    return Response({
+        'assets': data,
+        'category': category,
+        'pagination': {
+            'page': page,
+            'page_size': page_size,
+            'total_count': total_count,
+            'total_pages': (total_count + page_size - 1) // page_size
+        }
+    })
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def dashboard_data(request):
+    # Get all tipos_activo and regions
+    tipos_activo = TipoActivo.objects.all().order_by('name')
+    regions = Region.objects.all().order_by('name')
+
+    # Prepare data structure
+    data = {
+        'tipos_activo': [],
+        'regions': [region.name for region in regions],
+        'totals': {region.name: 0 for region in regions}
+    }
+
+    for tipo in tipos_activo:
+        tipo_data = {
+            'name': tipo.name,
+            'counts': {region.name: 0 for region in regions},
+            'total': 0
+        }
+
+        # Count assets for this tipo_activo per region
+        counts = Activo.objects.filter(tipo_activo=tipo).values('region__name').annotate(count=Count('id'))
+
+        for count_data in counts:
+            region_name = count_data['region__name']
+            count = count_data['count']
+            tipo_data['counts'][region_name] = count
+            tipo_data['total'] += count
+            data['totals'][region_name] += count
+
+        data['tipos_activo'].append(tipo_data)
+
+    # Add total row
+    total_row = {
+        'name': 'Total',
+        'counts': data['totals'],
+        'total': sum(data['totals'].values())
+    }
+    data['tipos_activo'].append(total_row)
+
+    return Response(data)
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def dashboard_models_data(request):
+    from masterdata.models import ModeloActivo
+
+    regions = Region.objects.all().order_by('name')
+
+    # Get all modelos_activo with their total counts
+    modelos_with_counts = []
+    for modelo in ModeloActivo.objects.select_related('marca', 'tipo_activo').all():
+        total_count = Activo.objects.filter(modelo=modelo).count()
+        if total_count > 0:  # Only include models that have assets
+            modelos_with_counts.append({
+                'modelo': modelo,
+                'total_count': total_count
+            })
+
+    # Sort by total count descending and take top 10
+    modelos_with_counts.sort(key=lambda x: x['total_count'], reverse=True)
+    top_modelos = modelos_with_counts[:10]
+    other_modelos = modelos_with_counts[10:]
+
+    # Prepare data structure
+    data = {
+        'modelos_activo': [],
+        'regions': [region.name for region in regions],
+        'totals': {region.name: 0 for region in regions}
+    }
+
+    # Process top 10 models
+    for item in top_modelos:
+        modelo = item['modelo']
+        modelo_data = {
+            'name': modelo.name,  # Just model name without brand
+            'counts': {region.name: 0 for region in regions},
+            'total': 0
+        }
+
+        # Count assets for this modelo per region
+        counts = Activo.objects.filter(modelo=modelo).values('region__name').annotate(count=Count('id'))
+
+        for count_data in counts:
+            region_name = count_data['region__name']
+            count = count_data['count']
+            modelo_data['counts'][region_name] = count
+            modelo_data['total'] += count
+            data['totals'][region_name] += count
+
+        data['modelos_activo'].append(modelo_data)
+
+    # If there are other models, aggregate them into "Otros modelos"
+    if other_modelos:
+        otros_data = {
+            'name': 'Otros modelos',
+            'counts': {region.name: 0 for region in regions},
+            'total': 0
+        }
+
+        for item in other_modelos:
+            modelo = item['modelo']
+            counts = Activo.objects.filter(modelo=modelo).values('region__name').annotate(count=Count('id'))
+
+            for count_data in counts:
+                region_name = count_data['region__name']
+                count = count_data['count']
+                otros_data['counts'][region_name] += count
+                otros_data['total'] += count
+                data['totals'][region_name] += count
+
+        data['modelos_activo'].append(otros_data)
+
+    # Add total row
+    total_row = {
+        'name': 'Total',
+        'counts': data['totals'],
+        'total': sum(data['totals'].values())
+    }
+    data['modelos_activo'].append(total_row)
+
+    return Response(data)

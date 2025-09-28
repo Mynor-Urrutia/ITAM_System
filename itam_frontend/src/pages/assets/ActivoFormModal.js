@@ -26,6 +26,9 @@ const ActivoFormModal = ({ show, onClose, onSaveSuccess, activoToEdit }) => {
         solicitante: '',
         correo_electronico: '',
         orden_compra: '',
+        cuenta_contable: '',
+        tipo_costo: '',
+        cuotas: '',
     });
 
     const [options, setOptions] = useState({
@@ -73,6 +76,11 @@ const ActivoFormModal = ({ show, onClose, onSaveSuccess, activoToEdit }) => {
                 solicitante: activoToEdit.solicitante || '',
                 correo_electronico: activoToEdit.correo_electronico || '',
                 orden_compra: activoToEdit.orden_compra || '',
+                cuenta_contable: activoToEdit.cuenta_contable || '',
+                tipo_costo: activoToEdit.tipo_costo || '',
+                cuotas: activoToEdit.cuotas ? activoToEdit.cuotas.toString() : '',
+                moneda: activoToEdit.moneda || '',
+                costo: activoToEdit.costo || '',
             });
             // Set selected model for description
             if (activoToEdit.modelo_id && options.modelos && options.modelos.length > 0) {
@@ -96,6 +104,11 @@ const ActivoFormModal = ({ show, onClose, onSaveSuccess, activoToEdit }) => {
                 solicitante: '',
                 correo_electronico: '',
                 orden_compra: '',
+                cuenta_contable: '',
+                tipo_costo: '',
+                cuotas: '',
+                moneda: '',
+                costo: '',
             });
             setSelectedModel(null);
         }
@@ -180,6 +193,11 @@ const ActivoFormModal = ({ show, onClose, onSaveSuccess, activoToEdit }) => {
             const model = options.modelos.find(m => m.id === parseInt(value));
             setSelectedModel(model);
         }
+
+        // Handle tipo_costo change: clear cuotas if not mensualidad
+        if (name === 'tipo_costo' && value !== 'mensualidad') {
+            setFormData(prev => ({ ...prev, cuotas: '' }));
+        }
     };
 
     const validate = () => {
@@ -196,9 +214,7 @@ const ActivoFormModal = ({ show, onClose, onSaveSuccess, activoToEdit }) => {
         if (!formData.finca) newErrors.finca = 'Finca es obligatoria.';
         if (!formData.departamento) newErrors.departamento = 'Departamento es obligatorio.';
         if (!formData.area) newErrors.area = 'Área es obligatoria.';
-        if (!formData.solicitante) newErrors.solicitante = 'Solicitante es obligatorio.';
-        if (!formData.correo_electronico) newErrors.correo_electronico = 'Correo electrónico es obligatorio.';
-        if (!formData.orden_compra) newErrors.orden_compra = 'Orden de compra es obligatoria.';
+        // solicitante, correo_electronico, and orden_compra are now optional
         return newErrors;
     };
 
@@ -212,11 +228,44 @@ const ActivoFormModal = ({ show, onClose, onSaveSuccess, activoToEdit }) => {
 
         setLoading(true);
         try {
+            // Prepare data for submission, converting empty strings to null for optional fields
+            const submitData = { ...formData };
+
+            // Convert empty strings to null for optional choice fields
+            if (!submitData.tipo_costo || submitData.tipo_costo === '') {
+                submitData.tipo_costo = null;
+            }
+            if (!submitData.cuotas || submitData.cuotas === '') {
+                submitData.cuotas = null;
+            } else {
+                submitData.cuotas = parseInt(submitData.cuotas, 10);
+            }
+            if (!submitData.moneda || submitData.moneda === '') {
+                submitData.moneda = null;
+            }
+            if (!submitData.costo || submitData.costo === '') {
+                submitData.costo = null;
+            } else {
+                submitData.costo = parseFloat(submitData.costo);
+            }
+            if (!submitData.cuenta_contable || submitData.cuenta_contable === '') {
+                submitData.cuenta_contable = null;
+            }
+            if (!submitData.solicitante || submitData.solicitante === '') {
+                submitData.solicitante = null;
+            }
+            if (!submitData.correo_electronico || submitData.correo_electronico === '') {
+                submitData.correo_electronico = null;
+            }
+            if (!submitData.orden_compra || submitData.orden_compra === '') {
+                submitData.orden_compra = null;
+            }
+
             if (activoToEdit) {
-                await updateActivo(activoToEdit.id, formData);
+                await updateActivo(activoToEdit.id, submitData);
                 toast.success('Activo actualizado exitosamente!');
             } else {
-                await createActivo(formData);
+                await createActivo(submitData);
                 toast.success('Activo creado exitosamente!');
             }
             onSaveSuccess();
@@ -295,7 +344,7 @@ const ActivoFormModal = ({ show, onClose, onSaveSuccess, activoToEdit }) => {
                                 name="tipo_activo"
                                 value={formData.tipo_activo}
                                 onChange={handleChange}
-                                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
+                                className="block w-full rounded-md bg-white border-gray-400 shadow-md focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
                             >
                                 <option value="">Seleccionar...</option>
                                 {options.tiposActivos && options.tiposActivos.map(tipo => (
@@ -312,7 +361,7 @@ const ActivoFormModal = ({ show, onClose, onSaveSuccess, activoToEdit }) => {
                                 name="proveedor"
                                 value={formData.proveedor}
                                 onChange={handleChange}
-                                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
+                                className="block w-full rounded-md bg-white border-gray-400 shadow-md focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
                             >
                                 <option value="">Seleccionar...</option>
                                 {options.proveedores && options.proveedores.map(prov => (
@@ -329,7 +378,7 @@ const ActivoFormModal = ({ show, onClose, onSaveSuccess, activoToEdit }) => {
                                 name="marca"
                                 value={formData.marca}
                                 onChange={handleChange}
-                                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
+                                className="block w-full rounded-md bg-white border-gray-400 shadow-md focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
                             >
                                 <option value="">Seleccionar...</option>
                                 {options.marcas && options.marcas.map(marca => (
@@ -346,7 +395,7 @@ const ActivoFormModal = ({ show, onClose, onSaveSuccess, activoToEdit }) => {
                                 name="modelo"
                                 value={formData.modelo}
                                 onChange={handleChange}
-                                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
+                                className="block w-full rounded-md bg-white border-gray-400 shadow-md focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
                                 disabled={!formData.tipo_activo || !formData.marca}
                             >
                                 <option value="">
@@ -367,7 +416,7 @@ const ActivoFormModal = ({ show, onClose, onSaveSuccess, activoToEdit }) => {
                                 name="serie"
                                 value={formData.serie}
                                 onChange={handleChange}
-                                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
+                                className="block w-full rounded-md bg-white border-gray-400 shadow-md focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
                             />
                             {errors.serie && <p className="mt-1 text-sm text-red-600">{errors.serie}</p>}
                         </div>
@@ -380,7 +429,7 @@ const ActivoFormModal = ({ show, onClose, onSaveSuccess, activoToEdit }) => {
                                 name="hostname"
                                 value={formData.hostname}
                                 onChange={handleChange}
-                                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
+                                className="block w-full rounded-md bg-white border-gray-400 shadow-md focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
                             />
                             {errors.hostname && <p className="mt-1 text-sm text-red-600">{errors.hostname}</p>}
                         </div>
@@ -399,7 +448,7 @@ const ActivoFormModal = ({ show, onClose, onSaveSuccess, activoToEdit }) => {
                                 name="fecha_registro"
                                 value={formData.fecha_registro}
                                 onChange={handleChange}
-                                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
+                                className="block w-full rounded-md bg-white border-gray-400 shadow-md focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
                             />
                             {errors.fecha_registro && <p className="mt-1 text-sm text-red-600">{errors.fecha_registro}</p>}
                         </div>
@@ -412,7 +461,7 @@ const ActivoFormModal = ({ show, onClose, onSaveSuccess, activoToEdit }) => {
                                 name="fecha_fin_garantia"
                                 value={formData.fecha_fin_garantia}
                                 onChange={handleChange}
-                                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
+                                className="block w-full rounded-md bg-white border-gray-400 shadow-md focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
                             />
                             {errors.fecha_fin_garantia && <p className="mt-1 text-sm text-red-600">{errors.fecha_fin_garantia}</p>}
                         </div>
@@ -424,7 +473,7 @@ const ActivoFormModal = ({ show, onClose, onSaveSuccess, activoToEdit }) => {
                                 name="region"
                                 value={formData.region}
                                 onChange={handleChange}
-                                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
+                                className="block w-full rounded-md bg-white border-gray-400 shadow-md focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
                             >
                                 <option value="">Seleccionar...</option>
                                 {options.regions && options.regions.map(region => (
@@ -441,7 +490,7 @@ const ActivoFormModal = ({ show, onClose, onSaveSuccess, activoToEdit }) => {
                                 name="finca"
                                 value={formData.finca}
                                 onChange={handleChange}
-                                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
+                                className="block w-full rounded-md bg-white border-gray-400 shadow-md focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
                                 disabled={!formData.region}
                             >
                                 <option value="">
@@ -461,7 +510,7 @@ const ActivoFormModal = ({ show, onClose, onSaveSuccess, activoToEdit }) => {
                                 name="departamento"
                                 value={formData.departamento}
                                 onChange={handleChange}
-                                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
+                                className="block w-full rounded-md bg-white border-gray-400 shadow-md focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
                             >
                                 <option value="">Seleccionar...</option>
                                 {options.departamentos && options.departamentos.map(depto => (
@@ -478,7 +527,7 @@ const ActivoFormModal = ({ show, onClose, onSaveSuccess, activoToEdit }) => {
                                 name="area"
                                 value={formData.area}
                                 onChange={handleChange}
-                                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
+                                className="block w-full rounded-md bg-white border-gray-400 shadow-md focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
                                 disabled={!formData.departamento}
                             >
                                 <option value="">
@@ -499,41 +548,144 @@ const ActivoFormModal = ({ show, onClose, onSaveSuccess, activoToEdit }) => {
                     <div className="grid grid-cols-3 gap-6">
                         {/* Solicitante */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Solicitante *</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Solicitante</label>
                             <input
                                 type="text"
                                 name="solicitante"
                                 value={formData.solicitante}
                                 onChange={handleChange}
-                                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
+                                className="block w-full rounded-md bg-white border-gray-400 shadow-md focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
                             />
                             {errors.solicitante && <p className="mt-1 text-sm text-red-600">{errors.solicitante}</p>}
                         </div>
 
                         {/* Correo Electronico */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Correo Electrónico *</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Correo Electrónico</label>
                             <input
                                 type="email"
                                 name="correo_electronico"
                                 value={formData.correo_electronico}
                                 onChange={handleChange}
-                                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
+                                className="block w-full rounded-md bg-white border-gray-400 shadow-md focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
                             />
                             {errors.correo_electronico && <p className="mt-1 text-sm text-red-600">{errors.correo_electronico}</p>}
                         </div>
 
                         {/* Orden de Compra */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Orden de Compra *</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Orden de Compra</label>
                             <input
                                 type="text"
                                 name="orden_compra"
                                 value={formData.orden_compra}
                                 onChange={handleChange}
-                                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
+                                className="block w-full rounded-md bg-white border-gray-400 shadow-md focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
                             />
                             {errors.orden_compra && <p className="mt-1 text-sm text-red-600">{errors.orden_compra}</p>}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Información Financiera */}
+                <div className="border-b border-gray-200 pb-6">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-4">Información Financiera</h3>
+                    <div className="grid grid-cols-3 gap-6">
+                        {/* Cuenta Contable */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Cuenta Contable</label>
+                            <input
+                                type="text"
+                                name="cuenta_contable"
+                                value={formData.cuenta_contable}
+                                onChange={handleChange}
+                                className="block w-full rounded-md bg-white border-gray-400 shadow-md focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
+                            />
+                            {errors.cuenta_contable && <p className="mt-1 text-sm text-red-600">{errors.cuenta_contable}</p>}
+                        </div>
+
+                        {/* Tipo de Costo */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de Costo</label>
+                            <div className="flex space-x-4">
+                                <label className="flex items-center">
+                                    <input
+                                        type="radio"
+                                        name="tipo_costo"
+                                        value="costo"
+                                        checked={formData.tipo_costo === 'costo'}
+                                        onChange={handleChange}
+                                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-400"
+                                    />
+                                    <span className="ml-2 text-sm text-gray-700">Costo</span>
+                                </label>
+                                <label className="flex items-center">
+                                    <input
+                                        type="radio"
+                                        name="tipo_costo"
+                                        value="mensualidad"
+                                        checked={formData.tipo_costo === 'mensualidad'}
+                                        onChange={handleChange}
+                                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-400"
+                                    />
+                                    <span className="ml-2 text-sm text-gray-700">Mensualidad</span>
+                                </label>
+                            </div>
+                            {errors.tipo_costo && <p className="mt-1 text-sm text-red-600">{errors.tipo_costo}</p>}
+                        </div>
+
+                        {/* Cuotas */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Cuotas</label>
+                            <select
+                                name="cuotas"
+                                value={formData.cuotas}
+                                onChange={handleChange}
+                                disabled={formData.tipo_costo !== 'mensualidad'}
+                                className="block w-full rounded-md bg-white border-gray-400 shadow-md focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                            >
+                                <option value="">Seleccionar...</option>
+                                <option value="1">1 mes</option>
+                                <option value="3">3 meses</option>
+                                <option value="6">6 meses</option>
+                                <option value="12">12 meses</option>
+                                <option value="18">18 meses</option>
+                                <option value="24">24 meses</option>
+                                <option value="36">36 meses</option>
+                                <option value="48">48 meses</option>
+                                <option value="60">60 meses</option>
+                            </select>
+                            {errors.cuotas && <p className="mt-1 text-sm text-red-600">{errors.cuotas}</p>}
+                        </div>
+
+                        {/* Moneda */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Moneda</label>
+                            <select
+                                name="moneda"
+                                value={formData.moneda}
+                                onChange={handleChange}
+                                className="block w-full rounded-md bg-white border-gray-400 shadow-md focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
+                            >
+                                <option value="">Seleccionar...</option>
+                                <option value="USD">Dólares</option>
+                                <option value="GTQ">Quetzales</option>
+                            </select>
+                            {errors.moneda && <p className="mt-1 text-sm text-red-600">{errors.moneda}</p>}
+                        </div>
+
+                        {/* Costo */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Costo</label>
+                            <input
+                                type="number"
+                                step="0.01"
+                                name="costo"
+                                value={formData.costo}
+                                onChange={handleChange}
+                                className="block w-full rounded-md bg-white border-gray-400 shadow-md focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
+                            />
+                            {errors.costo && <p className="mt-1 text-sm text-red-600">{errors.costo}</p>}
                         </div>
                     </div>
                 </div>

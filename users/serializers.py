@@ -10,9 +10,11 @@ class UserSerializer(serializers.ModelSerializer):
     # Campos de solo lectura para mostrar los IDs y nombres de los roles (grupos)
     role_ids = serializers.SerializerMethodField(read_only=True)
     role_names = serializers.SerializerMethodField(read_only=True)
+    role_name = serializers.SerializerMethodField(read_only=True)  # Single role name for profile
 
     # Campo para las listas de permisos del usuario
     user_permissions = serializers.SerializerMethodField()
+    permissions_count = serializers.SerializerMethodField(read_only=True)
 
     # Campo de escritura para asignar los roles (grupos) al usuario
     assigned_role_ids = serializers.PrimaryKeyRelatedField(
@@ -29,16 +31,24 @@ class UserSerializer(serializers.ModelSerializer):
     )
     region_name = serializers.CharField(source='region.name', read_only=True)
 
+    # Activity counts
+    audit_logs_count = serializers.SerializerMethodField(read_only=True)
+    assets_count = serializers.SerializerMethodField(read_only=True)
+
+    # Groups for profile display
+    groups = serializers.SerializerMethodField(read_only=True)
+
 
     class Meta:
         model = User
         fields = (
             'id', 'username', 'email', 'password', 'first_name', 'last_name',
             'puesto', 'departamento', 'departamento_name', 'region', 'region_name',
-            'status', 'is_staff', 'is_superuser',
-            'role_ids', 'role_names', 'assigned_role_ids', 'user_permissions'
+            'status', 'is_staff', 'is_superuser', 'is_active', 'last_login', 'date_joined',
+            'role_ids', 'role_names', 'role_name', 'assigned_role_ids', 'user_permissions', 'permissions_count',
+            'audit_logs_count', 'assets_count', 'groups'
         )
-        read_only_fields = ('role_ids', 'role_names', 'user_permissions')
+        read_only_fields = ('role_ids', 'role_names', 'role_name', 'user_permissions', 'permissions_count', 'audit_logs_count', 'assets_count', 'groups')
         # Crucial: Oculta la contraseña al leer, la hace opcional y añade un mínimo de 8 caracteres
         extra_kwargs = {'password': {'write_only': True, 'min_length': 8, 'required': False}}
 
@@ -50,6 +60,25 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_user_permissions(self, obj):
         return sorted(list(obj.get_all_permissions()))
+
+    def get_role_name(self, obj):
+        roles = list(obj.groups.values_list('name', flat=True))
+        return roles[0] if roles else None
+
+    def get_permissions_count(self, obj):
+        return len(obj.get_all_permissions())
+
+    def get_audit_logs_count(self, obj):
+        from masterdata.models import AuditLog
+        return AuditLog.objects.filter(user=obj).count()
+
+    def get_assets_count(self, obj):
+        # TODO: Add assigned_to field to Activo model to properly count user's assets
+        # For now, return 0 as assets are not linked to users
+        return 0
+
+    def get_groups(self, obj):
+        return list(obj.groups.values('id', 'name'))
 
 
     # MÉTODO CRUCIAL PARA LA CREACIÓN (HASHING)

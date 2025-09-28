@@ -26,6 +26,7 @@ import ModelosActivoPage from './pages/masterdata/ModelosActivoPage'; // Asegúr
 import ProveedoresPage from './pages/masterdata/ProveedoresPage'; // ¡NUEVO!
 import ActivosPage from './pages/assets/ActivosPage'; // ¡NUEVO!
 import AuditLogsPage from './pages/masterdata/AuditLogsPage'; // ¡NUEVO!
+import UserProfile from './pages/UserProfile'; // ¡NUEVO!
 
 
 
@@ -47,6 +48,7 @@ const AppContent = () => {
                         <main className="flex-1 overflow-x-hidden overflow-y-auto p-6">
                             <Routes>
                                 <Route path="/home" element={<Home />} />
+                                <Route path="/profile" element={<UserProfile />} />
                                 {/* Rutas de Administración */}
                                 <Route
                                     path="/admin/users"

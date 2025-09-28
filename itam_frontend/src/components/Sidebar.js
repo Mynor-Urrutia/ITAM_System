@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useAuth } from '../context/AuthContext';
 import {
     faHome,
+    faUser,
     faUserCog,
     faCog,
     faInfoCircle,
@@ -65,6 +66,19 @@ function Sidebar() {
                 >
                     <FontAwesomeIcon icon={faHome} className="mr-3" />
                     Inicio
+                </NavLink>
+
+                {/* User Profile */}
+                <NavLink
+                    to="/profile"
+                    className={({ isActive }) =>
+                        `block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 hover:text-white ${
+                            isActive ? 'bg-gray-700 text-white' : ''
+                        }`
+                    }
+                >
+                    <FontAwesomeIcon icon={faUser} className="mr-3" />
+                    Mi Perfil
                 </NavLink>
                 
                 {/* --------------------------- */}
