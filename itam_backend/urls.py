@@ -19,5 +19,7 @@ urlpatterns = [
     path('api/', include('users.urls')), # Esto incluirá todas las rutas definidas en users/urls.py
     # --- ¡NUEVA LÍNEA PARA INCLUIR LAS URLS DE MASTERDATA! ---
     path('api/masterdata/', include('masterdata.urls')),
+    # --- ¡NUEVA LÍNEA PARA INCLUIR LAS URLS DE ASSETS! ---
+    path('api/assets/', include('assets.urls')),
     # --------------------------------------------------------
 ]

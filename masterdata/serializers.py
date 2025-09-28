@@ -48,9 +48,12 @@ class AreaSerializer(serializers.ModelSerializer):
         required=True                        # Es un campo obligatorio
     )
 
+    # Campo de solo lectura para obtener el ID del departamento (necesario para filtrado en frontend)
+    departamento_id = serializers.IntegerField(source='departamento.id', read_only=True)
+
     class Meta:
         model = Area
-        fields = ['id', 'name', 'description', 'departamento', 'departamento_name']
+        fields = ['id', 'name', 'description', 'departamento', 'departamento_name', 'departamento_id']
 
 class TipoActivoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -66,6 +69,7 @@ class ModeloActivoSerializer(serializers.ModelSerializer):
     # Campos de solo lectura para mostrar el nombre en el frontend
     marca_name = serializers.CharField(source='marca.name', read_only=True)
     tipo_activo_name = serializers.CharField(source='tipo_activo.name', read_only=True)
+    asset_type_category = serializers.SerializerMethodField()
 
     # Campos de escritura para recibir los IDs de las claves foráneas
     marca = serializers.PrimaryKeyRelatedField(
@@ -80,12 +84,16 @@ class ModeloActivoSerializer(serializers.ModelSerializer):
         write_only=True
     )
 
+    # Campos de solo lectura para obtener los IDs (necesarios para filtrado en frontend)
+    marca_id = serializers.IntegerField(source='marca.id', read_only=True)
+    tipo_activo_id = serializers.IntegerField(source='tipo_activo.id', read_only=True, allow_null=True)
+
     class Meta:
         model = ModeloActivo
         fields = [
             'id', 'name',
-            'marca', 'marca_name',
-            'tipo_activo', 'tipo_activo_name',
+            'marca', 'marca_name', 'marca_id',
+            'tipo_activo', 'tipo_activo_name', 'tipo_activo_id', 'asset_type_category',
             # Campos para equipo de computo
             'procesador', 'ram', 'almacenamiento', 'tarjeta_grafica', 'wifi', 'ethernet',
             # Campos para equipos de red
@@ -98,6 +106,9 @@ class ModeloActivoSerializer(serializers.ModelSerializer):
             'marca': {'write_only': True},
             'tipo_activo': {'write_only': True},
         }
+
+    def get_asset_type_category(self, obj):
+        return obj.get_asset_type_category()
 
 class ProveedorSerializer(serializers.ModelSerializer):
     class Meta:

@@ -44,6 +44,8 @@ function Sidebar() {
         hasPermission('masterdata.view_proveedor') ||
         hasPermission('masterdata.view_auditlog');
 
+    const canViewAssets = hasPermission('assets.view_activo');
+
 
     return (
         <div className="flex flex-col w-64 bg-gray-800 text-white min-h-screen">
@@ -204,7 +206,23 @@ function Sidebar() {
                         )}
                     </div>
                 )}
-                
+
+                {/* --------------------------- */}
+                {/* Gestión de Activos */}
+                {canViewAssets && (
+                    <NavLink
+                        to="/assets/activos"
+                        className={({ isActive }) =>
+                            `block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 hover:text-white ${
+                                isActive ? 'bg-gray-700 text-white' : ''
+                            }`
+                        }
+                    >
+                        <FontAwesomeIcon icon={faLaptop} className="mr-3" />
+                        Gestión de Activos
+                    </NavLink>
+                )}
+
                 {/* --------------------------- */}
                 {/* Menú Desplegable: AJUSTES (Usuarios y Roles) */}
                 {/* --------------------------- */}

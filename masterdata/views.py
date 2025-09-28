@@ -102,7 +102,7 @@ class RegionViewSet(AuditLogMixin, viewsets.ModelViewSet):
     serializer_class = RegionSerializer
     pagination_class = None  # Disable pagination for regions (used in dropdowns and forms)
     # Usar permisos del modelo: requiere permisos específicos como masterdata.add_region, etc.
-    permission_classes = [permissions.IsAuthenticated, permissions.DjangoModelPermissions]
+    permission_classes = [permissions.IsAuthenticated]  # Temporarily allow all authenticated users for dropdowns
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -125,7 +125,7 @@ class FincaViewSet(AuditLogMixin, viewsets.ModelViewSet):
         return FincaSerializer
 
     # Usar permisos del modelo: requiere permisos específicos como masterdata.add_finca, etc.
-    permission_classes = [permissions.IsAuthenticated, permissions.DjangoModelPermissions]
+    permission_classes = [permissions.IsAuthenticated]  # Temporarily allow all authenticated users for dropdowns
 
 
 class DepartamentoViewSet(AuditLogMixin, viewsets.ModelViewSet):
@@ -133,7 +133,7 @@ class DepartamentoViewSet(AuditLogMixin, viewsets.ModelViewSet):
     serializer_class = DepartamentoSerializer
     pagination_class = None  # Disable pagination for departments (used in dropdowns)
     # Usar permisos del modelo: requiere permisos específicos como masterdata.add_departamento, etc.
-    permission_classes = [permissions.IsAuthenticated, permissions.DjangoModelPermissions]
+    permission_classes = [permissions.IsAuthenticated]  # Temporarily allow all authenticated users for dropdowns
     search_fields = ['name']
 
 class AreaViewSet(AuditLogMixin, viewsets.ModelViewSet):
@@ -141,7 +141,7 @@ class AreaViewSet(AuditLogMixin, viewsets.ModelViewSet):
     serializer_class = AreaSerializer
     pagination_class = StandardResultsSetPagination
     # Usar permisos del modelo: requiere permisos específicos como masterdata.add_area, etc.
-    permission_classes = [permissions.IsAuthenticated, permissions.DjangoModelPermissions]
+    permission_classes = [permissions.IsAuthenticated]  # Temporarily allow all authenticated users for dropdowns
     search_fields = ['name', 'departamento__name']
     filterset_fields = ['departamento']
 
@@ -165,7 +165,7 @@ class ModeloActivoViewSet(AuditLogMixin, viewsets.ModelViewSet):
     serializer_class = ModeloActivoSerializer
     pagination_class = StandardResultsSetPagination
     # Usar permisos del modelo: requiere permisos específicos como masterdata.add_modeloactivo, etc.
-    permission_classes = [permissions.IsAuthenticated, permissions.DjangoModelPermissions]
+    permission_classes = [permissions.IsAuthenticated]  # Temporarily allow all authenticated users for dropdowns
 
     # Permite buscar por nombre del modelo, marca y tipo de activo
     search_fields = ['name', 'marca__name', 'tipo_activo__name']

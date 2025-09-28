@@ -24,6 +24,7 @@ import TipoActivosPage from './pages/masterdata/TiposActivosPage'; // ¡NUEVO!
 import MarcasPage from './pages/masterdata/MarcasPage'; // ¡NUEVO!
 import ModelosActivoPage from './pages/masterdata/ModelosActivoPage'; // Asegúrate de que el nombre coincida
 import ProveedoresPage from './pages/masterdata/ProveedoresPage'; // ¡NUEVO!
+import ActivosPage from './pages/assets/ActivosPage'; // ¡NUEVO!
 import AuditLogsPage from './pages/masterdata/AuditLogsPage'; // ¡NUEVO!
 
 
@@ -126,6 +127,14 @@ const AppContent = () => {
                                     element={
                                         <PrivateRoute requiredPermissions={['masterdata.view_proveedor']}>
                                             <ProveedoresPage />
+                                        </PrivateRoute>
+                                    }
+                                />
+                                <Route
+                                    path="/assets/activos"
+                                    element={
+                                        <PrivateRoute requiredPermissions={['assets.view_activo']}>
+                                            <ActivosPage />
                                         </PrivateRoute>
                                     }
                                 />

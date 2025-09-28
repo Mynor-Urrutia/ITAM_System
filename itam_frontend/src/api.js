@@ -99,41 +99,47 @@ export const updateTipoActivo = (id, tipoActivoData) => api.put(`masterdata/tipo
 export const deleteTipoActivo = (id) => api.delete(`masterdata/tipos-activos/${id}/`);
 
 // Marcas
-export const getMarcas = (params = {}) => api.get('/masterdata/marcas/', { params });
-export const createMarca = (data) => api.post('/masterdata/marcas/', data);
-export const updateMarca = (id, data) => api.put(`/masterdata/marcas/${id}/`, data);
-export const deleteMarca = (id) => api.delete(`/masterdata/marcas/${id}/`);
+export const getMarcas = (params = {}) => api.get('masterdata/marcas/', { params });
+export const createMarca = (data) => api.post('masterdata/marcas/', data);
+export const updateMarca = (id, data) => api.put(`masterdata/marcas/${id}/`, data);
+export const deleteMarca = (id) => api.delete(`masterdata/marcas/${id}/`);
 
 // --- Funciones para la gestión de Modelos de Activos ---
-export const getModelosActivo = (params = {}) => api.get('/masterdata/modelos-activo/', { params });
-export const createModeloActivo = (data) => api.post('/masterdata/modelos-activo/', data);
-export const updateModeloActivo = (id, data) => api.put(`/masterdata/modelos-activo/${id}/`, data);
-export const deleteModeloActivo = (id) => api.delete(`/masterdata/modelos-activo/${id}/`);
+export const getModelosActivo = (params = {}) => api.get('masterdata/modelos-activo/', { params });
+export const createModeloActivo = (data) => api.post('masterdata/modelos-activo/', data);
+export const updateModeloActivo = (id, data) => api.put(`masterdata/modelos-activo/${id}/`, data);
+export const deleteModeloActivo = (id) => api.delete(`masterdata/modelos-activo/${id}/`);
 
 // --- Funciones para la gestión de Proveedores ---
-export const getProveedores = (params = {}) => api.get('/masterdata/proveedores/', { params });
-export const createProveedor = (data) => api.post('/masterdata/proveedores/', data);
-export const updateProveedor = (id, data) => api.put(`/masterdata/proveedores/${id}/`, data);
-export const deleteProveedor = (id) => api.delete(`/masterdata/proveedores/${id}/`);
+export const getProveedores = (params = {}) => api.get('masterdata/proveedores/', { params });
+export const createProveedor = (data) => api.post('masterdata/proveedores/', data);
+export const updateProveedor = (id, data) => api.put(`masterdata/proveedores/${id}/`, data);
+export const deleteProveedor = (id) => api.delete(`masterdata/proveedores/${id}/`);
 
 // --- Funciones para la gestión de Usuarios ---
-export const getUsers = (params = {}) => api.get('/users/', { params });
-export const createUser = (userData) => api.post('/users/', userData);
-export const updateUser = (id, userData) => api.put(`/users/${id}/`, userData);
-export const deleteUser = (id) => api.delete(`/users/${id}/`);
-export const getCurrentUser = () => api.get('/users/me/');
-export const changeUserPassword = (id, passwordData) => api.post(`/users/${id}/change-password/`, passwordData);
+export const getUsers = (params = {}) => api.get('users/', { params });
+export const createUser = (userData) => api.post('users/', userData);
+export const updateUser = (id, userData) => api.put(`users/${id}/`, userData);
+export const deleteUser = (id) => api.delete(`users/${id}/`);
+export const getCurrentUser = () => api.get('users/me/');
+export const changeUserPassword = (id, passwordData) => api.post(`users/${id}/change-password/`, passwordData);
 
 // --- Funciones para la gestión de Roles ---
-export const getRoles = (params = {}) => api.get('/roles/', { params });
-export const createRole = (roleData) => api.post('/roles/', roleData);
-export const updateRole = (id, roleData) => api.put(`/roles/${id}/`, roleData);
-export const deleteRole = (id) => api.delete(`/roles/${id}/`);
+export const getRoles = (params = {}) => api.get('roles/', { params });
+export const createRole = (roleData) => api.post('roles/', roleData);
+export const updateRole = (id, roleData) => api.put(`roles/${id}/`, roleData);
+export const deleteRole = (id) => api.delete(`roles/${id}/`);
 
 // --- Funciones para la gestión de Permisos ---
-export const getPermissions = (params = {}) => api.get('/permissions/', { params });
+export const getPermissions = (params = {}) => api.get('permissions/', { params });
+
+// --- Funciones para la gestión de Activos ---
+export const getActivos = (params = {}) => api.get('assets/activos/', { params });
+export const createActivo = (activoData) => api.post('assets/activos/', activoData);
+export const updateActivo = (id, activoData) => api.put(`assets/activos/${id}/`, activoData);
+export const deleteActivo = (id) => api.delete(`assets/activos/${id}/`);
 
 // --- Funciones para la gestión de Audit Logs ---
-export const getAuditLogs = (params = {}) => api.get('/masterdata/audit-logs/', { params });
+export const getAuditLogs = (params = {}) => api.get('masterdata/audit-logs/', { params });
 
 export default api;

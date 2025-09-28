@@ -233,6 +233,7 @@ class Proveedor(models.Model):
         return self.nombre_empresa
 
 
+
 class AuditLog(models.Model):
     ACTIVITY_CHOICES = [
         ('CREATE', 'Create'),
