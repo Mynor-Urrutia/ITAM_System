@@ -1,12 +1,15 @@
 from rest_framework import viewsets, permissions, status
+from rest_framework import filters as drf_filters
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, action
 from django.db.models import ProtectedError, Count, Q
 from datetime import date, timedelta
 from django.contrib.contenttypes.models import ContentType
 from django.forms.models import model_to_dict
 from django.core.serializers.json import DjangoJSONEncoder
+from django.utils import timezone
+from django_filters import rest_framework as filters
 import json
 
 from .models import Activo
@@ -17,6 +20,15 @@ class StandardResultsSetPagination(PageNumberPagination):
     page_size = 5  # Default page size
     page_size_query_param = 'page_size'
     max_page_size = 200
+
+class ActivoFilter(filters.FilterSet):
+    fecha_garantia_desde = filters.DateFilter(field_name='fecha_fin_garantia', lookup_expr='gte')
+    fecha_garantia_hasta = filters.DateFilter(field_name='fecha_fin_garantia', lookup_expr='lte')
+    region_name = filters.CharFilter(field_name='region__name', lookup_expr='icontains')
+
+    class Meta:
+        model = Activo
+        fields = ['estado', 'tipo_activo', 'proveedor', 'marca', 'modelo', 'region', 'finca', 'departamento', 'area']
 
 def serialize_model_data(instance):
     """Serialize model instance data to JSON-compatible format."""
@@ -106,11 +118,96 @@ class ActivoViewSet(AuditLogMixin, viewsets.ModelViewSet):
     serializer_class = ActivoSerializer
     pagination_class = StandardResultsSetPagination
     permission_classes = [permissions.IsAuthenticated, permissions.DjangoModelPermissions]
-    search_fields = ['serie', 'hostname', 'solicitante', 'correo_electronico', 'orden_compra']
-    filterset_fields = [
-        'tipo_activo', 'proveedor', 'marca', 'modelo',
-        'region', 'finca', 'departamento', 'area'
-    ]
+    filter_backends = [drf_filters.SearchFilter, drf_filters.OrderingFilter]
+    filterset_class = ActivoFilter
+    search_fields = ['serie', 'hostname', 'solicitante', 'correo_electronico', 'orden_compra', 'region__name', 'cuenta_contable', 'departamento__name', 'area__name']
+    ordering_fields = ['hostname', 'serie', 'tipo_activo__name', 'marca__name', 'modelo__name', 'fecha_fin_garantia', 'region__name', 'finca__name', 'estado']
+    ordering = ['hostname']  # Default ordering
+
+    def get_queryset(self):
+        queryset = Activo.objects.select_related(
+            'tipo_activo', 'proveedor', 'marca', 'modelo', 'region', 'finca', 'departamento', 'area'
+        )
+
+        # For detail actions, don't filter by estado to allow operations on retired assets
+        if self.action in ['retrieve', 'update', 'partial_update', 'destroy', 'retire', 'reactivate']:
+            return queryset
+
+        # For list, filter by estado: default to 'activo', but allow 'all' to include retired
+        estado_filter = self.request.query_params.get('estado', 'activo')
+        if estado_filter == 'all':
+            pass  # Include all
+        elif estado_filter == 'retirado':
+            queryset = queryset.filter(estado='retirado')
+        else:
+            queryset = queryset.filter(estado='activo')
+
+        return queryset
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def retire(self, request, pk=None):
+        """Retire an asset by setting its estado to 'retirado', fecha_baja to now, and recording motivo and usuario"""
+        activo = self.get_object()
+
+        if activo.estado == 'retirado':
+            return Response({'error': 'El activo ya está retirado'}, status=status.HTTP_400_BAD_REQUEST)
+
+        motivo = request.data.get('motivo_baja', '').strip()
+        if not motivo:
+            return Response({'error': 'El motivo de baja es obligatorio'}, status=status.HTTP_400_BAD_REQUEST)
+
+        activo.estado = 'retirado'
+        activo.fecha_baja = timezone.now()
+        activo.motivo_baja = motivo
+        activo.usuario_baja = request.user
+        activo.save()
+
+        # Log the retirement
+        self._log_activity('RETIRE', activo,
+                          old_data={'estado': 'activo'},
+                          new_data={
+                              'estado': 'retirado',
+                              'fecha_baja': activo.fecha_baja.isoformat(),
+                              'motivo_baja': motivo,
+                              'usuario_baja': request.user.username
+                          })
+
+        serializer = self.get_serializer(activo)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def reactivate(self, request, pk=None):
+        """Reactivate a retired asset by setting its estado to 'activo' and clearing retirement fields"""
+        activo = self.get_object()
+
+        if activo.estado == 'activo':
+            return Response({'error': 'El activo ya está activo'}, status=status.HTTP_400_BAD_REQUEST)
+
+        old_data = {
+            'estado': 'retirado',
+            'fecha_baja': activo.fecha_baja.isoformat() if activo.fecha_baja else None,
+            'motivo_baja': activo.motivo_baja,
+            'usuario_baja': activo.usuario_baja.username if activo.usuario_baja else None
+        }
+
+        activo.estado = 'activo'
+        activo.fecha_baja = None
+        activo.motivo_baja = None
+        activo.usuario_baja = None
+        activo.save()
+
+        # Log the reactivation
+        self._log_activity('REACTIVATE', activo,
+                           old_data=old_data,
+                           new_data={
+                               'estado': 'activo',
+                               'fecha_baja': None,
+                               'motivo_baja': None,
+                               'usuario_baja': None
+                           })
+
+        serializer = self.get_serializer(activo)
+        return Response(serializer.data)
 
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
@@ -121,7 +218,8 @@ def dashboard_warranty_data(request):
 
     # Get assets with warranty expiration in the next 90 days (but not today)
     expiring_assets = Activo.objects.filter(
-        Q(fecha_fin_garantia__gt=today) & Q(fecha_fin_garantia__lte=ninety_days_from_now)
+        Q(fecha_fin_garantia__gt=today) & Q(fecha_fin_garantia__lte=ninety_days_from_now),
+        estado='activo'
     ).select_related('modelo', 'region').order_by('fecha_fin_garantia')
 
     # Group by exact expiration date
@@ -180,7 +278,7 @@ def dashboard_summary(request):
     thirty_days_from_now = today + timedelta(days=30)
 
     # Total assets card
-    total_assets = Activo.objects.count()
+    total_assets = Activo.objects.filter(estado='activo').count()
 
     # Get all asset types that have assets
     asset_types_data = []
@@ -188,28 +286,29 @@ def dashboard_summary(request):
 
     for tipo in tipos_activo:
         # Count total assets for this type
-        total_count = Activo.objects.filter(tipo_activo=tipo).count()
+        total_count = Activo.objects.filter(tipo_activo=tipo, estado='activo').count()
 
         if total_count > 0:  # Only include types that have assets
             # Assets with valid warranty (>30 days)
             valid_warranty = Activo.objects.filter(
                 tipo_activo=tipo,
+                estado='activo',
                 fecha_fin_garantia__gt=thirty_days_from_now
             ).exclude(fecha_fin_garantia__isnull=True).count()
 
             # Assets with warranty expiring within 30 days (but not today)
             expiring_warranty = Activo.objects.filter(
                 tipo_activo=tipo,
+                estado='activo',
                 fecha_fin_garantia__gt=today,
                 fecha_fin_garantia__lte=thirty_days_from_now
             ).count()
 
             # Assets without warranty or expired warranty
             no_warranty = Activo.objects.filter(
-                tipo_activo=tipo
-            ).filter(
-                Q(fecha_fin_garantia__isnull=True) |
-                Q(fecha_fin_garantia__lte=today)
+                Q(tipo_activo=tipo) &
+                Q(estado='activo') &
+                (Q(fecha_fin_garantia__isnull=True) | Q(fecha_fin_garantia__lte=today))
             ).count()
 
             asset_types_data.append({
@@ -237,30 +336,34 @@ def dashboard_detail_data(request):
     page_size = int(request.GET.get('page_size', 10))
 
     if category == 'total_assets':
-        assets = Activo.objects.select_related('tipo_activo', 'marca', 'modelo', 'region').all()
+        assets = Activo.objects.select_related('tipo_activo', 'marca', 'modelo', 'region').filter(estado='activo')
     elif category == 'valid_warranty':
         today = date.today()
         thirty_days_from_now = today + timedelta(days=30)
         assets = Activo.objects.select_related('tipo_activo', 'marca', 'modelo', 'region').filter(
+            estado='activo',
             fecha_fin_garantia__gt=thirty_days_from_now
         ).exclude(fecha_fin_garantia__isnull=True)
     elif category == 'expiring_warranty':
         today = date.today()
         thirty_days_from_now = today + timedelta(days=30)
         assets = Activo.objects.select_related('tipo_activo', 'marca', 'modelo', 'region').filter(
+            Q(estado='activo') &
             Q(fecha_fin_garantia__gt=today) & Q(fecha_fin_garantia__lte=thirty_days_from_now)
         )
     elif category == 'no_warranty':
         today = date.today()
         assets = Activo.objects.select_related('tipo_activo', 'marca', 'modelo', 'region').filter(
-            Q(fecha_fin_garantia__isnull=True) | Q(fecha_fin_garantia__lte=today)
+            Q(estado='activo') &
+            (Q(fecha_fin_garantia__isnull=True) | Q(fecha_fin_garantia__lte=today))
         )
     else:
         # Check if category matches an asset type name
         try:
             tipo_activo = TipoActivo.objects.get(name=category)
             assets = Activo.objects.select_related('tipo_activo', 'marca', 'modelo', 'region').filter(
-                tipo_activo=tipo_activo
+                tipo_activo=tipo_activo,
+                estado='activo'
             )
         except TipoActivo.DoesNotExist:
             return Response({'error': 'Invalid category'}, status=400)
@@ -329,7 +432,7 @@ def dashboard_data(request):
         }
 
         # Count assets for this tipo_activo per region
-        counts = Activo.objects.filter(tipo_activo=tipo).values('region__name').annotate(count=Count('id'))
+        counts = Activo.objects.filter(tipo_activo=tipo, estado='activo').values('region__name').annotate(count=Count('id'))
 
         for count_data in counts:
             region_name = count_data['region__name']
@@ -360,7 +463,7 @@ def dashboard_models_data(request):
     # Get all modelos_activo with their total counts
     modelos_with_counts = []
     for modelo in ModeloActivo.objects.select_related('marca', 'tipo_activo').all():
-        total_count = Activo.objects.filter(modelo=modelo).count()
+        total_count = Activo.objects.filter(modelo=modelo, estado='activo').count()
         if total_count > 0:  # Only include models that have assets
             modelos_with_counts.append({
                 'modelo': modelo,
@@ -389,7 +492,7 @@ def dashboard_models_data(request):
         }
 
         # Count assets for this modelo per region
-        counts = Activo.objects.filter(modelo=modelo).values('region__name').annotate(count=Count('id'))
+        counts = Activo.objects.filter(modelo=modelo, estado='activo').values('region__name').annotate(count=Count('id'))
 
         for count_data in counts:
             region_name = count_data['region__name']
@@ -410,7 +513,7 @@ def dashboard_models_data(request):
 
         for item in other_modelos:
             modelo = item['modelo']
-            counts = Activo.objects.filter(modelo=modelo).values('region__name').annotate(count=Count('id'))
+            counts = Activo.objects.filter(modelo=modelo, estado='activo').values('region__name').annotate(count=Count('id'))
 
             for count_data in counts:
                 region_name = count_data['region__name']

@@ -138,6 +138,8 @@ export const getActivos = (params = {}) => api.get('assets/activos/', { params }
 export const createActivo = (activoData) => api.post('assets/activos/', activoData);
 export const updateActivo = (id, activoData) => api.put(`assets/activos/${id}/`, activoData);
 export const deleteActivo = (id) => api.delete(`assets/activos/${id}/`);
+export const retireActivo = (id, data) => api.post(`assets/activos/${id}/retire/`, data);
+export const reactivateActivo = (id) => api.post(`assets/activos/${id}/reactivate/`);
 
 // --- Funciones para Dashboard ---
 export const getDashboardData = () => api.get('assets/dashboard/');

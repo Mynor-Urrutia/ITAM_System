@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 from masterdata.models import TipoActivo, Marca, ModeloActivo, Proveedor, Region, Finca, Departamento, Area
 
 class Activo(models.Model):
@@ -94,6 +95,32 @@ class Activo(models.Model):
         verbose_name="Costo",
         blank=True,
         null=True
+    )
+
+    # Estado del activo
+    estado = models.CharField(
+        max_length=20,
+        choices=[('activo', 'Activo'), ('retirado', 'Retirado')],
+        default='activo',
+        verbose_name="Estado"
+    )
+    fecha_baja = models.DateTimeField(
+        verbose_name="Fecha de Baja",
+        blank=True,
+        null=True
+    )
+    motivo_baja = models.TextField(
+        verbose_name="Motivo de Baja",
+        blank=True,
+        null=True
+    )
+    usuario_baja = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        verbose_name="Usuario que dio de Baja",
+        blank=True,
+        null=True,
+        related_name='activos_retirados'
     )
 
     # Timestamps

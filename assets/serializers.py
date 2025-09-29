@@ -48,6 +48,9 @@ class ActivoSerializer(serializers.ModelSerializer):
     # User who created the asset
     created_by_user = serializers.SerializerMethodField()
 
+    # User who retired the asset
+    usuario_baja_name = serializers.CharField(source='usuario_baja.username', read_only=True, allow_null=True)
+
     # Write-only fields for sending IDs
     tipo_activo = serializers.PrimaryKeyRelatedField(
         queryset=TipoActivo.objects.all(),
@@ -110,6 +113,7 @@ class ActivoSerializer(serializers.ModelSerializer):
             'serie', 'hostname', 'fecha_registro', 'fecha_fin_garantia',
             'solicitante', 'correo_electronico', 'orden_compra',
             'cuenta_contable', 'tipo_costo', 'cuotas', 'moneda', 'costo',
+            'estado', 'fecha_baja', 'motivo_baja', 'usuario_baja_name',
             'created_at', 'updated_at'
         ]
         extra_kwargs = {
