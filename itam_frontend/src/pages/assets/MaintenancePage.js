@@ -11,6 +11,7 @@ function MaintenancePage() {
     const [maintenanceData, setMaintenanceData] = useState([]);
     const [filteredData, setFilteredData] = useState([]);
     const [activeTab, setActiveTab] = useState('todos');
+    const [searchTerm, setSearchTerm] = useState('');
     const [loading, setLoading] = useState(true);
     const { hasPermission } = useAuth();
 
@@ -33,7 +34,7 @@ function MaintenancePage() {
 
     useEffect(() => {
         filterData();
-    }, [maintenanceData, activeTab]);
+    }, [maintenanceData, activeTab, searchTerm]);
 
     const fetchMaintenanceData = async () => {
         try {
@@ -49,11 +50,23 @@ function MaintenancePage() {
     };
 
     const filterData = () => {
-        if (activeTab === 'todos') {
-            setFilteredData(maintenanceData);
-        } else {
-            setFilteredData(maintenanceData.filter(item => item.status === activeTab));
+        let filtered = maintenanceData;
+
+        // Filter by tab
+        if (activeTab !== 'todos') {
+            filtered = filtered.filter(item => item.status === activeTab);
         }
+
+        // Filter by search term (hostname or serie)
+        if (searchTerm.trim()) {
+            const term = searchTerm.toLowerCase().trim();
+            filtered = filtered.filter(item =>
+                item.hostname.toLowerCase().includes(term) ||
+                item.serie.toLowerCase().includes(term)
+            );
+        }
+
+        setFilteredData(filtered);
     };
 
     const getStatusLabel = (status) => {
@@ -127,6 +140,28 @@ function MaintenancePage() {
                         Registrar Mantenimiento Manual
                     </button>
                 )}
+            </div>
+
+            {/* Search Box */}
+            <div className="mb-4">
+                <div className="flex items-center">
+                    <label htmlFor="search" className="sr-only">Buscar por Hostname o Serie</label>
+                    <div className="relative flex-1 max-w-xs">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </div>
+                        <input
+                            type="text"
+                            id="search"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                            placeholder="Buscar por hostname o serie..."
+                        />
+                    </div>
+                </div>
             </div>
 
             {/* Tabs */}
