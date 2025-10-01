@@ -170,7 +170,7 @@ const MaintenanceModal = ({ show, onClose, activo, onMaintenanceSuccess }) => {
                             name="asset_identifier"
                             value={formData.asset_identifier}
                             onChange={handleInputChange}
-                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
+                            className="block w-full rounded-md bg-white border-gray-400 shadow-md focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
                             placeholder="Ingrese hostname o número de serie"
                             required
                         />
@@ -188,7 +188,7 @@ const MaintenanceModal = ({ show, onClose, activo, onMaintenanceSuccess }) => {
                             name="maintenance_date"
                             value={formData.maintenance_date}
                             onChange={handleInputChange}
-                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
+                            className="block w-full rounded-md bg-white border-gray-400 shadow-md focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
                             required
                         />
                         {errors.maintenance_date && <p className="mt-1 text-sm text-red-600">{errors.maintenance_date}</p>}
@@ -202,7 +202,7 @@ const MaintenanceModal = ({ show, onClose, activo, onMaintenanceSuccess }) => {
                             name="technician"
                             value={formData.technician}
                             onChange={handleInputChange}
-                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
+                            className="block w-full rounded-md bg-white border-gray-400 shadow-md focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
                             required
                         >
                             <option value="">Seleccionar técnico...</option>
@@ -224,7 +224,7 @@ const MaintenanceModal = ({ show, onClose, activo, onMaintenanceSuccess }) => {
                         name="findings"
                         value={formData.findings}
                         onChange={handleInputChange}
-                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
+                        className="block w-full rounded-md bg-white border-gray-400 shadow-md focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
                         rows={4}
                         placeholder="Describa los hallazgos encontrados durante el mantenimiento..."
                         required
