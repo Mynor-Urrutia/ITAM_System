@@ -2,11 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import Modal from '../../components/Modal';
-import { createMaintenance, getUsers } from '../../api';
+import { createMaintenance, getUsers, getActivos } from '../../api';
 import { toast } from 'react-toastify';
 
 const MaintenanceModal = ({ show, onClose, activo, onMaintenanceSuccess }) => {
     const [formData, setFormData] = useState({
+        asset_identifier: '',
         maintenance_date: '',
         technician: '',
         findings: '',
@@ -15,15 +16,23 @@ const MaintenanceModal = ({ show, onClose, activo, onMaintenanceSuccess }) => {
     const [technicians, setTechnicians] = useState([]);
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState({});
+    const [isValidAsset, setIsValidAsset] = useState(activo ? true : false);
+    const [assetValidationMessage, setAssetValidationMessage] = useState('');
 
     useEffect(() => {
         if (show) {
             loadTechnicians();
-            // Set default date to today
+            // Set default date to today and asset identifier
             const today = new Date().toISOString().split('T')[0];
-            setFormData(prev => ({ ...prev, maintenance_date: today }));
+            setFormData(prev => ({
+                ...prev,
+                maintenance_date: today,
+                asset_identifier: activo ? activo.hostname : ''
+            }));
+            setIsValidAsset(activo ? true : false);
+            setAssetValidationMessage('');
         }
-    }, [show]);
+    }, [show, activo]);
 
     const loadTechnicians = async () => {
         try {
@@ -34,9 +43,31 @@ const MaintenanceModal = ({ show, onClose, activo, onMaintenanceSuccess }) => {
         }
     };
 
+    const validateAsset = async (identifier) => {
+        if (!identifier.trim()) {
+            setIsValidAsset(false);
+            setAssetValidationMessage('');
+            return;
+        }
+        try {
+            const response = await getActivos({ search: identifier.trim(), page_size: 1 });
+            const exists = response.data.results && response.data.results.length > 0;
+            setIsValidAsset(exists);
+            setAssetValidationMessage(exists ? '' : 'El activo no existe o no está registrado.');
+        } catch (error) {
+            console.error('Error validating asset:', error);
+            setIsValidAsset(false);
+            setAssetValidationMessage('Error al validar el activo.');
+        }
+    };
+
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
+
+        if (name === 'asset_identifier' && !activo) {
+            validateAsset(value);
+        }
     };
 
     const handleFileChange = (e) => {
@@ -46,8 +77,9 @@ const MaintenanceModal = ({ show, onClose, activo, onMaintenanceSuccess }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if (!formData.maintenance_date || !formData.technician || !formData.findings.trim()) {
+        if (!formData.asset_identifier.trim() || !formData.maintenance_date || !formData.technician || !formData.findings.trim()) {
             setErrors({
+                asset_identifier: !formData.asset_identifier.trim() ? 'El identificador del activo es obligatorio' : '',
                 maintenance_date: !formData.maintenance_date ? 'La fecha es obligatoria' : '',
                 technician: !formData.technician ? 'El técnico es obligatorio' : '',
                 findings: !formData.findings.trim() ? 'Los hallazgos son obligatorios' : ''
@@ -55,10 +87,17 @@ const MaintenanceModal = ({ show, onClose, activo, onMaintenanceSuccess }) => {
             return;
         }
 
+        if (!activo && !isValidAsset) {
+            setErrors({
+                asset_identifier: assetValidationMessage
+            });
+            return;
+        }
+
         setLoading(true);
         try {
             const data = new FormData();
-            data.append('activo', activo.id);
+            data.append('asset_identifier', formData.asset_identifier.trim());
             data.append('maintenance_date', formData.maintenance_date);
             data.append('technician', formData.technician);
             data.append('findings', formData.findings.trim());
@@ -84,12 +123,15 @@ const MaintenanceModal = ({ show, onClose, activo, onMaintenanceSuccess }) => {
 
     const resetForm = () => {
         setFormData({
+            asset_identifier: activo ? activo.hostname : '',
             maintenance_date: '',
             technician: '',
             findings: '',
             attachments: []
         });
         setErrors({});
+        setIsValidAsset(activo ? true : false);
+        setAssetValidationMessage('');
     };
 
     const handleClose = () => {
@@ -98,7 +140,7 @@ const MaintenanceModal = ({ show, onClose, activo, onMaintenanceSuccess }) => {
     };
 
     return (
-        <Modal show={show} onClose={handleClose} title={`Registrar Mantenimiento - ${activo?.hostname}`} size="lg">
+        <Modal show={show} onClose={handleClose} title={activo ? `Registrar Mantenimiento - ${activo.hostname}` : 'Registrar Mantenimiento Manual'} size="lg">
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
                     <div className="flex">
@@ -117,6 +159,24 @@ const MaintenanceModal = ({ show, onClose, activo, onMaintenanceSuccess }) => {
                         </div>
                     </div>
                 </div>
+
+                {!activo && (
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Identificador del Activo (Hostname o Serie) *
+                        </label>
+                        <input
+                            type="text"
+                            name="asset_identifier"
+                            value={formData.asset_identifier}
+                            onChange={handleInputChange}
+                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
+                            placeholder="Ingrese hostname o número de serie"
+                            required
+                        />
+                        {errors.asset_identifier && <p className="mt-1 text-sm text-red-600">{errors.asset_identifier}</p>}
+                    </div>
+                )}
 
                 <div className="grid grid-cols-2 gap-4">
                     <div>
