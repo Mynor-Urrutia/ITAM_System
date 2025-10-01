@@ -6,12 +6,16 @@ import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthContext';
 import MaintenanceModal from './MaintenanceModal';
 import MaintenanceDetailModal from './MaintenanceDetailModal';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPlus, faEdit, faTrash, faEye, faSort, faSortUp, faSortDown } from '@fortawesome/free-solid-svg-icons';
 
 function MaintenancePage() {
     const [maintenanceData, setMaintenanceData] = useState([]);
     const [filteredData, setFilteredData] = useState([]);
     const [activeTab, setActiveTab] = useState('todos');
     const [searchTerm, setSearchTerm] = useState('');
+    const [sortField, setSortField] = useState('hostname');
+    const [sortDirection, setSortDirection] = useState('asc');
     const [loading, setLoading] = useState(true);
     const { hasPermission } = useAuth();
 
@@ -30,7 +34,7 @@ function MaintenancePage() {
         if (canViewMaintenance) {
             fetchMaintenanceData();
         }
-    }, [canViewMaintenance]);
+    }, [canViewMaintenance, sortField, sortDirection]);
 
     useEffect(() => {
         filterData();
@@ -39,7 +43,8 @@ function MaintenancePage() {
     const fetchMaintenanceData = async () => {
         try {
             setLoading(true);
-            const response = await getMaintenanceOverview();
+            const ordering = sortDirection === 'desc' ? `-${sortField}` : sortField;
+            const response = await getMaintenanceOverview({ ordering });
             setMaintenanceData(response.data);
         } catch (error) {
             console.error('Error fetching maintenance data:', error);
@@ -114,6 +119,24 @@ function MaintenancePage() {
 
     const handleMaintenanceSuccess = () => {
         fetchMaintenanceData(); // Refresh the data
+    };
+
+    const handleSort = (field) => {
+        if (sortField === field) {
+            // Toggle direction if same field
+            setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+        } else {
+            // New field, default to ascending
+            setSortField(field);
+            setSortDirection('asc');
+        }
+    };
+
+    const getSortIcon = (field) => {
+        if (sortField !== field) {
+            return 'fa-sort';
+        }
+        return sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down';
     };
 
     if (!canViewMaintenance) {
@@ -196,35 +219,65 @@ function MaintenancePage() {
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                             <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Hostname
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" onClick={() => handleSort('hostname')}>
+                                    <div className="flex items-center">
+                                        Hostname
+                                        <FontAwesomeIcon icon={getSortIcon('hostname')} className="ml-1 text-xs" />
+                                    </div>
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Serie
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" onClick={() => handleSort('serie')}>
+                                    <div className="flex items-center">
+                                        Serie
+                                        <FontAwesomeIcon icon={getSortIcon('serie')} className="ml-1 text-xs" />
+                                    </div>
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Marca
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" onClick={() => handleSort('marca')}>
+                                    <div className="flex items-center">
+                                        Marca
+                                        <FontAwesomeIcon icon={getSortIcon('marca')} className="ml-1 text-xs" />
+                                    </div>
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Modelo
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" onClick={() => handleSort('modelo')}>
+                                    <div className="flex items-center">
+                                        Modelo
+                                        <FontAwesomeIcon icon={getSortIcon('modelo')} className="ml-1 text-xs" />
+                                    </div>
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Último Mantenimiento
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" onClick={() => handleSort('ultimo_mantenimiento')}>
+                                    <div className="flex items-center">
+                                        Último Mantenimiento
+                                        <FontAwesomeIcon icon={getSortIcon('ultimo_mantenimiento')} className="ml-1 text-xs" />
+                                    </div>
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Próximo Mantenimiento
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" onClick={() => handleSort('proximo_mantenimiento')}>
+                                    <div className="flex items-center">
+                                        Próximo Mantenimiento
+                                        <FontAwesomeIcon icon={getSortIcon('proximo_mantenimiento')} className="ml-1 text-xs" />
+                                    </div>
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Región
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" onClick={() => handleSort('region')}>
+                                    <div className="flex items-center">
+                                        Región
+                                        <FontAwesomeIcon icon={getSortIcon('region')} className="ml-1 text-xs" />
+                                    </div>
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Finca
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" onClick={() => handleSort('finca')}>
+                                    <div className="flex items-center">
+                                        Finca
+                                        <FontAwesomeIcon icon={getSortIcon('finca')} className="ml-1 text-xs" />
+                                    </div>
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Técnico
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" onClick={() => handleSort('tecnico_mantenimiento')}>
+                                    <div className="flex items-center">
+                                        Técnico
+                                        <FontAwesomeIcon icon={getSortIcon('tecnico_mantenimiento')} className="ml-1 text-xs" />
+                                    </div>
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Estado
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" onClick={() => handleSort('status')}>
+                                    <div className="flex items-center">
+                                        Estado
+                                        <FontAwesomeIcon icon={getSortIcon('status')} className="ml-1 text-xs" />
+                                    </div>
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Acciones

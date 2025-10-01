@@ -294,7 +294,7 @@ class MaintenanceViewSet(AuditLogMixin, viewsets.ModelViewSet):
         # Extract data from request
 
         data = {
-            'activo_id': request.data.get('activo'),
+            'asset_identifier': request.data.get('asset_identifier'),  # hostname or serie
             'maintenance_date': request.data.get('maintenance_date'),
             'technician_id': request.data.get('technician'),
             'findings': request.data.get('findings'),
@@ -308,12 +308,17 @@ class MaintenanceViewSet(AuditLogMixin, viewsets.ModelViewSet):
             except ValueError:
                 return Response({'error': 'Formato de fecha inválido. Use YYYY-MM-DD'}, status=status.HTTP_400_BAD_REQUEST)
         # Validate required fields
-        if not all([data['activo_id'], data['maintenance_date'], data['technician_id'], data['findings']]):
+        if not all([data['asset_identifier'], data['maintenance_date'], data['technician_id'], data['findings']]):
             return Response({'error': 'Todos los campos son obligatorios'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            # Get related objects
-            activo = Activo.objects.get(id=data['activo_id'])
+            # Find activo by hostname or serie
+            activo = Activo.objects.filter(
+                Q(hostname=data['asset_identifier']) | Q(serie=data['asset_identifier'])
+            ).first()
+            if not activo:
+                return Response({'error': 'Activo no encontrado con el identificador proporcionado'}, status=status.HTTP_404_NOT_FOUND)
+
             technician = User.objects.get(id=data['technician_id'])
 
             # Create maintenance instance
@@ -325,12 +330,6 @@ class MaintenanceViewSet(AuditLogMixin, viewsets.ModelViewSet):
                 attachments=data['attachments']
             )
             maintenance.save()  # Explicitly call save to ensure next_maintenance_date is calculated
-
-            # Update the activo's maintenance tracking fields
-            activo.ultimo_mantenimiento = maintenance.maintenance_date
-            activo.proximo_mantenimiento = maintenance.next_maintenance_date
-            activo.tecnico_mantenimiento = maintenance.technician
-            activo.save()
 
             # Log the maintenance creation
             self._log_activity('CREATE', maintenance,
@@ -681,5 +680,69 @@ def dashboard_models_data(request):
         'total': sum(data['totals'].values())
     }
     data['modelos_activo'].append(total_row)
+
+    return Response(data)
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def maintenance_overview(request):
+    """Get maintenance overview data for all active assets"""
+    from datetime import date
+    today = date.today()
+
+    # Get ordering parameter
+    ordering = request.GET.get('ordering', 'hostname')  # Default ordering
+
+    activos = Activo.objects.select_related('marca', 'modelo', 'region', 'finca').filter(estado='activo')
+
+    data = []
+    for activo in activos:
+        # Get the latest maintenance for this activo
+        latest_maintenance = Maintenance.objects.filter(activo=activo).select_related('technician').order_by('-created_at').first()
+
+        if latest_maintenance:
+            status = 'realizados'
+            ultimo_mantenimiento = latest_maintenance.maintenance_date
+            proximo_mantenimiento = latest_maintenance.next_maintenance_date
+            tecnico_mantenimiento = latest_maintenance.technician.username
+        else:
+            status = 'nunca'
+            ultimo_mantenimiento = None
+            proximo_mantenimiento = None
+            tecnico_mantenimiento = ''
+
+        data.append({
+            'id': activo.id,
+            'hostname': activo.hostname,
+            'serie': activo.serie,
+            'marca': activo.marca.name if activo.marca else '',
+            'modelo': activo.modelo.name if activo.modelo else '',
+            'ultimo_mantenimiento': ultimo_mantenimiento.isoformat() if ultimo_mantenimiento else None,
+            'proximo_mantenimiento': proximo_mantenimiento.isoformat() if proximo_mantenimiento else None,
+            'region': activo.region.name if activo.region else '',
+            'finca': activo.finca.name if activo.finca else '',
+            'tecnico_mantenimiento': tecnico_mantenimiento,
+            'status': status,
+            'maintenance_id': latest_maintenance.id if latest_maintenance else None
+        })
+
+    # Apply sorting
+    reverse = ordering.startswith('-')
+    sort_key = ordering.lstrip('-')
+
+    def sort_func(item):
+        value = item.get(sort_key, '')
+        if sort_key in ['ultimo_mantenimiento', 'proximo_mantenimiento']:
+            # Handle date sorting
+            return value or '9999-12-31'  # Put None values at the end
+        elif sort_key == 'status':
+            # Custom status ordering: realizados, proximos, nunca
+            status_order = {'realizados': 0, 'proximos': 1, 'nunca': 2}
+            return status_order.get(value, 3)
+        else:
+            # String sorting
+            return value.lower() if isinstance(value, str) else str(value)
+
+    data.sort(key=sort_func, reverse=reverse)
 
     return Response(data)

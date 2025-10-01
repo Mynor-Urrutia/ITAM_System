@@ -146,6 +146,7 @@ export const reactivateActivo = (id) => api.post(`assets/activos/${id}/reactivat
 
 // --- Funciones para la gestión de Mantenimientos ---
 export const getMaintenances = (params = {}) => api.get('assets/maintenances/', { params });
+export const getMaintenance = (id) => api.get(`assets/maintenances/${id}/`);
 export const createMaintenance = (maintenanceData) => {
     const config = maintenanceData instanceof FormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
     return api.post('assets/maintenances/', maintenanceData, config);
@@ -160,6 +161,7 @@ export const getDashboardWarrantyData = () => api.get('assets/dashboard-warranty
 export const getDashboardSummary = () => api.get('assets/dashboard-summary/');
 export const getDashboardDetailData = (category, ordering = 'serie', page = 1, pageSize = 10) =>
   api.get(`assets/dashboard-detail/?category=${category}&ordering=${ordering}&page=${page}&page_size=${pageSize}`);
+export const getMaintenanceOverview = (params = {}) => api.get('assets/maintenance-overview/', { params });
 
 // --- Funciones para la gestión de Audit Logs ---
 export const getAuditLogs = (params = {}) => api.get('masterdata/audit-logs/', { params });
