@@ -439,6 +439,16 @@ function ActivosPage() {
                 show={isDetailModalOpen}
                 onClose={handleCloseDetailModal}
                 activo={selectedActivo}
+                onActivoUpdate={() => {
+                    fetchActivos(currentPage, pageSize);
+                    // Update selectedActivo with fresh data
+                    if (selectedActivo) {
+                        const updatedActivo = activos.find(a => a.id === selectedActivo.id);
+                        if (updatedActivo) {
+                            setSelectedActivo(updatedActivo);
+                        }
+                    }
+                }}
                 onRetireClick={handleRetireClick}
                 onReactivateClick={handleReactivateClick}
             />

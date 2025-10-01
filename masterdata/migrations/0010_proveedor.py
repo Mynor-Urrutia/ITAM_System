@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('masterdata', '0009_auditlog_new_data_auditlog_old_data'),
+        ('masterdata', '0001_initial_squashed_0009_auditlog_new_data_auditlog_old_data'),
     ]
 
     operations = [

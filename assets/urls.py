@@ -1,9 +1,10 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
-from .views import ActivoViewSet, dashboard_data, dashboard_models_data, dashboard_warranty_data, dashboard_summary, dashboard_detail_data
+from .views import ActivoViewSet, MaintenanceViewSet, dashboard_data, dashboard_models_data, dashboard_warranty_data, dashboard_summary, dashboard_detail_data
 
 router = DefaultRouter()
 router.register(r'activos', ActivoViewSet)
+router.register(r'maintenances', MaintenanceViewSet)
 
 urlpatterns = router.urls + [
     path('dashboard/', dashboard_data, name='dashboard_data'),

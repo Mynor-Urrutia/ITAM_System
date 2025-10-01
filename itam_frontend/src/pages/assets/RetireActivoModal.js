@@ -7,6 +7,7 @@ import { toast } from 'react-toastify';
 
 const RetireActivoModal = ({ show, onClose, activo, onRetireSuccess }) => {
     const [motivo, setMotivo] = useState('');
+    const [files, setFiles] = useState([]);
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState({});
 
@@ -20,7 +21,13 @@ const RetireActivoModal = ({ show, onClose, activo, onRetireSuccess }) => {
 
         setLoading(true);
         try {
-            await retireActivo(activo.id, { motivo_baja: motivo.trim() });
+            const formData = new FormData();
+            formData.append('motivo_baja', motivo.trim());
+            files.forEach((file, index) => {
+                formData.append('documentos_baja', file);
+            });
+
+            await retireActivo(activo.id, formData);
             toast.success('Activo dado de baja exitosamente.');
             onRetireSuccess();
             onClose();
@@ -36,6 +43,7 @@ const RetireActivoModal = ({ show, onClose, activo, onRetireSuccess }) => {
 
     const handleClose = () => {
         setMotivo('');
+        setFiles([]);
         setErrors({});
         onClose();
     };
@@ -75,6 +83,32 @@ const RetireActivoModal = ({ show, onClose, activo, onRetireSuccess }) => {
                         required
                     />
                     {errors.motivo && <p className="mt-1 text-sm text-red-600">{errors.motivo}</p>}
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Documentos de Baja (Opcional)
+                    </label>
+                    <input
+                        type="file"
+                        multiple
+                        accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx"
+                        onChange={(e) => setFiles(Array.from(e.target.files))}
+                        className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                    />
+                    <p className="mt-1 text-sm text-gray-500">
+                        Selecciona imágenes (JPG, PNG, GIF), PDF o documentos Word. Puedes seleccionar múltiples archivos.
+                    </p>
+                    {files.length > 0 && (
+                        <div className="mt-2">
+                            <p className="text-sm text-gray-700">Archivos seleccionados: {files.length}</p>
+                            <ul className="text-sm text-gray-600">
+                                {files.map((file, index) => (
+                                    <li key={index}>{file.name}</li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
                 </div>
 
                 <div className="bg-gray-50 rounded-lg p-3">

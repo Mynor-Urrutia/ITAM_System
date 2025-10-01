@@ -10,10 +10,19 @@ from django.forms.models import model_to_dict
 from django.core.serializers.json import DjangoJSONEncoder
 from django.utils import timezone
 from django_filters import rest_framework as filters
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
+from django.conf import settings
+from datetime import datetime
 import json
+import os
+import uuid
 
-from .models import Activo
-from .serializers import ActivoSerializer
+from .models import Activo, Maintenance
+from .serializers import ActivoSerializer, MaintenanceSerializer
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 from masterdata.models import TipoActivo, Region
 
 class StandardResultsSetPagination(PageNumberPagination):
@@ -75,6 +84,27 @@ def get_changed_fields(old_data, new_data):
             }
 
     return changed
+
+def save_uploaded_documents(files, subfolder='documents'):
+    """Save uploaded files and return list of relative paths."""
+    allowed_extensions = ['jpg', 'jpeg', 'png', 'gif', 'pdf', 'doc', 'docx']
+    saved_paths = []
+
+    for file in files:
+        if file:
+            ext = file.name.split('.')[-1].lower()
+            if ext not in allowed_extensions:
+                raise ValueError(f"Tipo de archivo no permitido: {ext}. Solo se permiten imágenes, PDF y documentos Word.")
+
+            # Generate unique filename
+            unique_name = f"{uuid.uuid4()}.{ext}"
+            path = os.path.join(subfolder, unique_name)
+
+            # Save file
+            file_path = default_storage.save(path, ContentFile(file.read()))
+            saved_paths.append(file_path)
+
+    return saved_paths
 
 # ----------------------------------------------------
 # APLICACIÓN DE PERMISOS: Usar permisos específicos del modelo para mayor seguridad.
@@ -146,7 +176,7 @@ class ActivoViewSet(AuditLogMixin, viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def retire(self, request, pk=None):
-        """Retire an asset by setting its estado to 'retirado', fecha_baja to now, and recording motivo and usuario"""
+        """Retire an asset by setting its estado to 'retirado', fecha_baja to now, and recording motivo, usuario, and documents"""
         activo = self.get_object()
 
         if activo.estado == 'retirado':
@@ -156,21 +186,35 @@ class ActivoViewSet(AuditLogMixin, viewsets.ModelViewSet):
         if not motivo:
             return Response({'error': 'El motivo de baja es obligatorio'}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Handle file uploads
+        documentos_paths = []
+        if 'documentos_baja' in request.FILES:
+            files = request.FILES.getlist('documentos_baja')
+            try:
+                documentos_paths = save_uploaded_documents(files, 'retirement_documents')
+            except ValueError as e:
+                return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
         activo.estado = 'retirado'
         activo.fecha_baja = timezone.now()
         activo.motivo_baja = motivo
         activo.usuario_baja = request.user
+        activo.documentos_baja = documentos_paths if documentos_paths else None
         activo.save()
 
         # Log the retirement
+        new_data = {
+            'estado': 'retirado',
+            'fecha_baja': activo.fecha_baja.isoformat(),
+            'motivo_baja': motivo,
+            'usuario_baja': request.user.username
+        }
+        if documentos_paths:
+            new_data['documentos_baja'] = documentos_paths
+
         self._log_activity('RETIRE', activo,
-                          old_data={'estado': 'activo'},
-                          new_data={
-                              'estado': 'retirado',
-                              'fecha_baja': activo.fecha_baja.isoformat(),
-                              'motivo_baja': motivo,
-                              'usuario_baja': request.user.username
-                          })
+                           old_data={'estado': 'activo'},
+                           new_data=new_data)
 
         serializer = self.get_serializer(activo)
         return Response(serializer.data)
@@ -183,31 +227,137 @@ class ActivoViewSet(AuditLogMixin, viewsets.ModelViewSet):
         if activo.estado == 'activo':
             return Response({'error': 'El activo ya está activo'}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Store old data including documents for audit log
         old_data = {
             'estado': 'retirado',
             'fecha_baja': activo.fecha_baja.isoformat() if activo.fecha_baja else None,
             'motivo_baja': activo.motivo_baja,
-            'usuario_baja': activo.usuario_baja.username if activo.usuario_baja else None
+            'usuario_baja': activo.usuario_baja.username if activo.usuario_baja else None,
+            'documentos_baja': activo.documentos_baja
         }
+
+        # Delete associated files from filesystem
+        if activo.documentos_baja:
+            for doc_path in activo.documentos_baja:
+                try:
+                    if default_storage.exists(doc_path):
+                        default_storage.delete(doc_path)
+                except Exception as e:
+                    # Log the error but don't fail the reactivation
+                    print(f"Error deleting file {doc_path}: {e}")
 
         activo.estado = 'activo'
         activo.fecha_baja = None
         activo.motivo_baja = None
         activo.usuario_baja = None
+        activo.documentos_baja = None  # Clear the documents field
         activo.save()
 
         # Log the reactivation
         self._log_activity('REACTIVATE', activo,
-                           old_data=old_data,
-                           new_data={
-                               'estado': 'activo',
-                               'fecha_baja': None,
-                               'motivo_baja': None,
-                               'usuario_baja': None
-                           })
+                            old_data=old_data,
+                            new_data={
+                                'estado': 'activo',
+                                'fecha_baja': None,
+                                'motivo_baja': None,
+                                'usuario_baja': None,
+                                'documentos_baja': None
+                            })
 
         serializer = self.get_serializer(activo)
         return Response(serializer.data)
+
+
+class MaintenanceViewSet(AuditLogMixin, viewsets.ModelViewSet):
+    queryset = Maintenance.objects.select_related('activo', 'technician').all()
+    serializer_class = MaintenanceSerializer
+    permission_classes = [permissions.IsAuthenticated, permissions.DjangoModelPermissions]
+
+    def get_queryset(self):
+        queryset = Maintenance.objects.select_related('activo', 'technician')
+        activo_id = self.request.query_params.get('activo', None)
+        if activo_id:
+            queryset = queryset.filter(activo_id=activo_id)
+        return queryset
+
+    def create(self, request, *args, **kwargs):
+        # Handle file uploads for maintenance creation
+        attachments_paths = []
+
+        if 'attachments' in request.FILES:
+            files = request.FILES.getlist('attachments')
+            try:
+                attachments_paths = save_uploaded_documents(files, 'maintenance_documents')
+            except ValueError as e:
+                return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Extract data from request
+
+        data = {
+            'activo_id': request.data.get('activo'),
+            'maintenance_date': request.data.get('maintenance_date'),
+            'technician_id': request.data.get('technician'),
+            'findings': request.data.get('findings'),
+            'attachments': attachments_paths if attachments_paths else None
+        }
+
+        # Parse date if it's a string
+        if data['maintenance_date'] and isinstance(data['maintenance_date'], str):
+            try:
+                data['maintenance_date'] = datetime.strptime(data['maintenance_date'], '%Y-%m-%d').date()
+            except ValueError:
+                return Response({'error': 'Formato de fecha inválido. Use YYYY-MM-DD'}, status=status.HTTP_400_BAD_REQUEST)
+        # Validate required fields
+        if not all([data['activo_id'], data['maintenance_date'], data['technician_id'], data['findings']]):
+            return Response({'error': 'Todos los campos son obligatorios'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # Get related objects
+            activo = Activo.objects.get(id=data['activo_id'])
+            technician = User.objects.get(id=data['technician_id'])
+
+            # Create maintenance instance
+            maintenance = Maintenance(
+                activo=activo,
+                maintenance_date=data['maintenance_date'],
+                technician=technician,
+                findings=data['findings'],
+                attachments=data['attachments']
+            )
+            maintenance.save()  # Explicitly call save to ensure next_maintenance_date is calculated
+
+            # Update the activo's maintenance tracking fields
+            activo.ultimo_mantenimiento = maintenance.maintenance_date
+            activo.proximo_mantenimiento = maintenance.next_maintenance_date
+            activo.tecnico_mantenimiento = maintenance.technician
+            activo.save()
+
+            # Log the maintenance creation
+            self._log_activity('CREATE', maintenance,
+                               old_data=None,
+                               new_data={
+                                   'maintenance_date': maintenance.maintenance_date.isoformat(),
+                                   'technician': maintenance.technician.username,
+                                   'findings': maintenance.findings,
+                                   'next_maintenance_date': maintenance.next_maintenance_date.isoformat() if maintenance.next_maintenance_date else None,
+                                   'attachments': attachments_paths if attachments_paths else []
+                               })
+
+            serializer = self.get_serializer(maintenance)
+            headers = self.get_success_headers(serializer.data)
+            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+        except Activo.DoesNotExist:
+            return Response({'error': 'Activo no encontrado'}, status=status.HTTP_404_NOT_FOUND)
+        except User.DoesNotExist:
+            return Response({'error': 'Técnico no encontrado'}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    def perform_create(self, serializer):
+        # This method is now handled in create() above
+        pass
+
 
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])

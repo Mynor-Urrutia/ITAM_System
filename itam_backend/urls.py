@@ -1,7 +1,11 @@
 # C:\Proyectos\ITAM_System\itam_backend\itam_backend\urls.py
 
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
+from django.conf import settings
+from django.conf.urls.static import static
+from django.http import HttpResponse
+from django.views.static import serve
 from rest_framework_simplejwt.views import (
     TokenRefreshView,
     TokenVerifyView, # Opcional: para verificar tokens
@@ -10,6 +14,12 @@ from rest_framework_simplejwt.views import (
 from rest_framework_simplejwt.views import TokenObtainPairView
 # Importa tu serializer personalizado
 from users.serializers import CustomTokenObtainPairSerializer
+
+def download_media(request, path):
+    """Serve media files with Content-Disposition: attachment to force download."""
+    response = serve(request, path, document_root=settings.MEDIA_ROOT)
+    response['Content-Disposition'] = f'attachment; filename="{path.split("/")[-1]}"'
+    return response
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -23,3 +33,9 @@ urlpatterns = [
     path('api/assets/', include('assets.urls')),
     # --------------------------------------------------------
 ]
+
+# Serve media files during development with forced download
+if settings.DEBUG:
+    urlpatterns += [
+        re_path(r'^media/(?P<path>.*)$', download_media, name='media'),
+    ]

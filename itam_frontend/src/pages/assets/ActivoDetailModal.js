@@ -1,9 +1,12 @@
 // itam_frontend/src/pages/assets/ActivoDetailModal.js
 
-import React from 'react';
+import React, { useState } from 'react';
 import Modal from '../../components/Modal';
+import MaintenanceModal from './MaintenanceModal';
 
-const ActivoDetailModal = ({ show, onClose, activo }) => {
+const ActivoDetailModal = ({ show, onClose, activo, onActivoUpdate }) => {
+    const [showMaintenanceModal, setShowMaintenanceModal] = useState(false);
+
     if (!activo) return null;
 
     const formatDate = (dateString) => {
@@ -36,6 +39,7 @@ const ActivoDetailModal = ({ show, onClose, activo }) => {
     const warrantyStatus = getWarrantyStatus();
 
     return (
+        <>
         <Modal show={show} onClose={onClose} title={`Detalles del Activo: ${activo.hostname}`} size="2xl">
             <div className="flex flex-col h-full">
                 {/* Scrollable Content */}
@@ -259,15 +263,15 @@ const ActivoDetailModal = ({ show, onClose, activo }) => {
                                     <div className="space-y-2">
                                         <div className="flex justify-between">
                                             <span className="text-sm font-medium text-gray-600">Solicitante:</span>
-                                            <span className="text-sm text-gray-900">{activo.solicitante}</span>
+                                            <span className="text-sm text-gray-900">{activo.solicitante || 'No especificado'}</span>
                                         </div>
                                         <div className="flex justify-between">
                                             <span className="text-sm font-medium text-gray-600">Correo:</span>
-                                            <span className="text-sm text-gray-900">{activo.correo_electronico}</span>
+                                            <span className="text-sm text-gray-900">{activo.correo_electronico || 'No especificado'}</span>
                                         </div>
                                         <div className="flex justify-between">
                                             <span className="text-sm font-medium text-gray-600">Orden de Compra:</span>
-                                            <span className="text-sm text-gray-900">{activo.orden_compra}</span>
+                                            <span className="text-sm text-gray-900">{activo.orden_compra || 'No especificado'}</span>
                                         </div>
                                         {activo.cuenta_contable && (
                                             <div className="flex justify-between">
@@ -302,6 +306,80 @@ const ActivoDetailModal = ({ show, onClose, activo }) => {
                                     </div>
                                 </div>
 
+                                {/* Información de Mantenimiento */}
+                                <div className="bg-white p-4 rounded-lg border border-blue-200 shadow-sm">
+                                    <h3 className="text-lg font-semibold text-gray-800 mb-3">🔧 Información de Mantenimiento</h3>
+                                    <div className="space-y-2">
+                                        <div className="flex justify-between">
+                                            <span className="text-sm font-medium text-gray-600">Último Mantenimiento:</span>
+                                            <span className="text-sm text-gray-900">{activo.ultimo_mantenimiento ? formatDate(activo.ultimo_mantenimiento) : 'Nunca'}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-sm font-medium text-gray-600">Próximo Mantenimiento:</span>
+                                            <span className={`text-sm font-semibold ${activo.proximo_mantenimiento && new Date(activo.proximo_mantenimiento) < new Date() ? 'text-red-600' : 'text-green-600'}`}>
+                                                {activo.proximo_mantenimiento ? formatDate(activo.proximo_mantenimiento) : 'No programado'}
+                                            </span>
+                                        </div>
+                                        {activo.tecnico_mantenimiento_name && (
+                                            <div className="flex justify-between">
+                                                <span className="text-sm font-medium text-gray-600">Último Técnico:</span>
+                                                <span className="text-sm text-gray-900">{activo.tecnico_mantenimiento_name}</span>
+                                            </div>
+                                        )}
+                                        {activo.ultimo_mantenimiento_hallazgos && (
+                                            <div className="flex flex-col">
+                                                <span className="text-sm font-medium text-gray-600 mb-1">Últimos Hallazgos:</span>
+                                                <span className="text-sm text-gray-900 bg-gray-50 p-2 rounded border">{activo.ultimo_mantenimiento_hallazgos}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Información de Baja - Solo para activos retirados */}
+                                {activo.estado === 'retirado' && (
+                                    <div className="bg-white p-4 rounded-lg border border-red-200 shadow-sm">
+                                        <h3 className="text-lg font-semibold text-gray-800 mb-3">🚫 Información de Baja</h3>
+                                        <div className="space-y-2">
+                                            <div className="flex justify-between">
+                                                <span className="text-sm font-medium text-gray-600">Fecha de Baja:</span>
+                                                <span className="text-sm text-gray-900">{formatDate(activo.fecha_baja)}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-sm font-medium text-gray-600">Usuario que dio de Baja:</span>
+                                                <span className="text-sm text-gray-900">{activo.usuario_baja_name || 'Desconocido'}</span>
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="text-sm font-medium text-gray-600 mb-1">Motivo de Baja:</span>
+                                                <span className="text-sm text-gray-900 bg-gray-50 p-2 rounded border">{activo.motivo_baja || 'No especificado'}</span>
+                                            </div>
+                                            {activo.documentos_baja && activo.documentos_baja.length > 0 && (
+                                                <div className="flex flex-col">
+                                                    <span className="text-sm font-medium text-gray-600 mb-2">Documentos Adjuntos:</span>
+                                                    <div className="space-y-1">
+                                                        {activo.documentos_baja.map((docPath, index) => {
+                                                            const fileName = docPath.split('/').pop();
+                                                            const fileUrl = `http://127.0.0.1:8000/media/${docPath}`;
+                                                            return (
+                                                                <a
+                                                                    key={index}
+                                                                    href={fileUrl}
+                                                                    download={fileName}
+                                                                    className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                                                                >
+                                                                    <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                                        <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                                                                    </svg>
+                                                                    {fileName}
+                                                                </a>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+
                             </div>
                         </div>
                     </div>
@@ -309,7 +387,14 @@ const ActivoDetailModal = ({ show, onClose, activo }) => {
 
                 {/* Fixed Footer with Buttons */}
                 <div className="flex-shrink-0 pt-4 border-t bg-white">
-                    <div className="flex justify-end">
+                    <div className="flex justify-between">
+                        <button
+                            type="button"
+                            onClick={() => setShowMaintenanceModal(true)}
+                            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700"
+                        >
+                            Registrar Mantenimiento
+                        </button>
                         <button
                             type="button"
                             onClick={onClose}
@@ -321,6 +406,17 @@ const ActivoDetailModal = ({ show, onClose, activo }) => {
                 </div>
             </div>
         </Modal>
+
+        <MaintenanceModal
+            show={showMaintenanceModal}
+            onClose={() => setShowMaintenanceModal(false)}
+            activo={activo}
+            onMaintenanceSuccess={() => {
+                setShowMaintenanceModal(false);
+                if (onActivoUpdate) onActivoUpdate();
+            }}
+        />
+        </>
     );
 };
 

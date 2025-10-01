@@ -138,8 +138,20 @@ export const getActivos = (params = {}) => api.get('assets/activos/', { params }
 export const createActivo = (activoData) => api.post('assets/activos/', activoData);
 export const updateActivo = (id, activoData) => api.put(`assets/activos/${id}/`, activoData);
 export const deleteActivo = (id) => api.delete(`assets/activos/${id}/`);
-export const retireActivo = (id, data) => api.post(`assets/activos/${id}/retire/`, data);
+export const retireActivo = (id, data) => {
+    const config = data instanceof FormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
+    return api.post(`assets/activos/${id}/retire/`, data, config);
+};
 export const reactivateActivo = (id) => api.post(`assets/activos/${id}/reactivate/`);
+
+// --- Funciones para la gestión de Mantenimientos ---
+export const getMaintenances = (params = {}) => api.get('assets/maintenances/', { params });
+export const createMaintenance = (maintenanceData) => {
+    const config = maintenanceData instanceof FormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
+    return api.post('assets/maintenances/', maintenanceData, config);
+};
+export const updateMaintenance = (id, maintenanceData) => api.put(`assets/maintenances/${id}/`, maintenanceData);
+export const deleteMaintenance = (id) => api.delete(`assets/maintenances/${id}/`);
 
 // --- Funciones para Dashboard ---
 export const getDashboardData = () => api.get('assets/dashboard/');

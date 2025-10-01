@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Activo
+from .models import Activo, Maintenance
 from masterdata.models import TipoActivo, Marca, ModeloActivo, Proveedor, Region, Finca, Departamento, Area, AuditLog
 from django.contrib.contenttypes.models import ContentType
 
@@ -50,6 +50,12 @@ class ActivoSerializer(serializers.ModelSerializer):
 
     # User who retired the asset
     usuario_baja_name = serializers.CharField(source='usuario_baja.username', read_only=True, allow_null=True)
+
+    # Maintenance technician name
+    tecnico_mantenimiento_name = serializers.CharField(source='tecnico_mantenimiento.username', read_only=True, allow_null=True)
+
+    # Latest maintenance findings
+    ultimo_mantenimiento_hallazgos = serializers.SerializerMethodField()
 
     # Write-only fields for sending IDs
     tipo_activo = serializers.PrimaryKeyRelatedField(
@@ -113,7 +119,9 @@ class ActivoSerializer(serializers.ModelSerializer):
             'serie', 'hostname', 'fecha_registro', 'fecha_fin_garantia',
             'solicitante', 'correo_electronico', 'orden_compra',
             'cuenta_contable', 'tipo_costo', 'cuotas', 'moneda', 'costo',
-            'estado', 'fecha_baja', 'motivo_baja', 'usuario_baja_name',
+            'estado', 'fecha_baja', 'motivo_baja', 'usuario_baja_name', 'documentos_baja',
+            'ultimo_mantenimiento', 'proximo_mantenimiento', 'tecnico_mantenimiento', 'tecnico_mantenimiento_name',
+            'ultimo_mantenimiento_hallazgos',
             'created_at', 'updated_at'
         ]
         extra_kwargs = {
@@ -157,3 +165,24 @@ class ActivoSerializer(serializers.ModelSerializer):
         except Exception:
             pass
         return "Desconocido"
+
+    def get_ultimo_mantenimiento_hallazgos(self, obj):
+        """Get the findings from the latest maintenance"""
+        try:
+            latest_maintenance = obj.maintenances.order_by('-maintenance_date').first()
+            return latest_maintenance.findings if latest_maintenance else None
+        except Exception:
+            return None
+
+
+class MaintenanceSerializer(serializers.ModelSerializer):
+    technician_name = serializers.CharField(source='technician.username', read_only=True)
+    activo_hostname = serializers.CharField(source='activo.hostname', read_only=True)
+
+    class Meta:
+        model = Maintenance
+        fields = [
+            'id', 'activo', 'activo_hostname', 'maintenance_date', 'technician', 'technician_name',
+            'findings', 'next_maintenance_date', 'attachments', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['activo_hostname', 'technician_name', 'next_maintenance_date']

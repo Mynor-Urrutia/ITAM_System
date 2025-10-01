@@ -133,42 +133,11 @@ class ModeloActivo(models.Model):
     ethernet = models.BooleanField(default=False, verbose_name="Ethernet")
 
     # Campos para Equipos de Red (switch, routers, firewall, AP Wifi, P2P)
-    puertos_ethernet = models.CharField(max_length=50, blank=True, null=True, verbose_name="Puertos Ethernet",
-        choices=[
-            ('1', '1 puerto'),
-            ('4', '4 puertos'),
-            ('8', '8 puertos'),
-            ('16', '16 puertos'),
-            ('24', '24 puertos'),
-            ('48', '48 puertos'),
-        ]
-    )
-    puertos_sfp = models.CharField(max_length=50, blank=True, null=True, verbose_name="Puertos SFP",
-        choices=[
-            ('0', '0 puertos'),
-            ('2', '2 puertos'),
-            ('4', '4 puertos'),
-            ('8', '8 puertos'),
-        ]
-    )
+    puertos_ethernet = models.CharField(max_length=50, blank=True, null=True, verbose_name="Puertos Ethernet")
+    puertos_sfp = models.CharField(max_length=50, blank=True, null=True, verbose_name="Puertos SFP")
     puerto_consola = models.BooleanField(default=False, verbose_name="Puerto Consola")
-    puertos_poe = models.CharField(max_length=50, blank=True, null=True, verbose_name="Puertos PoE",
-        choices=[
-            ('0', '0 puertos'),
-            ('4', '4 puertos'),
-            ('8', '8 puertos'),
-            ('16', '16 puertos'),
-            ('24', '24 puertos'),
-            ('48', '48 puertos'),
-        ]
-    )
-    alimentacion = models.CharField(max_length=50, blank=True, null=True, verbose_name="Alimentación",
-        choices=[
-            ('AC', 'AC'),
-            ('Transformador', 'Transformador'),
-            ('PoE', 'PoE'),
-        ]
-    )
+    puertos_poe = models.CharField(max_length=50, blank=True, null=True, verbose_name="Puertos PoE")
+    alimentacion = models.CharField(max_length=50, blank=True, null=True, verbose_name="Alimentación")
     administrable = models.BooleanField(default=False, verbose_name="Administrable")
 
     # Campos para Perifericos (otros tipos)

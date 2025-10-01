@@ -29,6 +29,7 @@ const ActivoFormModal = ({ show, onClose, onSaveSuccess, activoToEdit }) => {
         cuenta_contable: '',
         tipo_costo: '',
         cuotas: '',
+        estado: 'activo', // Default to activo for new assets
     });
 
     const [options, setOptions] = useState({
@@ -81,6 +82,7 @@ const ActivoFormModal = ({ show, onClose, onSaveSuccess, activoToEdit }) => {
                 cuotas: activoToEdit.cuotas ? activoToEdit.cuotas.toString() : '',
                 moneda: activoToEdit.moneda || '',
                 costo: activoToEdit.costo || '',
+                estado: activoToEdit.estado || 'activo',
             });
             // Set selected model for description
             if (activoToEdit.modelo_id && options.modelos && options.modelos.length > 0) {
@@ -109,6 +111,7 @@ const ActivoFormModal = ({ show, onClose, onSaveSuccess, activoToEdit }) => {
                 cuotas: '',
                 moneda: '',
                 costo: '',
+                estado: 'activo',
             });
             setSelectedModel(null);
         }
