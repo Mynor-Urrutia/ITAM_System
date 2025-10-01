@@ -129,37 +129,36 @@ function MaintenancePage() {
     return (
         <div className="p-4">
             <div className="mb-6">
-                <h1 className="text-3xl font-bold text-gray-800 mb-4">
-                    Vista General de Mantenimientos
-                </h1>
-                {canCreateMaintenance && (
-                    <button
-                        onClick={() => handleRegisterMaintenance(null)}
-                        className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700"
-                    >
-                        Registrar Mantenimiento Manual
-                    </button>
-                )}
-            </div>
-
-            {/* Search Box */}
-            <div className="mb-4">
-                <div className="flex items-center">
-                    <label htmlFor="search" className="sr-only">Buscar por Hostname o Serie</label>
-                    <div className="relative flex-1 max-w-xs">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                            </svg>
+                <div className="flex justify-between items-center">
+                    <h1 className="text-3xl font-bold text-gray-800">
+                        Vista General de Mantenimientos
+                    </h1>
+                    <div className="flex items-center space-x-4">
+                        {/* Search Box */}
+                        <div className="relative">
+                            <label htmlFor="search" className="sr-only">Buscar por Hostname o Serie</label>
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                            </div>
+                            <input
+                                type="text"
+                                id="search"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                                placeholder="Buscar por hostname o serie..."
+                            />
                         </div>
-                        <input
-                            type="text"
-                            id="search"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
-                            placeholder="Buscar por hostname o serie..."
-                        />
+                        {canCreateMaintenance && (
+                            <button
+                                onClick={() => handleRegisterMaintenance(null)}
+                                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700"
+                            >
+                                Registrar Mantenimiento Manual
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>
