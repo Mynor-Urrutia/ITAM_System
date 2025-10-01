@@ -181,72 +181,50 @@ function ActivosPage() {
 
     return (
         <div className="p-4">
-            <h1 className="text-3xl font-bold mb-6 text-gray-800">
-                Gestión de Activos {showRetired ? '(Retirados)' : '(Activos)'}
-            </h1>
-
-            <div className="flex justify-between items-center mb-4">
-                <div className="flex items-center space-x-4">
-                    <label className="flex items-center">
-                        <input
-                            type="checkbox"
-                            checked={showRetired}
-                            onChange={(e) => {
-                                setShowRetired(e.target.checked);
-                                setCurrentPage(1);
-                            }}
-                            className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                        />
-                        <span className="ml-2 text-sm text-gray-700">Mostrar activos retirados</span>
-                    </label>
-                </div>
-                <div>
-                    {canAddActivo && (
-                        <button
-                            onClick={handleAddClick}
-                            className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-                        >
-                            <FontAwesomeIcon icon={faPlus} className="mr-2" />
-                            Crear Nuevo Activo
-                        </button>
-                    )}
-                </div>
-            </div>
-
-            {/* Search Bar */}
-            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-4">
-                <h3 className="text-lg font-semibold text-gray-800 mb-3">🔍 Búsqueda de Activos</h3>
-                <div className="flex gap-4 items-end">
-                    <div className="flex-1">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Buscar por Hostname, Serie, Región, Solicitante, Correo, Orden de Compra, Cuenta Contable, Departamento o Área</label>
-                        <div className="flex gap-2">
+            <div className="mb-6">
+                <div className="flex justify-between items-center">
+                    <h1 className="text-3xl font-bold text-gray-800">
+                        Gestión de Activos {showRetired ? '(Retirados)' : '(Activos)'}
+                    </h1>
+                    <div className="flex items-center space-x-4">
+                        <label className="flex items-center">
+                            <input
+                                type="checkbox"
+                                checked={showRetired}
+                                onChange={(e) => {
+                                    setShowRetired(e.target.checked);
+                                    setCurrentPage(1);
+                                }}
+                                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                            />
+                            <span className="ml-2 text-sm text-gray-700">Mostrar retirados</span>
+                        </label>
+                        {/* Search Box */}
+                        <div className="relative">
+                            <label htmlFor="search" className="sr-only">Buscar Activos</label>
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                            </div>
                             <input
                                 type="text"
+                                id="search"
                                 value={searchText}
                                 onChange={(e) => setSearchText(e.target.value)}
-                                onKeyPress={(e) => e.key === 'Enter' && setCurrentPage(1)}
-                                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="Ingrese términos de búsqueda..."
+                                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                                placeholder="Buscar por hostname, serie..."
                             />
-                            <button
-                                onClick={() => setCurrentPage(1)}
-                                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 flex items-center gap-2"
-                                title="Buscar"
-                            >
-                                🔍 Buscar
-                            </button>
                         </div>
-                    </div>
-                    <div className="flex gap-2">
-                        <button
-                            onClick={() => {
-                                setSearchText('');
-                                setCurrentPage(1);
-                            }}
-                            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200"
-                        >
-                            Limpiar
-                        </button>
+                        {canAddActivo && (
+                            <button
+                                onClick={handleAddClick}
+                                className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+                            >
+                                <FontAwesomeIcon icon={faPlus} className="mr-2" />
+                                Crear Nuevo Activo
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>
