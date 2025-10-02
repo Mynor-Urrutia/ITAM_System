@@ -120,7 +120,7 @@ const ActivoDetailModal = ({ show, onClose, activo, onActivoUpdate }) => {
         <Modal show={show} onClose={onClose} title={`Detalles del Activo: ${activo.hostname}`} size="2xl">
             <div className="flex flex-col h-full">
                 {/* Scrollable Content */}
-                <div className="flex-1 overflow-y-auto">
+                <div className="flex-1 overflow-y-auto min-h-[700px] max-h-[700px]">
                     <div className="space-y-6 pb-6">
                         {/* Header with Warranty Status */}
                         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
