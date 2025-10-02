@@ -1,6 +1,6 @@
 import React from 'react';
 
-const Pagination = ({ currentPage, totalPages, pageSize, pageSizeOptions, onPageChange, onPageSizeChange }) => {
+const Pagination = ({ currentPage, totalPages, pageSize, pageSizeOptions, onPageChange, onPageSizeChange, hidePageSize = false }) => {
     const getPageNumbers = () => {
         const pages = [];
         const maxVisiblePages = 5;
@@ -39,24 +39,26 @@ const Pagination = ({ currentPage, totalPages, pageSize, pageSizeOptions, onPage
     return (
         <div className="flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200 sm:px-6">
             {/* Page size selector */}
-            <div className="flex items-center">
-                <label htmlFor="page-size" className="mr-2 text-sm text-gray-700">
-                    Mostrar:
-                </label>
-                <select
-                    id="page-size"
-                    value={pageSize}
-                    onChange={(e) => onPageSizeChange(parseInt(e.target.value))}
-                    className="px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                    {pageSizeOptions.map(size => (
-                        <option key={size} value={size}>
-                            {size}
-                        </option>
-                    ))}
-                </select>
-                <span className="ml-2 text-sm text-gray-700">registros por página</span>
-            </div>
+            {!hidePageSize && (
+                <div className="flex items-center">
+                    <label htmlFor="page-size" className="mr-2 text-sm text-gray-700">
+                        Mostrar:
+                    </label>
+                    <select
+                        id="page-size"
+                        value={pageSize}
+                        onChange={(e) => onPageSizeChange(parseInt(e.target.value))}
+                        className="px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                        {pageSizeOptions.map(size => (
+                            <option key={size} value={size}>
+                                {size}
+                            </option>
+                        ))}
+                    </select>
+                    <span className="ml-2 text-sm text-gray-700">registros por página</span>
+                </div>
+            )}
 
             {/* Pagination controls */}
             <div className="flex items-center space-x-1">

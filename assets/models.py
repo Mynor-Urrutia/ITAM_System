@@ -153,6 +153,12 @@ class Activo(models.Model):
         related_name='mantenimientos_realizados',
         help_text="Último técnico que realizó mantenimiento a este activo"
     )
+    ultimo_mantenimiento_hallazgos = models.TextField(
+        verbose_name="Últimos Hallazgos de Mantenimiento",
+        blank=True,
+        null=True,
+        help_text="Hallazgos del último mantenimiento realizado"
+    )
 
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
@@ -229,7 +235,7 @@ class Maintenance(models.Model):
     class Meta:
         verbose_name = "Mantenimiento"
         verbose_name_plural = "Mantenimientos"
-        ordering = ['-maintenance_date']
+        ordering = ['-created_at']
 
     def __str__(self):
         try:
@@ -246,3 +252,10 @@ class Maintenance(models.Model):
             if calculated_date:
                 self.next_maintenance_date = calculated_date
         super().save(*args, **kwargs)
+
+        # Update the Activo's maintenance fields with this maintenance's data
+        self.activo.ultimo_mantenimiento = self.maintenance_date
+        self.activo.proximo_mantenimiento = self.next_maintenance_date
+        self.activo.tecnico_mantenimiento = self.technician
+        self.activo.ultimo_mantenimiento_hallazgos = self.findings
+        self.activo.save(update_fields=['ultimo_mantenimiento', 'proximo_mantenimiento', 'tecnico_mantenimiento', 'ultimo_mantenimiento_hallazgos'])

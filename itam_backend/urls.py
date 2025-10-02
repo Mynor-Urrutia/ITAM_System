@@ -31,6 +31,8 @@ urlpatterns = [
     path('api/masterdata/', include('masterdata.urls')),
     # --- ¡NUEVA LÍNEA PARA INCLUIR LAS URLS DE ASSETS! ---
     path('api/assets/', include('assets.urls')),
+    # --- ¡NUEVA LÍNEA PARA INCLUIR LAS URLS DE EMPLOYEES! ---
+    path('api/employees/', include('employees.urls')),
     # --------------------------------------------------------
 ]
 

@@ -25,8 +25,10 @@ import MarcasPage from './pages/masterdata/MarcasPage'; // ¡NUEVO!
 import ModelosActivoPage from './pages/masterdata/ModelosActivoPage'; // Asegúrate de que el nombre coincida
 import ProveedoresPage from './pages/masterdata/ProveedoresPage'; // ¡NUEVO!
 import ActivosPage from './pages/assets/ActivosPage'; // ¡NUEVO!
+import MaintenancePage from './pages/assets/MaintenancePage'; // ¡NUEVO!
 import AuditLogsPage from './pages/masterdata/AuditLogsPage'; // ¡NUEVO!
 import UserProfile from './pages/UserProfile'; // ¡NUEVO!
+import EmployeesPage from './pages/employees/EmployeesPage'; // ¡NUEVO!
 
 
 
@@ -148,13 +150,21 @@ const AppContent = () => {
                                         </PrivateRoute>
                                     }
                                 />
+                                <Route
+                                    path="/employees/employees"
+                                    element={
+                                        <PrivateRoute requiredPermissions={['employees.view_employee']}>
+                                            <EmployeesPage />
+                                        </PrivateRoute>
+                                    }
+                                />
 
                                 {/* Rutas de Activos */}
                                 <Route
                                     path="/assets/maintenance"
                                     element={
                                         <PrivateRoute requiredPermissions={['assets.view_mantenimiento']}>
-                                            <div>Mantenimiento de Activos</div>
+                                            <MaintenancePage />
                                         </PrivateRoute>
                                     }
                                 />

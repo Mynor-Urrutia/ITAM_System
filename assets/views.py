@@ -271,6 +271,7 @@ class ActivoViewSet(AuditLogMixin, viewsets.ModelViewSet):
 class MaintenanceViewSet(AuditLogMixin, viewsets.ModelViewSet):
     queryset = Maintenance.objects.select_related('activo', 'technician').all()
     serializer_class = MaintenanceSerializer
+    pagination_class = StandardResultsSetPagination
     permission_classes = [permissions.IsAuthenticated, permissions.DjangoModelPermissions]
 
     def get_queryset(self):

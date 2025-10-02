@@ -167,6 +167,9 @@ typings/
 # Optional eslint cache
 .eslintcache
 
+# Node.js cache directories
+**/node_modules/.cache/
+
 # Microbundle cache
 .rpt2_cache/
 .rts2_cache_cjs/

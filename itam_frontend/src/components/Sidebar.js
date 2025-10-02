@@ -47,6 +47,8 @@ function Sidebar() {
 
     const canViewAssets = hasPermission('assets.view_activo');
 
+    const canViewEmployees = hasPermission('employees.view_employee');
+
 
     return (
         <div className="flex flex-col w-64 bg-gray-800 text-white min-h-screen">
@@ -234,6 +236,22 @@ function Sidebar() {
                     >
                         <FontAwesomeIcon icon={faLaptop} className="mr-3" />
                         Gestión de Activos
+                    </NavLink>
+                )}
+
+                {/* --------------------------- */}
+                {/* Gestión de Empleados */}
+                {canViewEmployees && (
+                    <NavLink
+                        to="/employees/employees"
+                        className={({ isActive }) =>
+                            `block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 hover:text-white ${
+                                isActive ? 'bg-gray-700 text-white' : ''
+                            }`
+                        }
+                    >
+                        <FontAwesomeIcon icon={faUsers} className="mr-3" />
+                        Gestión de Empleados
                     </NavLink>
                 )}
 

@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'django_filters',
     'masterdata',
     'assets',
+    'employees',
 ]
 
 AUTH_USER_MODEL = 'users.CustomUser' # ¡Esto es CRÍTICO!

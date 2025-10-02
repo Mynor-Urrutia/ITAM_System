@@ -51,11 +51,11 @@ class ActivoSerializer(serializers.ModelSerializer):
     # User who retired the asset
     usuario_baja_name = serializers.CharField(source='usuario_baja.username', read_only=True, allow_null=True)
 
-    # Maintenance technician name
-    tecnico_mantenimiento_name = serializers.CharField(source='tecnico_mantenimiento.username', read_only=True, allow_null=True)
+    # Maintenance fields
+    tecnico_mantenimiento_name = serializers.SerializerMethodField()
 
-    # Latest maintenance findings
-    ultimo_mantenimiento_hallazgos = serializers.SerializerMethodField()
+    # Latest maintenance attachments
+    ultimo_mantenimiento_adjuntos = serializers.SerializerMethodField()
 
     # Write-only fields for sending IDs
     tipo_activo = serializers.PrimaryKeyRelatedField(
@@ -121,7 +121,7 @@ class ActivoSerializer(serializers.ModelSerializer):
             'cuenta_contable', 'tipo_costo', 'cuotas', 'moneda', 'costo',
             'estado', 'fecha_baja', 'motivo_baja', 'usuario_baja_name', 'documentos_baja',
             'ultimo_mantenimiento', 'proximo_mantenimiento', 'tecnico_mantenimiento', 'tecnico_mantenimiento_name',
-            'ultimo_mantenimiento_hallazgos',
+            'ultimo_mantenimiento_hallazgos', 'ultimo_mantenimiento_adjuntos',
             'created_at', 'updated_at'
         ]
         extra_kwargs = {
@@ -166,11 +166,18 @@ class ActivoSerializer(serializers.ModelSerializer):
             pass
         return "Desconocido"
 
-    def get_ultimo_mantenimiento_hallazgos(self, obj):
-        """Get the findings from the latest maintenance"""
+    def get_tecnico_mantenimiento_name(self, obj):
+        """Get the technician name from the latest maintenance"""
         try:
-            latest_maintenance = obj.maintenances.order_by('-maintenance_date').first()
-            return latest_maintenance.findings if latest_maintenance else None
+            return obj.tecnico_mantenimiento.username if obj.tecnico_mantenimiento else None
+        except Exception:
+            return None
+
+    def get_ultimo_mantenimiento_adjuntos(self, obj):
+        """Get the attachments from the latest maintenance"""
+        try:
+            latest_maintenance = obj.maintenances.order_by('-created_at').first()
+            return latest_maintenance.attachments if latest_maintenance else None
         except Exception:
             return None
 
@@ -178,11 +185,12 @@ class ActivoSerializer(serializers.ModelSerializer):
 class MaintenanceSerializer(serializers.ModelSerializer):
     technician_name = serializers.CharField(source='technician.username', read_only=True)
     activo_hostname = serializers.CharField(source='activo.hostname', read_only=True)
+    activo_serie = serializers.CharField(source='activo.serie', read_only=True)
 
     class Meta:
         model = Maintenance
         fields = [
-            'id', 'activo', 'activo_hostname', 'maintenance_date', 'technician', 'technician_name',
+            'id', 'activo', 'activo_hostname', 'activo_serie', 'maintenance_date', 'technician', 'technician_name',
             'findings', 'next_maintenance_date', 'attachments', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['activo_hostname', 'technician_name', 'next_maintenance_date']
+        read_only_fields = ['activo_hostname', 'activo_serie', 'technician_name', 'next_maintenance_date']

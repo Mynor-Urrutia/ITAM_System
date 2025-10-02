@@ -166,4 +166,10 @@ export const getMaintenanceOverview = (params = {}) => api.get('assets/maintenan
 // --- Funciones para la gestión de Audit Logs ---
 export const getAuditLogs = (params = {}) => api.get('masterdata/audit-logs/', { params });
 
+// --- Funciones para la gestión de Empleados ---
+export const getEmployees = (params = {}) => api.get('employees/employees/', { params });
+export const createEmployee = (employeeData, config = {}) => api.post('employees/employees/', employeeData, config);
+export const updateEmployee = (id, employeeData, config = {}) => api.put(`employees/employees/${id}/`, employeeData, config);
+export const deleteEmployee = (id) => api.delete(`employees/employees/${id}/`);
+
 export default api;

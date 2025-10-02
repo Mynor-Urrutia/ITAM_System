@@ -61,7 +61,7 @@ const MaintenanceDetailModal = ({ show, onClose, maintenanceId }) => {
 
     const isViewable = (fileName) => {
         const ext = fileName.split('.').pop().toLowerCase();
-        return ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'bmp'].includes(ext);
+        return ['jpg', 'jpeg', 'png', 'gif', 'bmp'].includes(ext);
     };
 
     const FileViewer = ({ fileUrl, zoom }) => {
@@ -153,6 +153,7 @@ const MaintenanceDetailModal = ({ show, onClose, maintenanceId }) => {
                                              const fileName = filePath.split('/').pop();
                                              const fileUrl = `http://127.0.0.1:8000/media/${filePath}`;
                                              const viewable = isViewable(fileName);
+                                             const ext = fileName.split('.').pop().toLowerCase();
                                              return (
                                                  <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
                                                      <span className="text-sm text-gray-700">{fileName}</span>
@@ -160,9 +161,13 @@ const MaintenanceDetailModal = ({ show, onClose, maintenanceId }) => {
                                                          {viewable && (
                                                              <button
                                                                  onClick={() => {
-                                                                     setCurrentFile(fileUrl);
-                                                                     setZoom(1);
-                                                                     setShowViewer(true);
+                                                                     if (ext === 'pdf') {
+                                                                         window.open(fileUrl, '_blank');
+                                                                     } else {
+                                                                         setCurrentFile(fileUrl);
+                                                                         setZoom(1);
+                                                                         setShowViewer(true);
+                                                                     }
                                                                  }}
                                                                  className="inline-flex items-center text-sm text-green-600 hover:text-green-800 hover:underline"
                                                              >
@@ -223,18 +228,24 @@ const MaintenanceDetailModal = ({ show, onClose, maintenanceId }) => {
                                                          </td>
                                                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
                                                              {item.attachments && item.attachments.length > 0 ? (
-                                                                 <button
-                                                                     onClick={() => {
-                                                                         const firstFile = item.attachments[0];
-                                                                         const fileUrl = `http://127.0.0.1:8000/media/${firstFile}`;
-                                                                         setCurrentFile(fileUrl);
-                                                                         setZoom(1);
-                                                                         setShowViewer(true);
-                                                                     }}
-                                                                     className="inline-flex items-center text-sm text-green-600 hover:text-green-800 hover:underline"
-                                                                 >
-                                                                     Ver
-                                                                 </button>
+                                                                 (() => {
+                                                                     const firstFile = item.attachments[0];
+                                                                     const fileName = firstFile.split('/').pop();
+                                                                     const viewable = isViewable(fileName);
+                                                                     return viewable ? (
+                                                                         <button
+                                                                             onClick={() => {
+                                                                                 const fileUrl = `http://127.0.0.1:8000/media/${firstFile}`;
+                                                                                 setCurrentFile(fileUrl);
+                                                                                 setZoom(1);
+                                                                                 setShowViewer(true);
+                                                                             }}
+                                                                             className="inline-flex items-center text-sm text-green-600 hover:text-green-800 hover:underline"
+                                                                         >
+                                                                             Ver
+                                                                         </button>
+                                                                     ) : 'Descargar';
+                                                                 })()
                                                              ) : 'No hay archivos'}
                                                          </td>
                                                      </tr>
