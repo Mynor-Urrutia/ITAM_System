@@ -3,6 +3,8 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from masterdata.models import Region, Departamento
+from employees.models import Employee
+from employees.serializers import EmployeeSerializer
 
 User = get_user_model()
 
@@ -30,6 +32,11 @@ class UserSerializer(serializers.ModelSerializer):
         queryset=Region.objects.all(), allow_null=True, required=False
     )
     region_name = serializers.CharField(source='region.name', read_only=True)
+    employee = serializers.PrimaryKeyRelatedField(
+        queryset=Employee.objects.all(), allow_null=True, required=False
+    )
+    employee_name = serializers.SerializerMethodField(read_only=True)
+    employee_data = serializers.SerializerMethodField(read_only=True)
 
     # Activity counts
     audit_logs_count = serializers.SerializerMethodField(read_only=True)
@@ -43,7 +50,7 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = (
             'id', 'username', 'email', 'password', 'first_name', 'last_name',
-            'puesto', 'departamento', 'departamento_name', 'region', 'region_name',
+            'puesto', 'departamento', 'departamento_name', 'region', 'region_name', 'employee', 'employee_name', 'employee_data',
             'status', 'is_staff', 'is_superuser', 'is_active', 'last_login', 'date_joined',
             'role_ids', 'role_names', 'role_name', 'assigned_role_ids', 'user_permissions', 'permissions_count',
             'audit_logs_count', 'assets_count', 'groups'
@@ -79,6 +86,15 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_groups(self, obj):
         return list(obj.groups.values('id', 'name'))
+
+    def get_employee_name(self, obj):
+        return str(obj.employee) if obj.employee else 'N/A'
+
+    def get_employee_data(self, obj):
+        if obj.employee:
+            serializer = EmployeeSerializer(obj.employee)
+            return serializer.data
+        return None
 
 
     # MÉTODO CRUCIAL PARA LA CREACIÓN (HASHING)
@@ -139,6 +155,11 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         allow_null=True,
         required=False
     )
+    employee = serializers.PrimaryKeyRelatedField(
+        queryset=Employee.objects.all(),
+        allow_null=True,
+        required=False
+    )
 
     class Meta:
         model = User
@@ -151,6 +172,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             'puesto',
             'departamento', # <-- Para enviar el ID del departamento
             'region',       # <-- Para enviar el ID de la región
+            'employee',     # <-- Para enviar el ID del empleado
             'status',
             'assigned_role_ids',
             'is_staff',
@@ -179,6 +201,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             puesto=validated_data.get('puesto'),
             departamento=validated_data.get('departamento'), # Se pasa directamente el objeto
             region=validated_data.get('region'),             # Se pasa directamente el objeto
+            employee=validated_data.get('employee'),         # Se pasa directamente el objeto
             status=validated_data.get('status', 'Activo'),
             is_staff=is_staff_val,
             is_superuser=is_superuser_val,

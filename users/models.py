@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from masterdata.models import Region, Departamento # Asegúrate de importar Departamento aquí también
+from employees.models import Employee
 
 class CustomUser(AbstractUser):
     email = models.EmailField(unique=True)
@@ -36,6 +37,14 @@ class CustomUser(AbstractUser):
         related_name='users_in_region'
     )
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Activo')
+    employee = models.ForeignKey(
+        Employee,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='user_account',
+        verbose_name="Empleado"
+    )
 
     def save(self, *args, **kwargs):
         # Sync is_active with status

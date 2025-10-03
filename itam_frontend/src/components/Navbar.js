@@ -16,6 +16,12 @@ function Navbar() {
         return 'Sin Rol';
     };
 
+    // Determine display data: employee info if assigned, otherwise user info
+    const displayData = user && user.employee_data ? {
+        ...user.employee_data,
+        role_name: user.role_name // Keep user role
+    } : user;
+
     return (
         <nav className="bg-white shadow-md p-4 flex justify-between items-center">
             {/* Espacio para cualquier elemento a la izquierda del navbar, como un botón de menú para mobile */}
@@ -25,7 +31,7 @@ function Navbar() {
 
             {/* Información del Usuario a la derecha */}
             <div className="flex items-center space-x-4">
-                {user && (
+                {user && displayData && (
                     <Link
                         to="/profile"
                         className="flex items-center hover:bg-gray-100 rounded-lg p-2 transition duration-200"
@@ -34,11 +40,11 @@ function Navbar() {
                         <FontAwesomeIcon icon={faUserCircle} className="text-gray-600 text-3xl mr-3" />
                         <div>
                             <p className="text-gray-800 font-semibold text-lg leading-tight">
-                                {user.first_name} {user.last_name}
+                                {displayData.first_name} {displayData.last_name}
                             </p>
                             <p className="text-gray-600 text-sm leading-tight -mt-0.5">
                                 {/* Mostrar puesto, departamento y región */}
-                                ({user.puesto || 'N/A'}, {user.departamento_name || 'N/A'}, {user.region_name || 'N/A'})
+                                ({user.employee_data ? 'Empleado' : (displayData.puesto || 'N/A')}, {displayData.department_name || displayData.departamento_name || 'N/A'}, {displayData.region_name || 'N/A'})
                             </p>
                         </div>
                     </Link>

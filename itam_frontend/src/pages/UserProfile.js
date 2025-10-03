@@ -44,6 +44,20 @@ function UserProfile() {
 
     const formatDate = (dateString) => {
         if (!dateString) return 'N/A';
+
+        // Handle date-only strings (YYYY-MM-DD) to avoid timezone issues
+        if (typeof dateString === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+            // For date-only strings, create date in local timezone
+            const [year, month, day] = dateString.split('-').map(Number);
+            const date = new Date(year, month - 1, day); // month is 0-indexed
+            return date.toLocaleDateString('es-ES', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+
+        // For datetime strings, use the original method
         return new Date(dateString).toLocaleDateString('es-ES', {
             year: 'numeric',
             month: 'long',
@@ -81,9 +95,29 @@ function UserProfile() {
         );
     }
 
+    // Determine if we should display employee data or user data
+    const displayData = userData.employee_data ? {
+        ...userData.employee_data,
+        username: userData.employee_data.employee_number,
+        email: userData.email || 'N/A', // Keep user email if available
+        puesto: 'Empleado', // Default position for employees
+        status: userData.status, // Keep user status
+        is_active: userData.is_active,
+        last_login: userData.last_login,
+        date_joined: userData.employee_data.start_date,
+        account_created: userData.date_joined, // Account creation date
+        role_name: userData.role_name,
+        groups: userData.groups,
+        permissions_count: userData.permissions_count,
+        audit_logs_count: userData.audit_logs_count,
+        assets_count: userData.assets_count
+    } : userData;
+
     return (
         <div className="p-4">
-            <h1 className="text-3xl font-bold mb-6 text-gray-800">Mi Perfil</h1>
+            <h1 className="text-3xl font-bold mb-6 text-gray-800">
+                {userData.employee_data ? 'Perfil del Empleado' : 'Mi Perfil'}
+            </h1>
 
             <div className="w-full">
                 {/* Header Card */}
@@ -94,17 +128,17 @@ function UserProfile() {
                         </div>
                         <div>
                             <h2 className="text-3xl font-bold text-blue-900">
-                                {userData.first_name} {userData.last_name}
+                                {displayData.first_name} {displayData.last_name}
                             </h2>
-                            <p className="text-blue-700 text-lg">@{userData.username}</p>
+                            <p className="text-blue-700 text-lg">@{displayData.username}</p>
                             <div className="flex items-center mt-2 space-x-3">
                                 <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                                    userData.status === 'Activo' ? 'bg-green-100 text-green-800' :
-                                    userData.status === 'Inactivo' ? 'bg-red-100 text-red-800' :
-                                    userData.status === 'Vacaciones' ? 'bg-yellow-100 text-yellow-800' :
+                                    displayData.status === 'Activo' ? 'bg-green-100 text-green-800' :
+                                    displayData.status === 'Inactivo' ? 'bg-red-100 text-red-800' :
+                                    displayData.status === 'Vacaciones' ? 'bg-yellow-100 text-yellow-800' :
                                     'bg-gray-100 text-gray-800'
                                 }`}>
-                                    {userData.status || 'Sin estado'}
+                                    {displayData.status || 'Sin estado'}
                                 </span>
                                 <button
                                     onClick={() => setShowChangePasswordModal(true)}
@@ -127,25 +161,31 @@ function UserProfile() {
                             <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
                                 <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
                                     <FontAwesomeIcon icon={faUser} className="mr-3 text-blue-600" />
-                                    Información Personal
+                                    {userData.employee_data ? 'Información del Empleado' : 'Información Personal'}
                                 </h3>
                                 <div className="space-y-3">
                                     <div className="flex justify-between">
                                         <span className="text-sm font-medium text-gray-600">Nombre completo:</span>
-                                        <span className="text-sm text-gray-900">{userData.first_name} {userData.last_name}</span>
+                                        <span className="text-sm text-gray-900">{displayData.first_name} {displayData.last_name}</span>
                                     </div>
                                     <div className="flex justify-between">
-                                        <span className="text-sm font-medium text-gray-600">Nombre de usuario:</span>
-                                        <span className="text-sm text-gray-900">{userData.username}</span>
+                                        <span className="text-sm font-medium text-gray-600">{userData.employee_data ? 'No. Empleado:' : 'Nombre de usuario:'}</span>
+                                        <span className="text-sm text-gray-900">{displayData.username}</span>
                                     </div>
                                     <div className="flex justify-between">
                                         <span className="text-sm font-medium text-gray-600">Correo electrónico:</span>
-                                        <span className="text-sm text-gray-900">{userData.email}</span>
+                                        <span className="text-sm text-gray-900">{displayData.email}</span>
                                     </div>
                                     <div className="flex justify-between">
                                         <span className="text-sm font-medium text-gray-600">Puesto:</span>
-                                        <span className="text-sm text-gray-900">{userData.puesto || 'No especificado'}</span>
+                                        <span className="text-sm text-gray-900">{displayData.puesto || 'No especificado'}</span>
                                     </div>
+                                    {userData.employee_data && (
+                                        <div className="flex justify-between">
+                                            <span className="text-sm font-medium text-gray-600">Fecha de inicio:</span>
+                                            <span className="text-sm text-gray-900">{formatDate(displayData.date_joined)}</span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -156,14 +196,37 @@ function UserProfile() {
                                     Ubicación
                                 </h3>
                                 <div className="space-y-3">
-                                    <div className="flex justify-between">
-                                        <span className="text-sm font-medium text-gray-600">Región:</span>
-                                        <span className="text-sm text-gray-900">{userData.region_name || 'No asignada'}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-sm font-medium text-gray-600">Departamento:</span>
-                                        <span className="text-sm text-gray-900">{userData.departamento_name || 'No asignado'}</span>
-                                    </div>
+                                    {userData.employee_data ? (
+                                        <>
+                                            <div className="flex justify-between">
+                                                <span className="text-sm font-medium text-gray-600">Región:</span>
+                                                <span className="text-sm text-gray-900">{displayData.region_name || 'No asignada'}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-sm font-medium text-gray-600">Finca:</span>
+                                                <span className="text-sm text-gray-900">{displayData.finca_name || 'No asignada'}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-sm font-medium text-gray-600">Departamento:</span>
+                                                <span className="text-sm text-gray-900">{displayData.department_name || 'No asignado'}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-sm font-medium text-gray-600">Área:</span>
+                                                <span className="text-sm text-gray-900">{displayData.area_name || 'No asignada'}</span>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <div className="flex justify-between">
+                                                <span className="text-sm font-medium text-gray-600">Región:</span>
+                                                <span className="text-sm text-gray-900">{displayData.region_name || 'No asignada'}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-sm font-medium text-gray-600">Departamento:</span>
+                                                <span className="text-sm text-gray-900">{displayData.departamento_name || 'No asignado'}</span>
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
                             </div>
 
@@ -171,27 +234,36 @@ function UserProfile() {
                             <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
                                 <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
                                     <FontAwesomeIcon icon={faUserShield} className="mr-3 text-purple-600" />
-                                    Información del Sistema
+                                    {userData.employee_data ? 'Información de la Cuenta' : 'Información del Sistema'}
                                 </h3>
                                 <div className="space-y-3">
                                     <div className="flex justify-between">
-                                        <span className="text-sm font-medium text-gray-600">Estado de cuenta:</span>
+                                        <span className="text-sm font-medium text-gray-600">
+                                            {userData.employee_data ? 'Estado del empleado:' : 'Estado de cuenta:'}
+                                        </span>
                                         <span className={`text-sm font-medium ${
-                                            userData.is_active ? 'text-green-600' : 'text-red-600'
+                                            displayData.is_active ? 'text-green-600' : 'text-red-600'
                                         }`}>
-                                            {userData.is_active ? 'Activa' : 'Inactiva'}
+                                            {displayData.is_active ? 'Activo' : 'Inactivo'}
                                         </span>
                                     </div>
                                     <div className="flex justify-between">
-                                        <span className="text-sm font-medium text-gray-600">Último login:</span>
+                                        <span className="text-sm font-medium text-gray-600">
+                                            {userData.employee_data ? 'Creación de cuenta:' : 'Último login:'}
+                                        </span>
                                         <span className="text-sm text-gray-900">
-                                            {userData.last_login ? formatDate(userData.last_login) : 'Nunca'}
+                                            {userData.employee_data
+                                                ? formatDate(displayData.account_created)
+                                                : (displayData.last_login ? formatDate(displayData.last_login) : 'Nunca')
+                                            }
                                         </span>
                                     </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-sm font-medium text-gray-600">Fecha de registro:</span>
-                                        <span className="text-sm text-gray-900">{formatDate(userData.date_joined)}</span>
-                                    </div>
+                                    {!userData.employee_data && (
+                                        <div className="flex justify-between">
+                                            <span className="text-sm font-medium text-gray-600">Fecha de registro:</span>
+                                            <span className="text-sm text-gray-900">{formatDate(displayData.date_joined)}</span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -199,20 +271,20 @@ function UserProfile() {
                             <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
                                 <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
                                     <FontAwesomeIcon icon={faIdBadge} className="mr-3 text-orange-600" />
-                                    Roles y Permisos
+                                    {userData.employee_data ? 'Permisos de Acceso' : 'Roles y Permisos'}
                                 </h3>
                                 <div className="space-y-3">
                                     <div>
                                         <span className="text-sm font-medium text-gray-600">Rol principal:</span>
                                         <p className="text-sm text-gray-900 mt-1">
-                                            {userData.role_name || 'Sin rol asignado'}
+                                            {displayData.role_name || 'Sin rol asignado'}
                                         </p>
                                     </div>
                                     <div>
                                         <span className="text-sm font-medium text-gray-600">Grupos adicionales:</span>
                                         <p className="text-sm text-gray-900 mt-1">
-                                            {userData.groups && userData.groups.length > 0
-                                                ? userData.groups.map(group => group.name).join(', ')
+                                            {displayData.groups && displayData.groups.length > 0
+                                                ? displayData.groups.map(group => group.name).join(', ')
                                                 : 'Ninguno'
                                             }
                                         </p>
@@ -227,24 +299,24 @@ function UserProfile() {
                         <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
                             <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
                                 <FontAwesomeIcon icon={faClock} className="mr-3 text-indigo-600" />
-                                Resumen de Actividad
+                                {userData.employee_data ? 'Actividad del Empleado' : 'Resumen de Actividad'}
                             </h3>
                             <div className="grid grid-cols-1 gap-4">
                                 <div className="text-center p-4 bg-blue-50 rounded-lg">
                                     <div className="text-2xl font-bold text-blue-600">
-                                        {userData.audit_logs_count || 0}
+                                        {displayData.audit_logs_count || 0}
                                     </div>
                                     <div className="text-sm text-blue-700">Acciones registradas</div>
                                 </div>
                                 <div className="text-center p-4 bg-green-50 rounded-lg">
                                     <div className="text-2xl font-bold text-green-600">
-                                        {userData.assets_count || 0}
+                                        {displayData.assets_count || 0}
                                     </div>
                                     <div className="text-sm text-green-700">Activos gestionados</div>
                                 </div>
                                 <div className="text-center p-4 bg-purple-50 rounded-lg">
                                     <div className="text-2xl font-bold text-purple-600">
-                                        {userData.permissions_count || 0}
+                                        {displayData.permissions_count || 0}
                                     </div>
                                     <div className="text-sm text-purple-700">Permisos activos</div>
                                 </div>
@@ -261,7 +333,7 @@ function UserProfile() {
                 title="Cambiar Contraseña"
             >
                 <ChangePasswordForm
-                    userId={user.id}
+                    userId={userData.id}
                     onClose={() => setShowChangePasswordModal(false)}
                 />
             </Modal>
