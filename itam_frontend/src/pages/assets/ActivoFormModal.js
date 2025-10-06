@@ -296,18 +296,18 @@ const ActivoFormModal = ({ show, onClose, onSaveSuccess, activoToEdit }) => {
                         <p><strong>RAM:</strong> {selectedModel.ram ? `${selectedModel.ram} GB` : 'N/A'}</p>
                         <p><strong>Almacenamiento:</strong> {selectedModel.almacenamiento || 'N/A'}</p>
                         <p><strong>Tarjeta Gráfica:</strong> {selectedModel.tarjeta_grafica || 'N/A'}</p>
-                        <p><strong>WIFI:</strong> {selectedModel.wifi ? 'Sí' : 'No'}</p>
-                        <p><strong>Ethernet:</strong> {selectedModel.ethernet ? 'Sí' : 'No'}</p>
+                        <p><strong>WIFI:</strong> {Boolean(selectedModel.wifi) ? 'Sí' : 'No'}</p>
+                        <p><strong>Ethernet:</strong> {Boolean(selectedModel.ethernet) ? 'Sí' : 'No'}</p>
                     </div>
                 )}
                 {category === 'red' && (
                     <div className="grid grid-cols-2 gap-2 text-sm">
                         <p><strong>Puertos Ethernet:</strong> {selectedModel.puertos_ethernet || 'N/A'}</p>
                         <p><strong>Puertos SFP:</strong> {selectedModel.puertos_sfp || 'N/A'}</p>
-                        <p><strong>Puerto Consola:</strong> {selectedModel.puerto_consola ? 'Sí' : 'No'}</p>
+                        <p><strong>Puerto Consola:</strong> {Boolean(selectedModel.puerto_consola) ? 'Sí' : 'No'}</p>
                         <p><strong>Puertos PoE:</strong> {selectedModel.puertos_poe || 'N/A'}</p>
                         <p><strong>Alimentación:</strong> {selectedModel.alimentacion || 'N/A'}</p>
-                        <p><strong>Administrable:</strong> {selectedModel.administrable ? 'Sí' : 'No'}</p>
+                        <p><strong>Administrable:</strong> {Boolean(selectedModel.administrable) ? 'Sí' : 'No'}</p>
                     </div>
                 )}
                 {category === 'periferico' && (

@@ -7,7 +7,7 @@ import { getEmployees } from '../api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch, faCircleNotch } from '@fortawesome/free-solid-svg-icons';
 
-const EmployeeSearchModal = ({ show, onClose, onSelect }) => {
+const EmployeeSearchModal = ({ show, onClose, onSelect, availableForUser = false }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [results, setResults] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -30,10 +30,14 @@ const EmployeeSearchModal = ({ show, onClose, onSelect }) => {
 
         setLoading(true);
         try {
-            const response = await getEmployees({
+            const params = {
                 search: query,
                 page_size: 50
-            });
+            };
+            if (availableForUser) {
+                params.available_for_user = 'true';
+            }
+            const response = await getEmployees(params);
             setResults(response.data.results || response.data || []);
         } catch (error) {
             console.error('Error searching employees:', error);

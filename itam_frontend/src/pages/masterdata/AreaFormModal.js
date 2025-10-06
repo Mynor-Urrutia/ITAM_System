@@ -15,8 +15,8 @@ const AreaFormModal = ({ show, onClose, onSaveSuccess, areaToEdit }) => {
     useEffect(() => {
         const fetchDepartamentosList = async () => {
             try {
-                const response = await getDepartamentos();
-                setDepartamentos(response.data);
+                const response = await getDepartamentos({ page_size: 1000 }); // Get all departments
+                setDepartamentos(response.data.results || response.data);
                 setLoadingDepartamentos(false);
             } catch (error) {
                 console.error('Error fetching departments for form:', error);
@@ -36,7 +36,11 @@ const AreaFormModal = ({ show, onClose, onSaveSuccess, areaToEdit }) => {
             setName('');
             setDescription('');
             // Establece el primer departamento como valor por defecto si hay alguno
-            setDepartamentoId(departamentos.length > 0 ? departamentos[0].id : '');
+            if (departamentos && departamentos.length > 0) {
+                setDepartamentoId(departamentos[0].id);
+            } else {
+                setDepartamentoId('');
+            }
         }
     }, [areaToEdit, show, departamentos]); // Dependencia de `departamentos` para que se establezca el valor por defecto
 
@@ -114,7 +118,7 @@ const AreaFormModal = ({ show, onClose, onSaveSuccess, areaToEdit }) => {
                             disabled={isLoading}
                         >
                             <option value="">-- Selecciona un Departamento --</option>
-                            {departamentos.map(dept => (
+                            {Array.isArray(departamentos) && departamentos.map(dept => (
                                 <option key={dept.id} value={dept.id}>{dept.name}</option>
                             ))}
                         </select>

@@ -7,35 +7,10 @@ import { createModeloActivo, updateModeloActivo } from '../api';
 function ModeloActivoForm({ modelo, onClose, onSave, marcas, tiposActivo }) {
     const isEditing = !!modelo;
 
-    const [formData, setFormData] = useState({
-        name: '',
-        marca: '',
-        tipo_activo: '',
-        // Campos para equipo de computo
-        procesador: '',
-        ram: '',
-        almacenamiento: '',
-        tarjeta_grafica: '',
-        wifi: false,
-        ethernet: false,
-        // Campos para equipos de red
-        puertos_ethernet: '',
-        puertos_sfp: '',
-        puerto_consola: false,
-        puertos_poe: '',
-        alimentacion: '',
-        administrable: false,
-        // Campos para perifericos
-        tamano: '',
-        color: '',
-        conectores: '',
-        cables: '',
-    });
-    const [loading, setLoading] = useState(false);
-
-    useEffect(() => {
+    // Initialize form data based on editing mode
+    const getInitialFormData = () => {
         if (isEditing && modelo) {
-            setFormData({
+            return {
                 name: modelo.name || '',
                 marca: modelo.marca || '',
                 tipo_activo: modelo.tipo_activo || '',
@@ -58,9 +33,90 @@ function ModeloActivoForm({ modelo, onClose, onSave, marcas, tiposActivo }) {
                 color: modelo.color || '',
                 conectores: modelo.conectores || '',
                 cables: modelo.cables || '',
+            };
+        }
+        return {
+            name: '',
+            marca: '',
+            tipo_activo: '',
+            // Campos para equipo de computo
+            procesador: '',
+            ram: '',
+            almacenamiento: '',
+            tarjeta_grafica: '',
+            wifi: false,
+            ethernet: false,
+            // Campos para equipos de red
+            puertos_ethernet: '',
+            puertos_sfp: '',
+            puerto_consola: false,
+            puertos_poe: '',
+            alimentacion: '',
+            administrable: false,
+            // Campos para perifericos
+            tamano: '',
+            color: '',
+            conectores: '',
+            cables: '',
+        };
+    };
+
+    const [formData, setFormData] = useState(getInitialFormData);
+    const [loading, setLoading] = useState(false);
+
+    // Update form data when modelo changes (for editing)
+    useEffect(() => {
+        if (modelo) {
+            // Editing mode - populate with existing data
+            setFormData({
+                name: modelo.name || '',
+                marca: modelo.marca || '',
+                tipo_activo: modelo.tipo_activo || '',
+                // Campos para equipo de computo
+                procesador: modelo.procesador || '',
+                ram: modelo.ram || '',
+                almacenamiento: modelo.almacenamiento || '',
+                tarjeta_grafica: modelo.tarjeta_grafica || '',
+                wifi: Boolean(modelo.wifi),
+                ethernet: Boolean(modelo.ethernet),
+                // Campos para equipos de red
+                puertos_ethernet: modelo.puertos_ethernet || '',
+                puertos_sfp: modelo.puertos_sfp || '',
+                puerto_consola: Boolean(modelo.puerto_consola),
+                puertos_poe: modelo.puertos_poe || '',
+                alimentacion: modelo.alimentacion || '',
+                administrable: Boolean(modelo.administrable),
+                // Campos para perifericos
+                tamano: modelo.tamano || '',
+                color: modelo.color || '',
+                conectores: modelo.conectores || '',
+                cables: modelo.cables || '',
+            });
+        } else {
+            // Creation mode - reset to empty
+            setFormData({
+                name: '',
+                marca: '',
+                tipo_activo: '',
+                procesador: '',
+                ram: '',
+                almacenamiento: '',
+                tarjeta_grafica: '',
+                wifi: false,
+                ethernet: false,
+                puertos_ethernet: '',
+                puertos_sfp: '',
+                puerto_consola: false,
+                puertos_poe: '',
+                alimentacion: '',
+                administrable: false,
+                tamano: '',
+                color: '',
+                conectores: '',
+                cables: '',
             });
         }
-    }, [isEditing, modelo]);
+    }, [modelo]);
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
@@ -112,15 +168,15 @@ function ModeloActivoForm({ modelo, onClose, onSave, marcas, tiposActivo }) {
                 dataToSend.ram = formData.ram ? Number(formData.ram) : null;
                 dataToSend.almacenamiento = formData.almacenamiento || null;
                 dataToSend.tarjeta_grafica = formData.tarjeta_grafica || null;
-                dataToSend.wifi = formData.wifi;
-                dataToSend.ethernet = formData.ethernet;
+                dataToSend.wifi = Boolean(formData.wifi);
+                dataToSend.ethernet = Boolean(formData.ethernet);
             } else if (assetTypeCategory === 'red') {
                 dataToSend.puertos_ethernet = formData.puertos_ethernet || null;
                 dataToSend.puertos_sfp = formData.puertos_sfp || null;
-                dataToSend.puerto_consola = formData.puerto_consola;
+                dataToSend.puerto_consola = Boolean(formData.puerto_consola);
                 dataToSend.puertos_poe = formData.puertos_poe || null;
                 dataToSend.alimentacion = formData.alimentacion || null;
-                dataToSend.administrable = formData.administrable;
+                dataToSend.administrable = Boolean(formData.administrable);
             } else if (assetTypeCategory === 'periferico') {
                 dataToSend.tamano = formData.tamano || null;
                 dataToSend.color = formData.color || null;

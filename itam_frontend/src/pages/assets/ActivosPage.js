@@ -9,7 +9,7 @@ import Pagination from '../../components/Pagination';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faEdit, faTrash, faEye, faSort, faSortUp, faSortDown, faUndo, faArchive } from '@fortawesome/free-solid-svg-icons';
+import { faPlus, faEdit, faTrash, faEye, faSort, faSortUp, faSortDown, faUndo, faArchive, faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons';
 
 function ActivosPage() {
     const [activos, setActivos] = useState([]);
@@ -27,6 +27,7 @@ function ActivosPage() {
     const [searchText, setSearchText] = useState('');
     const [sortField, setSortField] = useState('hostname');
     const [sortDirection, setSortDirection] = useState('asc');
+    const [expandedCards, setExpandedCards] = useState(new Set());
     const { hasPermission } = useAuth();
 
     const canAddActivo = hasPermission('masterdata.add_activo');
@@ -179,9 +180,64 @@ function ActivosPage() {
         return sortDirection === 'asc' ? faSortUp : faSortDown;
     };
 
+    const toggleCardExpansion = (activoId) => {
+        const newExpanded = new Set(expandedCards);
+        if (newExpanded.has(activoId)) {
+            newExpanded.delete(activoId);
+        } else {
+            newExpanded.add(activoId);
+        }
+        setExpandedCards(newExpanded);
+    };
+
     return (
-        <div className="p-4">
-            <div className="mb-6">
+        <div className="p-2 sm:p-4 relative min-h-screen">
+            {/* Mobile Layout */}
+            <div className="block sm:hidden">
+                {/* Title */}
+                <div className="mb-4">
+                    <h1 className="text-2xl font-bold text-gray-800 text-center">
+                        Gestión de Activos {showRetired ? '(Retirados)' : '(Activos)'}
+                    </h1>
+                </div>
+
+                {/* Controls Row */}
+                <div className="mb-4 space-y-3">
+                    <label className="flex items-center justify-center">
+                        <input
+                            type="checkbox"
+                            checked={showRetired}
+                            onChange={(e) => {
+                                setShowRetired(e.target.checked);
+                                setCurrentPage(1);
+                            }}
+                            className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">Mostrar retirados</span>
+                    </label>
+
+                    {/* Search Box */}
+                    <div className="relative">
+                        <label htmlFor="search" className="sr-only">Buscar Activos</label>
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </div>
+                        <input
+                            type="text"
+                            id="search"
+                            value={searchText}
+                            onChange={(e) => setSearchText(e.target.value)}
+                            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                            placeholder="Buscar por hostname, serie..."
+                        />
+                    </div>
+                </div>
+            </div>
+
+            {/* Desktop Layout */}
+            <div className="hidden sm:block mb-6">
                 <div className="flex justify-between items-center">
                     <h1 className="text-3xl font-bold text-gray-800">
                         Gestión de Activos {showRetired ? '(Retirados)' : '(Activos)'}
@@ -229,8 +285,128 @@ function ActivosPage() {
                 </div>
             </div>
 
-            <div className="bg-white shadow overflow-hidden rounded-lg">
-                <table className="min-w-full divide-y divide-gray-200">
+            {/* Mobile Card View */}
+            <div className="block sm:hidden space-y-4">
+                {activos.length === 0 ? (
+                    <p className="text-center text-gray-500 py-4">No hay activos disponibles.</p>
+                ) : (
+                    activos.map((activo) => {
+                        const isExpanded = expandedCards.has(activo.id);
+                        return (
+                            <div key={activo.id} className="bg-white rounded-lg shadow border">
+                                {/* Header - Always visible */}
+                                <div className="p-4">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <div>
+                                            <h3 className="font-bold text-lg text-gray-900">{activo.hostname}</h3>
+                                            <p className="text-sm text-gray-600">
+                                                <span className="font-medium">Serie:</span> {activo.serie}
+                                            </p>
+                                        </div>
+                                        <div className="flex flex-col items-end space-y-2">
+                                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                                activo.estado === 'activo'
+                                                    ? 'bg-green-100 text-green-800'
+                                                    : 'bg-red-100 text-red-800'
+                                            }`}>
+                                                {activo.estado === 'activo' ? 'Activo' : 'Retirado'}
+                                            </span>
+                                            <button
+                                                onClick={() => toggleCardExpansion(activo.id)}
+                                                className="text-gray-500 hover:text-gray-700 p-1"
+                                                title={isExpanded ? "Contraer" : "Expandir"}
+                                            >
+                                                <FontAwesomeIcon
+                                                    icon={isExpanded ? faChevronUp : faChevronDown}
+                                                    className="text-sm"
+                                                />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Expandable Content */}
+                                {isExpanded && (
+                                    <div className="px-4 pb-4 border-t border-gray-200">
+                                        <div className="space-y-2 mt-3">
+                                            <p className="text-sm text-gray-600">
+                                                <span className="font-medium">Tipo:</span> {activo.tipo_activo_name}
+                                            </p>
+                                            <p className="text-sm text-gray-600">
+                                                <span className="font-medium">Marca/Modelo:</span> {activo.marca_name} / {activo.modelo_name}
+                                            </p>
+                                            <p className="text-sm text-gray-600">
+                                                <span className="font-medium">Región/Finca:</span> {activo.region_name} / {activo.finca_name}
+                                            </p>
+                                            <p className="text-sm text-gray-600">
+                                                <span className="font-medium">Garantía:</span> {activo.fecha_fin_garantia ? new Date(activo.fecha_fin_garantia).toLocaleDateString('es-ES') : 'N/A'}
+                                                <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${getWarrantyStatus(activo.fecha_fin_garantia).color}`}>
+                                                    {getWarrantyStatus(activo.fecha_fin_garantia).status}
+                                                </span>
+                                            </p>
+                                        </div>
+                                        <div className="flex flex-wrap gap-2 mt-4">
+                                            <button
+                                                onClick={() => handleViewClick(activo)}
+                                                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm"
+                                                title="Ver Detalles"
+                                            >
+                                                <FontAwesomeIcon icon={faEye} className="mr-1" />
+                                                Ver
+                                            </button>
+                                            {showRetired && canChangeActivo && (
+                                                <button
+                                                    onClick={() => handleReactivateClick(activo)}
+                                                    className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm"
+                                                    title="Reactivar Activo"
+                                                >
+                                                    <FontAwesomeIcon icon={faUndo} className="mr-1" />
+                                                    Reactivar
+                                                </button>
+                                            )}
+                                            {!showRetired && canChangeActivo && (
+                                                <>
+                                                    <button
+                                                        onClick={() => handleEditClick(activo)}
+                                                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded text-sm"
+                                                        title="Editar"
+                                                    >
+                                                        <FontAwesomeIcon icon={faEdit} className="mr-1" />
+                                                        Editar
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleRetireClick(activo)}
+                                                        className="bg-orange-600 hover:bg-orange-700 text-white px-3 py-1 rounded text-sm"
+                                                        title="Retirar Activo"
+                                                    >
+                                                        <FontAwesomeIcon icon={faArchive} className="mr-1" />
+                                                        Retirar
+                                                    </button>
+                                                </>
+                                            )}
+                                            {canDeleteActivo && (
+                                                <button
+                                                    onClick={() => handleDeleteClick(activo.id)}
+                                                    className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm"
+                                                    title="Eliminar"
+                                                >
+                                                    <FontAwesomeIcon icon={faTrash} className="mr-1" />
+                                                    Eliminar
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })
+                )}
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden sm:block bg-white shadow overflow-hidden rounded-lg">
+                <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                         <tr>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" onClick={() => handleSort('hostname')}>
@@ -394,6 +570,7 @@ function ActivosPage() {
                     </tbody>
                 </table>
             </div>
+        </div>
 
             {totalPages > 0 && (
                 <Pagination
@@ -440,6 +617,19 @@ function ActivosPage() {
                 activo={activoToRetire}
                 onRetireSuccess={handleRetireSuccess}
             />
+
+            {/* Mobile Floating Action Button */}
+            {canAddActivo && (
+                <div className="block sm:hidden fixed bottom-6 right-6 z-10">
+                    <button
+                        onClick={handleAddClick}
+                        className="bg-green-600 hover:bg-green-700 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg transition-all duration-200 hover:scale-110"
+                        title="Crear Nuevo Activo"
+                    >
+                        <FontAwesomeIcon icon={faPlus} className="text-xl" />
+                    </button>
+                </div>
+            )}
 
         </div>
     );

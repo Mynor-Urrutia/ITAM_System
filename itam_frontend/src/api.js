@@ -172,4 +172,14 @@ export const createEmployee = (employeeData, config = {}) => api.post('employees
 export const updateEmployee = (id, employeeData, config = {}) => api.put(`employees/employees/${id}/`, employeeData, config);
 export const deleteEmployee = (id) => api.delete(`employees/employees/${id}/`);
 
+// --- Funciones para la gestión de Asignaciones ---
+export const getAssignments = (params = {}) => api.get('assets/assignments/', { params });
+export const getAssignment = (id) => api.get(`assets/assignments/${id}/`);
+export const createAssignment = (assignmentData) => api.post('assets/assignments/', assignmentData);
+export const updateAssignment = (id, assignmentData) => api.put(`assets/assignments/${id}/`, assignmentData);
+export const deleteAssignment = (id) => api.delete(`assets/assignments/${id}/`);
+export const returnAssignment = (id, returnData) => api.post(`assets/assignments/${id}/return_assignment/`, returnData);
+export const getAvailableAssets = (params = {}) => api.get('assets/assignments/available_assets/', { params });
+export const bulkAssignAssets = (assignmentData) => api.post('assets/assignments/bulk_assign/', assignmentData);
+
 export default api;

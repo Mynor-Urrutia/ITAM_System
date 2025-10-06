@@ -3,11 +3,15 @@
 from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.decorators import api_view, permission_classes
 from django.db.models import ProtectedError
 from django.contrib.contenttypes.models import ContentType
 from django.forms.models import model_to_dict
 from django.core.serializers.json import DjangoJSONEncoder
+from django.http import HttpResponse
+from datetime import datetime
 import json
+import csv
 
 from .models import Region, Finca, Departamento, Area, TipoActivo, Marca, ModeloActivo, Proveedor, AuditLog
 from .serializers import RegionSerializer, FincaSerializer, FincaCreateUpdateSerializer, DepartamentoSerializer, AreaSerializer, TipoActivoSerializer, MarcaSerializer, ModeloActivoSerializer, ProveedorSerializer, AuditLogSerializer
@@ -100,7 +104,7 @@ class AuditLogMixin:
 class RegionViewSet(AuditLogMixin, viewsets.ModelViewSet):
     queryset = Region.objects.all()
     serializer_class = RegionSerializer
-    pagination_class = None  # Disable pagination for regions (used in dropdowns and forms)
+    pagination_class = StandardResultsSetPagination
     # Usar permisos del modelo: requiere permisos específicos como masterdata.add_region, etc.
     permission_classes = [permissions.IsAuthenticated]  # Temporarily allow all authenticated users for dropdowns
 
@@ -131,7 +135,7 @@ class FincaViewSet(AuditLogMixin, viewsets.ModelViewSet):
 class DepartamentoViewSet(AuditLogMixin, viewsets.ModelViewSet):
     queryset = Departamento.objects.all()
     serializer_class = DepartamentoSerializer
-    pagination_class = None  # Disable pagination for departments (used in dropdowns)
+    pagination_class = StandardResultsSetPagination
     # Usar permisos del modelo: requiere permisos específicos como masterdata.add_departamento, etc.
     permission_classes = [permissions.IsAuthenticated]  # Temporarily allow all authenticated users for dropdowns
     search_fields = ['name']
@@ -187,3 +191,76 @@ class AuditLogViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     search_fields = ['activity_type', 'description', 'user__username']
     filterset_fields = ['activity_type', 'user']
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def audit_logs_report_csv(request):
+    """Generate CSV report for audit logs with filters"""
+    # Get filter parameters
+    activity_type = request.GET.get('activity_type')
+    user_id = request.GET.get('user')
+    fecha_desde = request.GET.get('fecha_desde')
+    fecha_hasta = request.GET.get('fecha_hasta')
+    content_type_id = request.GET.get('content_type')
+
+    # Build queryset
+    queryset = AuditLog.objects.select_related('user', 'content_type').order_by('-timestamp')
+
+    if activity_type:
+        queryset = queryset.filter(activity_type=activity_type)
+    if user_id:
+        queryset = queryset.filter(user_id=user_id)
+    if content_type_id:
+        queryset = queryset.filter(content_type_id=content_type_id)
+
+    # Date filtering
+    if fecha_desde:
+        try:
+            fecha_desde = datetime.strptime(fecha_desde, '%Y-%m-%d')
+            queryset = queryset.filter(timestamp__gte=fecha_desde)
+        except ValueError:
+            pass
+
+    if fecha_hasta:
+        try:
+            fecha_hasta = datetime.strptime(fecha_hasta, '%Y-%m-%d')
+            # Add one day to include the entire end date
+            from datetime import timedelta
+            fecha_hasta = fecha_hasta + timedelta(days=1)
+            queryset = queryset.filter(timestamp__lt=fecha_hasta)
+        except ValueError:
+            pass
+
+    # Create CSV response with UTF-8 BOM for Excel compatibility
+    response = HttpResponse(content_type='text/csv; charset=utf-8')
+    response['Content-Disposition'] = 'attachment; filename="reporte_auditoria.csv"'
+    # Add UTF-8 BOM for proper Excel display
+    response.write('\ufeff')
+
+    writer = csv.writer(response)
+    # Write header
+    writer.writerow([
+        'ID', 'Fecha/Hora', 'Tipo Actividad', 'Descripción', 'Usuario',
+        'Tipo Contenido', 'ID Objeto', 'Datos Anteriores', 'Datos Nuevos'
+    ])
+
+    # Write data
+    for log in queryset:
+        # Format old_data and new_data as JSON strings
+        old_data_str = json.dumps(log.old_data, ensure_ascii=False) if log.old_data else ''
+        new_data_str = json.dumps(log.new_data, ensure_ascii=False) if log.new_data else ''
+
+        writer.writerow([
+            log.id,
+            log.timestamp.isoformat(),
+            log.activity_type,
+            log.description,
+            log.user.username if log.user else '',
+            log.content_type.name if log.content_type else '',
+            log.object_id,
+            old_data_str,
+            new_data_str
+        ])
+
+    return response

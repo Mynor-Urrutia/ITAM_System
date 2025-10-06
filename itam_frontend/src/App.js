@@ -1,6 +1,6 @@
 // C:\Proyectos\ITAM_System\itam_frontend\src\App.js
 
-import React from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastContainer } from 'react-toastify';
@@ -25,16 +25,19 @@ import MarcasPage from './pages/masterdata/MarcasPage'; // ¡NUEVO!
 import ModelosActivoPage from './pages/masterdata/ModelosActivoPage'; // Asegúrate de que el nombre coincida
 import ProveedoresPage from './pages/masterdata/ProveedoresPage'; // ¡NUEVO!
 import ActivosPage from './pages/assets/ActivosPage'; // ¡NUEVO!
+import AssignmentPage from './pages/assets/AssignmentPage'; // ¡NUEVO!
 import MaintenancePage from './pages/assets/MaintenancePage'; // ¡NUEVO!
 import AuditLogsPage from './pages/masterdata/AuditLogsPage'; // ¡NUEVO!
 import UserProfile from './pages/UserProfile'; // ¡NUEVO!
 import EmployeesPage from './pages/employees/EmployeesPage'; // ¡NUEVO!
+import ReportsPage from './pages/ReportsPage'; // ¡NUEVO!
 
 
 
 // Este componente AppContent usará el AuthContext
 const AppContent = () => {
     const { isAuthenticated, loading } = useAuth();
+    const [sidebarOpen, setSidebarOpen] = useState(false);
 
     if (loading) {
         return <div className="flex justify-center items-center h-screen text-2xl">Cargando...</div>;
@@ -44,10 +47,10 @@ const AppContent = () => {
         <>
             {isAuthenticated ? (
                 <div className="flex min-h-screen bg-gray-100">
-                    <Sidebar />
-                    <div className="flex-1 flex flex-col overflow-hidden">
-                        <Navbar />
-                        <main className="flex-1 overflow-x-hidden overflow-y-auto p-6">
+                    <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+                    <div className="flex-1 flex flex-col overflow-hidden md:ml-0">
+                        <Navbar onMenuClick={() => setSidebarOpen(true)} />
+                        <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-6">
                             <Routes>
                                 <Route path="/home" element={<Home />} />
                                 <Route path="/profile" element={<UserProfile />} />
@@ -143,6 +146,14 @@ const AppContent = () => {
                                     }
                                 />
                                 <Route
+                                    path="/assets/assignments"
+                                    element={
+                                        <PrivateRoute requiredPermissions={['assets.view_assignment']}>
+                                            <AssignmentPage />
+                                        </PrivateRoute>
+                                    }
+                                />
+                                <Route
                                     path="/masterdata/audit-logs"
                                     element={
                                         <PrivateRoute requiredPermissions={['masterdata.view_auditlog']}>
@@ -165,6 +176,16 @@ const AppContent = () => {
                                     element={
                                         <PrivateRoute requiredPermissions={['assets.view_mantenimiento']}>
                                             <MaintenancePage />
+                                        </PrivateRoute>
+                                    }
+                                />
+
+                                {/* Rutas de Reportes */}
+                                <Route
+                                    path="/reports"
+                                    element={
+                                        <PrivateRoute requiredPermissions={['assets.view_activo', 'assets.view_assignment', 'masterdata.view_auditlog']}>
+                                            <ReportsPage />
                                         </PrivateRoute>
                                     }
                                 />

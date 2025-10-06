@@ -209,6 +209,9 @@ class AuditLog(models.Model):
         ('UPDATE', 'Update'),
         ('DELETE', 'Delete'),
         ('LOGIN', 'Login'),
+        ('RETIRE', 'Retire'),
+        ('REACTIVATE', 'Reactivate'),
+        ('RETURN', 'Return'),
     ]
 
     timestamp = models.DateTimeField(auto_now_add=True)

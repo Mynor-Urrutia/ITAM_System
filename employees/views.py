@@ -29,6 +29,13 @@ class EmployeeViewSet(viewsets.ModelViewSet):
     ordering_fields = ['employee_number', 'first_name', 'last_name', 'start_date', 'department__name', 'area__name', 'region__name', 'finca__name']
     ordering = ['employee_number']  # Default ordering
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        available_for_user = self.request.query_params.get('available_for_user', None)
+        if available_for_user == 'true':
+            queryset = queryset.filter(user_account__isnull=True)
+        return queryset
+
     def get_parsers(self):
         if getattr(self, 'action', None) in ['create', 'update', 'partial_update']:
             return [parsers.MultiPartParser(), parsers.FormParser()]

@@ -37,18 +37,18 @@ const Pagination = ({ currentPage, totalPages, pageSize, pageSizeOptions, onPage
     };
 
     return (
-        <div className="flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200 sm:px-6">
+        <div className="flex flex-col sm:flex-row items-center justify-between px-2 py-2 sm:px-4 sm:py-3 bg-white border-t border-gray-200 sm:px-6 space-y-2 sm:space-y-0">
             {/* Page size selector */}
             {!hidePageSize && (
-                <div className="flex items-center">
-                    <label htmlFor="page-size" className="mr-2 text-sm text-gray-700">
+                <div className="flex items-center text-xs sm:text-sm">
+                    <label htmlFor="page-size" className="mr-1 sm:mr-2 text-gray-700">
                         Mostrar:
                     </label>
                     <select
                         id="page-size"
                         value={pageSize}
                         onChange={(e) => onPageSizeChange(parseInt(e.target.value))}
-                        className="px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="px-1 py-1 sm:px-2 text-xs sm:text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                         {pageSizeOptions.map(size => (
                             <option key={size} value={size}>
@@ -56,7 +56,7 @@ const Pagination = ({ currentPage, totalPages, pageSize, pageSizeOptions, onPage
                             </option>
                         ))}
                     </select>
-                    <span className="ml-2 text-sm text-gray-700">registros por página</span>
+                    <span className="ml-1 sm:ml-2 text-gray-700">por página</span>
                 </div>
             )}
 
@@ -65,19 +65,20 @@ const Pagination = ({ currentPage, totalPages, pageSize, pageSizeOptions, onPage
                 <button
                     onClick={() => onPageChange(currentPage - 1)}
                     disabled={currentPage === 1}
-                    className="px-3 py-1 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-l hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-2 py-1 sm:px-3 text-xs sm:text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-l hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    Anterior
+                    <span className="hidden sm:inline">Anterior</span>
+                    <span className="sm:hidden">◀</span>
                 </button>
 
                 {getPageNumbers().map((page, index) => (
                     <React.Fragment key={index}>
                         {page === '...' ? (
-                            <span className="px-3 py-1 text-sm text-gray-500">...</span>
+                            <span className="px-2 py-1 sm:px-3 text-xs sm:text-sm text-gray-500">...</span>
                         ) : (
                             <button
                                 onClick={() => onPageChange(page)}
-                                className={`px-3 py-1 text-sm font-medium border ${
+                                className={`px-2 py-1 sm:px-3 text-xs sm:text-sm font-medium border ${
                                     page === currentPage
                                         ? 'text-blue-600 bg-blue-50 border-blue-500'
                                         : 'text-gray-500 bg-white border-gray-300 hover:bg-gray-50'
@@ -92,15 +93,16 @@ const Pagination = ({ currentPage, totalPages, pageSize, pageSizeOptions, onPage
                 <button
                     onClick={() => onPageChange(currentPage + 1)}
                     disabled={currentPage === totalPages}
-                    className="px-3 py-1 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-r hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-2 py-1 sm:px-3 text-xs sm:text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-r hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    Siguiente
+                    <span className="hidden sm:inline">Siguiente</span>
+                    <span className="sm:hidden">▶</span>
                 </button>
             </div>
 
             {/* Page info */}
-            <div className="text-sm text-gray-700">
-                Página {currentPage} de {totalPages}
+            <div className="text-xs sm:text-sm text-gray-700">
+                {currentPage} de {totalPages}
             </div>
         </div>
     );

@@ -152,20 +152,20 @@ const EmployeeDetailModal = ({ show, onClose, employee, onEmployeeUpdate }) => {
                     {employee.document && (
                         <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
                             <h3 className="text-lg font-semibold text-gray-800 mb-3">📄 Documento</h3>
-                            <div className="flex items-center justify-between">
+                            <div className="space-y-2">
                                 <div>
                                     <span className="text-sm font-medium text-gray-600">Archivo PDF:</span>
-                                    <p className="text-sm text-gray-900">{employee.document.split('/').pop()}</p>
+                                    <p className="text-sm text-gray-900 break-all">{employee.document.split('/').pop()}</p>
                                 </div>
                                 <a
                                     href={employee.document}
                                     download
-                                    className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                    className="inline-flex items-center px-2 py-1 border border-transparent text-xs leading-3 font-medium rounded text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-blue-500"
                                 >
-                                    <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                    <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                                         <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
                                     </svg>
-                                    Descargar PDF
+                                    Descargar
                                 </a>
                             </div>
                         </div>

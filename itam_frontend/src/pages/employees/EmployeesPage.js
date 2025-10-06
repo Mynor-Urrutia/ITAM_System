@@ -8,7 +8,7 @@ import Pagination from '../../components/Pagination';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faEdit, faTrash, faEye, faSort, faSortUp, faSortDown } from '@fortawesome/free-solid-svg-icons';
+import { faPlus, faEdit, faTrash, faEye, faSort, faSortUp, faSortDown, faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons';
 
 function EmployeesPage() {
     const [employees, setEmployees] = useState([]);
@@ -23,6 +23,7 @@ function EmployeesPage() {
     const [searchText, setSearchText] = useState('');
     const [sortField, setSortField] = useState('employee_number');
     const [sortDirection, setSortDirection] = useState('asc');
+    const [expandedCards, setExpandedCards] = useState(new Set());
     const { hasPermission } = useAuth();
 
     const canAddEmployee = hasPermission('employees.add_employee');
@@ -126,9 +127,48 @@ function EmployeesPage() {
         return sortDirection === 'asc' ? faSortUp : faSortDown;
     };
 
+    const toggleCardExpansion = (employeeId) => {
+        const newExpanded = new Set(expandedCards);
+        if (newExpanded.has(employeeId)) {
+            newExpanded.delete(employeeId);
+        } else {
+            newExpanded.add(employeeId);
+        }
+        setExpandedCards(newExpanded);
+    };
+
     return (
-        <div className="p-4">
-            <div className="mb-6">
+        <div className="p-2 sm:p-4 relative min-h-screen">
+            {/* Mobile Layout */}
+            <div className="block sm:hidden">
+                {/* Title */}
+                <div className="mb-4">
+                    <h1 className="text-2xl font-bold text-gray-800 text-center">Gestión de Empleados</h1>
+                </div>
+
+                {/* Search Box for Mobile */}
+                <div className="mb-4">
+                    <div className="relative">
+                        <label htmlFor="search" className="sr-only">Buscar Empleados</label>
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </div>
+                        <input
+                            type="text"
+                            id="search"
+                            value={searchText}
+                            onChange={(e) => setSearchText(e.target.value)}
+                            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                            placeholder="Buscar por número, nombre..."
+                        />
+                    </div>
+                </div>
+            </div>
+
+            {/* Desktop Layout */}
+            <div className="hidden sm:block mb-6">
                 <div className="flex justify-between items-center">
                     <h1 className="text-3xl font-bold text-gray-800">
                         Gestión de Empleados
@@ -164,8 +204,98 @@ function EmployeesPage() {
                 </div>
             </div>
 
-            <div className="bg-white shadow overflow-hidden rounded-lg">
-                <table className="min-w-full divide-y divide-gray-200">
+            {/* Mobile Card View */}
+            <div className="block sm:hidden space-y-4">
+                {employees.length === 0 ? (
+                    <p className="text-center text-gray-500 py-4">No hay empleados disponibles.</p>
+                ) : (
+                    employees.map((employee) => {
+                        const isExpanded = expandedCards.has(employee.id);
+                        return (
+                            <div key={employee.id} className="bg-white rounded-lg shadow border">
+                                {/* Header - Always visible */}
+                                <div className="p-4">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <div>
+                                            <h3 className="font-bold text-lg text-gray-900">{employee.first_name} {employee.last_name}</h3>
+                                            <p className="text-sm text-gray-600">
+                                                <span className="font-medium">No. Empleado:</span> {employee.employee_number}
+                                            </p>
+                                        </div>
+                                        <div className="flex flex-col items-end space-y-2">
+                                            <button
+                                                onClick={() => toggleCardExpansion(employee.id)}
+                                                className="text-gray-500 hover:text-gray-700 p-1"
+                                                title={isExpanded ? "Contraer" : "Expandir"}
+                                            >
+                                                <FontAwesomeIcon
+                                                    icon={isExpanded ? faChevronUp : faChevronDown}
+                                                    className="text-sm"
+                                                />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Expandable Content */}
+                                {isExpanded && (
+                                    <div className="px-4 pb-4 border-t border-gray-200">
+                                        <div className="space-y-2 mt-3">
+                                            <p className="text-sm text-gray-600">
+                                                <span className="font-medium">Departamento/Área:</span> {employee.department_name} / {employee.area_name}
+                                            </p>
+                                            <p className="text-sm text-gray-600">
+                                                <span className="font-medium">Región/Finca:</span> {employee.region_name} / {employee.finca_name}
+                                            </p>
+                                            <p className="text-sm text-gray-600">
+                                                <span className="font-medium">Inicio de Labores:</span> {employee.start_date ? new Date(employee.start_date).toLocaleDateString('es-ES') : 'N/A'}
+                                            </p>
+                                            <p className="text-sm text-gray-600">
+                                                <span className="font-medium">Jefe Inmediato:</span> {employee.supervisor_name || 'N/A'}
+                                            </p>
+                                        </div>
+                                        <div className="flex flex-wrap gap-2 mt-4">
+                                            <button
+                                                onClick={() => handleViewClick(employee)}
+                                                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm"
+                                                title="Ver Detalles"
+                                            >
+                                                <FontAwesomeIcon icon={faEye} className="mr-1" />
+                                                Ver
+                                            </button>
+                                            {canChangeEmployee && (
+                                                <button
+                                                    onClick={() => handleEditClick(employee)}
+                                                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded text-sm"
+                                                    title="Editar"
+                                                >
+                                                    <FontAwesomeIcon icon={faEdit} className="mr-1" />
+                                                    Editar
+                                                </button>
+                                            )}
+                                            {canDeleteEmployee && (
+                                                <button
+                                                    onClick={() => handleDeleteClick(employee.id)}
+                                                    className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm"
+                                                    title="Eliminar"
+                                                >
+                                                    <FontAwesomeIcon icon={faTrash} className="mr-1" />
+                                                    Eliminar
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })
+                )}
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden sm:block bg-white shadow overflow-hidden rounded-lg">
+                <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                         <tr>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" onClick={() => handleSort('employee_number')}>
@@ -294,6 +424,7 @@ function EmployeesPage() {
                     </tbody>
                 </table>
             </div>
+        </div>
 
             {totalPages > 0 && (
                 <Pagination
@@ -328,6 +459,19 @@ function EmployeesPage() {
                     }
                 }}
             />
+
+            {/* Mobile Floating Action Button */}
+            {canAddEmployee && (
+                <div className="block sm:hidden fixed bottom-6 right-6 z-10">
+                    <button
+                        onClick={handleAddClick}
+                        className="bg-green-600 hover:bg-green-700 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg transition-all duration-200 hover:scale-110"
+                        title="Crear Nuevo Empleado"
+                    >
+                        <FontAwesomeIcon icon={faPlus} className="text-xl" />
+                    </button>
+                </div>
+            )}
 
         </div>
     );

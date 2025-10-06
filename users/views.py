@@ -37,6 +37,11 @@ def serialize_model_data(instance):
         exclude_fields.append('password')  # Don't log passwords
 
     data = model_to_dict(instance, exclude=exclude_fields)
+
+    # Replace foreign key IDs with names for better readability in audit logs
+    if hasattr(instance, 'employee') and instance.employee:
+        data['employee'] = str(instance.employee)
+
     return json.loads(json.dumps(data, cls=DjangoJSONEncoder))
 
 def get_changed_fields(old_data, new_data):

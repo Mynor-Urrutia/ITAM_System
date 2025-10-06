@@ -99,6 +99,24 @@ class Activo(models.Model):
         null=True
     )
 
+    # Asset specifications (can override modelo defaults)
+    procesador = models.CharField(max_length=150, blank=True, null=True, verbose_name="Procesador")
+    ram = models.IntegerField(verbose_name="Memoria RAM (GB)", blank=True, null=True)
+    almacenamiento = models.CharField(max_length=100, blank=True, null=True, verbose_name="Almacenamiento")
+    tarjeta_grafica = models.CharField(max_length=150, blank=True, null=True, verbose_name="Tarjeta Gráfica")
+    wifi = models.BooleanField(blank=True, null=True, verbose_name="WIFI")
+    ethernet = models.BooleanField(blank=True, null=True, verbose_name="Ethernet")
+    puertos_ethernet = models.CharField(max_length=50, blank=True, null=True, verbose_name="Puertos Ethernet")
+    puertos_sfp = models.CharField(max_length=50, blank=True, null=True, verbose_name="Puertos SFP")
+    puerto_consola = models.BooleanField(blank=True, null=True, verbose_name="Puerto Consola")
+    puertos_poe = models.CharField(max_length=50, blank=True, null=True, verbose_name="Puertos PoE")
+    alimentacion = models.CharField(max_length=50, blank=True, null=True, verbose_name="Alimentación")
+    administrable = models.BooleanField(blank=True, null=True, verbose_name="Administrable")
+    tamano = models.CharField(max_length=100, blank=True, null=True, verbose_name="Tamaño")
+    color = models.CharField(max_length=50, blank=True, null=True, verbose_name="Color")
+    conectores = models.TextField(blank=True, null=True, verbose_name="Conectores")
+    cables = models.TextField(blank=True, null=True, verbose_name="Cables")
+
     # Estado del activo
     estado = models.CharField(
         max_length=20,
@@ -259,3 +277,72 @@ class Maintenance(models.Model):
         self.activo.tecnico_mantenimiento = self.technician
         self.activo.ultimo_mantenimiento_hallazgos = self.findings
         self.activo.save(update_fields=['ultimo_mantenimiento', 'proximo_mantenimiento', 'tecnico_mantenimiento', 'ultimo_mantenimiento_hallazgos'])
+
+
+class Assignment(models.Model):
+    # Foreign Keys
+    activo = models.ForeignKey(
+        Activo,
+        on_delete=models.PROTECT,
+        related_name='assignments',
+        verbose_name="Activo"
+    )
+    employee = models.ForeignKey(
+        'employees.Employee',
+        on_delete=models.PROTECT,
+        related_name='assignments',
+        verbose_name="Empleado"
+    )
+
+    # Assignment dates
+    assigned_date = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Fecha de Asignación"
+    )
+    returned_date = models.DateTimeField(
+        verbose_name="Fecha de Devolución",
+        blank=True,
+        null=True
+    )
+
+    # Users who performed actions
+    assigned_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name='assignments_made',
+        verbose_name="Asignado por"
+    )
+    returned_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name='assignments_returned',
+        verbose_name="Devuelto por",
+        blank=True,
+        null=True
+    )
+
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Asignación"
+        verbose_name_plural = "Asignaciones"
+        ordering = ['-assigned_date']
+        # Ensure no duplicate active assignments for same activo
+        unique_together = ['activo', 'employee', 'assigned_date']
+
+    def __str__(self):
+        return f"{self.activo.hostname} asignado a {self.employee.first_name} {self.employee.last_name}"
+
+    @property
+    def is_active(self):
+        """Check if assignment is currently active (not returned)"""
+        return self.returned_date is None
+
+    def return_assignment(self, returned_by_user, return_date=None):
+        """Mark assignment as returned"""
+        from django.utils import timezone
+        self.returned_date = return_date or timezone.now()
+        self.returned_by = returned_by_user
+        self.save()

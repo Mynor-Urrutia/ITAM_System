@@ -15,7 +15,9 @@ import {
     faPlus,
     faEye,
     faEdit,
-    faKey
+    faKey,
+    faChevronDown,
+    faChevronUp
 } from '@fortawesome/free-solid-svg-icons';
 
 function UserCrud() {
@@ -39,6 +41,8 @@ function UserCrud() {
     const [currentUser, setCurrentUser] = useState(null);
 
     const { user: loggedInUser, fetchUserDetails, hasPermission } = useAuth();
+
+    const [expandedCards, setExpandedCards] = useState(new Set());
 
     const canAddUser = hasPermission('users.add_customuser');
     const canChangeUser = hasPermission('users.change_customuser');
@@ -168,27 +172,150 @@ function UserCrud() {
     };
 
 
+    const toggleCardExpansion = (userId) => {
+        const newExpanded = new Set(expandedCards);
+        if (newExpanded.has(userId)) {
+            newExpanded.delete(userId);
+        } else {
+            newExpanded.add(userId);
+        }
+        setExpandedCards(newExpanded);
+    };
+
     if (loading) return <div className="text-center mt-8">Cargando usuarios...</div>;
     if (error) return <div className="text-center mt-8 text-red-500">{error}</div>;
 
     return (
-        <div className="p-4">
-            <h1 className="text-3xl font-bold mb-6 text-gray-800">Gestión de Usuarios</h1>
+        <div className="p-2 sm:p-4 relative min-h-screen">
+            {/* Mobile Layout */}
+            <div className="block sm:hidden">
+                {/* Title */}
+                <div className="mb-4">
+                    <h1 className="text-2xl font-bold text-gray-800 text-center">Gestión de Usuarios</h1>
+                </div>
+            </div>
 
-            <div className="flex justify-end mb-4">
-                {canAddUser && (
-                    <button
-                        onClick={handleCreateUserClick}
-                        className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-                    >
-                        <FontAwesomeIcon icon={faPlus} className="mr-2" />
-                        Crear Nuevo Usuario
-                    </button>
+            {/* Desktop Layout */}
+            <div className="hidden sm:block mb-6">
+                <div className="flex justify-between items-center">
+                    <h1 className="text-3xl font-bold text-gray-800">
+                        Gestión de Usuarios
+                    </h1>
+                    <div className="flex items-center space-x-4">
+                        {canAddUser && (
+                            <button
+                                onClick={handleCreateUserClick}
+                                className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+                            >
+                                <FontAwesomeIcon icon={faPlus} className="mr-2" />
+                                Crear Nuevo Usuario
+                            </button>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="block sm:hidden space-y-4">
+                {users.length === 0 ? (
+                    <p className="text-center text-gray-500 py-4">No hay usuarios disponibles.</p>
+                ) : (
+                    users.map((user) => {
+                        const isExpanded = expandedCards.has(user.id);
+                        return (
+                            <div key={user.id} className="bg-white rounded-lg shadow border">
+                                {/* Header - Always visible */}
+                                <div className="p-4">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <div>
+                                            <h3 className="font-bold text-lg text-gray-900">{user.username}</h3>
+                                            <p className="text-sm text-gray-600">
+                                                <span className="font-medium">Email:</span> {user.email}
+                                            </p>
+                                        </div>
+                                        <div className="flex flex-col items-end space-y-2">
+                                            <button
+                                                onClick={() => toggleCardExpansion(user.id)}
+                                                className="text-gray-500 hover:text-gray-700 p-1"
+                                                title={isExpanded ? "Contraer" : "Expandir"}
+                                            >
+                                                <FontAwesomeIcon
+                                                    icon={isExpanded ? faChevronUp : faChevronDown}
+                                                    className="text-sm"
+                                                />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Expandable Content */}
+                                {isExpanded && (
+                                    <div className="px-4 pb-4 border-t border-gray-200">
+                                        <div className="space-y-2 mt-3">
+                                            <p className="text-sm text-gray-600">
+                                                <span className="font-medium">Nombre:</span> {user.first_name} {user.last_name}
+                                            </p>
+                                            <p className="text-sm text-gray-600">
+                                                <span className="font-medium">Puesto:</span> {user.puesto || 'N/A'}
+                                            </p>
+                                            <p className="text-sm text-gray-600">
+                                                <span className="font-medium">Departamento:</span> {user.departamento_name || 'N/A'}
+                                            </p>
+                                            <p className="text-sm text-gray-600">
+                                                <span className="font-medium">Región:</span> {user.region_name || 'N/A'}
+                                            </p>
+                                            <p className="text-sm text-gray-600">
+                                                <span className="font-medium">Empleado:</span> {user.employee_name || 'N/A'}
+                                            </p>
+                                            <p className="text-sm text-gray-600">
+                                                <span className="font-medium">Roles:</span> {user.role_names && user.role_names.length > 0 ? user.role_names.join(', ') : 'Sin Roles'}
+                                            </p>
+                                            <p className="text-sm text-gray-600">
+                                                <span className="font-medium">Estado:</span> {user.status}
+                                            </p>
+                                        </div>
+                                        <div className="flex flex-wrap gap-2 mt-4">
+                                            <button
+                                                onClick={() => handleViewUserClick(user)}
+                                                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm"
+                                                title="Ver Detalles"
+                                            >
+                                                <FontAwesomeIcon icon={faEye} className="mr-1" />
+                                                Ver
+                                            </button>
+                                            {canChangeUser && (
+                                                <>
+                                                    <button
+                                                        onClick={() => handleEditUserClick(user)}
+                                                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded text-sm"
+                                                        title="Editar Usuario"
+                                                    >
+                                                        <FontAwesomeIcon icon={faEdit} className="mr-1" />
+                                                        Editar
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleChangePasswordClick(user)}
+                                                        className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded text-sm"
+                                                        title="Cambiar Contraseña"
+                                                    >
+                                                        <FontAwesomeIcon icon={faKey} className="mr-1" />
+                                                        Cambiar Contraseña
+                                                    </button>
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })
                 )}
             </div>
 
-            <div className="bg-white shadow overflow-hidden rounded-lg">
-                <table className="min-w-full divide-y divide-gray-200">
+            {/* Desktop Table View */}
+            <div className="hidden sm:block bg-white shadow overflow-hidden rounded-lg">
+                <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                         <tr>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -210,6 +337,9 @@ function UserCrud() {
                                 Región
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Empleado
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Roles
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -223,7 +353,7 @@ function UserCrud() {
                     <tbody className="bg-white divide-y divide-gray-200">
                         {users.length === 0 ? (
                             <tr>
-                                <td colSpan={(canChangeUser) ? 9 : 8} className="px-6 py-4 text-center text-gray-500">
+                                <td colSpan={(canChangeUser) ? 10 : 9} className="px-6 py-4 text-center text-gray-500">
                                     No hay usuarios disponibles.
                                 </td>
                             </tr>
@@ -247,6 +377,9 @@ function UserCrud() {
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                         {user.region_name || 'N/A'}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        {user.employee_name || 'N/A'}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                         {user.role_names && user.role_names.length > 0 ? user.role_names.join(', ') : 'Sin Roles'}
@@ -300,6 +433,7 @@ function UserCrud() {
                         )}
                     </tbody>
                 </table>
+                </div>
             </div>
 
             {/* Pagination Component */}
@@ -315,11 +449,11 @@ function UserCrud() {
             )}
 
             {/* Modales */}
-            <Modal show={showCreateModal} onClose={closeModal} title="Crear Nuevo Usuario">
+            <Modal show={showCreateModal} onClose={closeModal} title="Crear Nuevo Usuario" size="xl">
                 <UserForm onClose={closeModal} onSubmit={handleCreateUser} roles={roles} />
             </Modal>
 
-            <Modal show={showEditModal} onClose={closeModal} title="Editar Usuario">
+            <Modal show={showEditModal} onClose={closeModal} title="Editar Usuario" size="xl">
                 <UserForm user={currentUser} onClose={closeModal} onSubmit={handleUpdateUser} roles={roles} />
             </Modal>
 
@@ -330,6 +464,19 @@ function UserCrud() {
             <Modal show={showChangePasswordModal} onClose={closeModal} title={`Cambiar Contraseña para ${currentUser?.username || ''}`}>
                 {currentUser && <ChangePasswordForm userId={currentUser.id} onClose={closeModal} />}
             </Modal>
+
+            {/* Mobile Floating Action Button */}
+            {canAddUser && (
+                <div className="block sm:hidden fixed bottom-6 right-6 z-10">
+                    <button
+                        onClick={handleCreateUserClick}
+                        className="bg-green-600 hover:bg-green-700 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg transition-all duration-200 hover:scale-110"
+                        title="Crear Nuevo Usuario"
+                    >
+                        <FontAwesomeIcon icon={faPlus} className="text-xl" />
+                    </button>
+                </div>
+            )}
         </div>
     );
 }

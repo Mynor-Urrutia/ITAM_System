@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 // IMPORTANTE: Se asume que '../api' contiene las funciones de la API
 // Asegúrate de que tu archivo api.js exporte getRegions y getDepartamentos
-import { getRegions, getDepartamentos } from '../api';
+import { getRegions, getDepartamentos, getEmployees } from '../api';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext'; // Para obtener el usuario logueado
+import EmployeeSearchModal from './EmployeeSearchModal';
+import api from '../api';
 
 // Opciones para los campos de selección estáticos
 const PUESTO_CHOICES = [
@@ -28,6 +30,7 @@ function UserForm({ user, onClose, onSubmit, roles }) {
         puesto: '',
         departamento: null, // ID del departamento (debe ser null para FK opcionales en el backend)
         region: null,       // ID de la región (debe ser null para FK opcionales en el backend)
+        employee: null,     // ID del empleado (debe ser null para FK opcionales en el backend)
         status: 'Activo',
         assigned_role_ids: [], // Array de IDs de grupos/roles
         is_staff: false,
@@ -37,24 +40,31 @@ function UserForm({ user, onClose, onSubmit, roles }) {
     const [formData, setFormData] = useState(initialFormData);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-    
+
     // ESTADO PARA DATOS MAESTROS (NUEVO)
     const [regions, setRegions] = useState([]);
     const [departamentos, setDepartamentos] = useState([]);
+    const [employees, setEmployees] = useState([]);
+
+    // Estado para el modal de búsqueda de empleados
+    const [showEmployeeModal, setShowEmployeeModal] = useState(false);
+    const [employeeName, setEmployeeName] = useState('');
 
 
     useEffect(() => {
         // Función para cargar los datos maestros
         const fetchMasterData = async () => {
             try {
-                // Usamos Promise.all para cargar regiones y departamentos en paralelo
-                const [regionsResponse, departamentosResponse] = await Promise.all([
+                // Usamos Promise.all para cargar regiones, departamentos y empleados en paralelo
+                const [regionsResponse, departamentosResponse, employeesResponse] = await Promise.all([
                     getRegions(),
-                    getDepartamentos()
+                    getDepartamentos(),
+                    getEmployees()
                 ]);
                 // La data debe ser un array de objetos con { id, name }
-                setRegions(regionsResponse.data); 
-                setDepartamentos(departamentosResponse.data);
+                setRegions(regionsResponse.data.results || regionsResponse.data);
+                setDepartamentos(departamentosResponse.data.results || departamentosResponse.data);
+                setEmployees(employeesResponse.data.results || employeesResponse.data);
             } catch (err) {
                 console.error("Error al cargar datos maestros:", err);
                 toast.error("Error al cargar las listas de Regiones y Departamentos.");
@@ -62,7 +72,27 @@ function UserForm({ user, onClose, onSubmit, roles }) {
         };
 
         fetchMasterData();
+    }, []);
 
+    const loadEmployeeName = async (employeeId) => {
+        try {
+            const response = await api.get(`employees/employees/${employeeId}/`);
+            const employee = response.data;
+            if (employee) {
+                setEmployeeName(`${employee.employee_number} - ${employee.first_name} ${employee.last_name}`);
+            }
+        } catch (error) {
+            console.error('Error loading employee name:', error);
+            setEmployeeName('Error al cargar nombre');
+        }
+    };
+
+    const handleEmployeeSelect = (employee) => {
+        setFormData(prev => ({ ...prev, employee: employee.id }));
+        setEmployeeName(`${employee.employee_number} - ${employee.first_name} ${employee.last_name}`);
+    };
+
+    useEffect(() => {
         if (isEditing) {
             // Lógica existente para precargar datos de usuario
             // Asegúrate de que los campos 'departamento' y 'region' sean el ID o null
@@ -77,12 +107,21 @@ function UserForm({ user, onClose, onSubmit, roles }) {
                 // IMPORTANTE: Asignar el ID. Si el valor es falsy (null, 0, undefined), se usa null.
                 departamento: user.departamento || null, // user.departamento es el ID
                 region: user.region || null,           // user.region es el ID
+                employee: user.employee || null,       // user.employee es el ID
                 status: user.status || 'Activo',
                 // Los roles se manejan como un array de strings (IDs)
                 assigned_role_ids: (user.role_ids || []).map(id => id.toString()),
                 is_staff: user.is_staff || false,
                 is_superuser: user.is_superuser || false,
             });
+            // Load employee name if exists
+            if (user.employee) {
+                loadEmployeeName(user.employee);
+            } else {
+                setEmployeeName('');
+            }
+        } else {
+            setEmployeeName('');
         }
     }, [user, isEditing]);
 
@@ -92,7 +131,7 @@ function UserForm({ user, onClose, onSubmit, roles }) {
         let newValue = value;
         
         // Convertir el valor de los SELECTs a entero (ID) o null si se selecciona la opción vacía
-        if (name === 'departamento' || name === 'region') {
+        if (name === 'departamento' || name === 'region' || name === 'employee') {
             // Si el valor del select es la cadena vacía (''), lo convertimos a null
             // ya que representa 'Sin asignar' y el backend espera null para FK opcionales.
             // De lo contrario, lo convertimos a entero.
@@ -151,202 +190,218 @@ function UserForm({ user, onClose, onSubmit, roles }) {
     };
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Campos básicos (no modificados) */}
+        <>
+            <form onSubmit={handleSubmit} className="space-y-8 max-h-[600px] overflow-y-auto">
+            {/* Información Personal */}
             <div>
-                <label htmlFor="username" className="block text-sm font-medium text-gray-700">Nombre de Usuario</label>
-                <input
-                    type="text"
-                    id="username"
-                    name="username"
-                    value={formData.username}
-                    onChange={handleChange}
-                    required
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-            </div>
-
-            <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
-                <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    required
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-            </div>
-
-            {/* Contraseña (solo requerida en creación o si se cambia en edición) */}
-            <div className={isEditing ? '' : 'mb-4'}>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700">{isEditing ? 'Contraseña (dejar vacío para no cambiar)' : 'Contraseña'}</label>
-                <input
-                    type="password"
-                    id="password"
-                    name="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    required={!isEditing}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                    <label htmlFor="first_name" className="block text-sm font-medium text-gray-700">Nombre</label>
+                <h3 className="text-lg font-medium text-gray-900 mb-3">Información Personal</h3>
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label htmlFor="username" className="block text-sm font-medium text-gray-700">Nombre de Usuario *</label>
+                        <input
+                            type="text"
+                            id="username"
+                            name="username"
+                            value={formData.username}
+                            onChange={handleChange}
+                            required
+                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                    </div>
+                    <div>
+                        <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email *</label>
+                        <input
+                            type="email"
+                            id="email"
+                            name="email"
+                            value={formData.email}
+                            onChange={handleChange}
+                            required
+                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                    </div>
+                </div>
+                {/* Contraseña (solo requerida en creación o si se cambia en edición) */}
+                <div className="mt-4">
+                    <label htmlFor="password" className="block text-sm font-medium text-gray-700">{isEditing ? 'Contraseña (dejar vacío para no cambiar)' : 'Contraseña *'}</label>
                     <input
-                        type="text"
-                        id="first_name"
-                        name="first_name"
-                        value={formData.first_name}
+                        type="password"
+                        id="password"
+                        name="password"
+                        value={formData.password}
                         onChange={handleChange}
-                        required
+                        required={!isEditing}
                         className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                 </div>
-                <div>
-                    <label htmlFor="last_name" className="block text-sm font-medium text-gray-700">Apellido</label>
-                    <input
-                        type="text"
-                        id="last_name"
-                        name="last_name"
-                        value={formData.last_name}
-                        onChange={handleChange}
-                        required
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                </div>
-            </div>
-
-            {/* Campo Puesto (select estático) */}
-            <div>
-                <label htmlFor="puesto" className="block text-sm font-medium text-gray-700">Puesto</label>
-                <select
-                    id="puesto"
-                    name="puesto"
-                    value={formData.puesto}
-                    onChange={handleChange}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                    <option value="">-- Seleccionar Puesto --</option>
-                    {PUESTO_CHOICES.map(choice => (
-                        <option key={choice} value={choice}>{choice}</option>
-                    ))}
-                </select>
-            </div>
-
-            {/* -------------------------------------------------- */}
-            {/* 🆕 DEPARTAMENTO (CAMBIADO A SELECT DINÁMICO) */}
-            {/* -------------------------------------------------- */}
-            <div>
-                <label htmlFor="departamento" className="block text-sm font-medium text-gray-700">Departamento</label>
-                <select
-                    id="departamento"
-                    name="departamento"
-                    // Usa || '' para manejar null/undefined y que el select funcione con la opción vacía
-                    value={formData.departamento || ''} 
-                    onChange={handleChange}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                    <option value="">-- Sin Departamento --</option> 
-                    {departamentos.map(dpto => (
-                        <option key={dpto.id} value={dpto.id}>
-                            {dpto.name}
-                        </option>
-                    ))}
-                </select>
-            </div>
-
-            {/* -------------------------------------------------- */}
-            {/* 🆕 REGIÓN (CAMBIADO A SELECT DINÁMICO) */}
-            {/* -------------------------------------------------- */}
-            <div>
-                <label htmlFor="region" className="block text-sm font-medium text-gray-700">Región</label>
-                <select
-                    id="region"
-                    name="region"
-                    // Usa || '' para manejar null/undefined y que el select funcione con la opción vacía
-                    value={formData.region || ''} 
-                    onChange={handleChange}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                    <option value="">-- Sin Región --</option>
-                    {regions.map(region => (
-                        <option key={region.id} value={region.id}>
-                            {region.name}
-                        </option>
-                    ))}
-                </select>
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Asignar Roles */}
-                <div>
-                    <label htmlFor="assigned_role_ids" className="block text-sm font-medium text-gray-700">Roles</label>
-                    <select
-                        id="assigned_role_ids"
-                        name="assigned_role_ids"
-                        multiple
-                        value={formData.assigned_role_ids}
-                        onChange={handleChange}
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                        {roles.map(role => (
-                            <option key={role.id} value={role.id.toString()}>
-                                {role.name}
-                            </option>
-                        ))}
-                    </select>
-                    <p className="text-xs text-gray-500 mt-1">Mantén Ctrl (o Cmd) para seleccionar múltiples roles</p>
-                </div>
-
-                {/* Status (Select Estático) */}
-                <div>
-                    <label htmlFor="status" className="block text-sm font-medium text-gray-700">Estado</label>
-                    <select
-                        id="status"
-                        name="status"
-                        value={formData.status}
-                        onChange={handleChange}
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                        {STATUS_CHOICES.map(choice => (
-                            <option key={choice} value={choice}>{choice}</option>
-                        ))}
-                    </select>
-                </div>
-            </div>
-
-
-            {/* Checkboxes de Staff/Superuser (solo para Superusers logueados) */}
-            {loggedInUser?.is_superuser && (
-                <div className="flex space-x-6">
-                    <div className="flex items-center space-x-2">
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                    <div>
+                        <label htmlFor="first_name" className="block text-sm font-medium text-gray-700">Nombre *</label>
                         <input
-                            type="checkbox"
-                            name="is_staff"
-                            id="is_staff"
-                            checked={formData.is_staff}
+                            type="text"
+                            id="first_name"
+                            name="first_name"
+                            value={formData.first_name}
                             onChange={handleChange}
-                            className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                            required
+                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
                         />
-                        <label htmlFor="is_staff" className="block text-sm font-medium text-gray-700">Es Staff</label>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div>
+                        <label htmlFor="last_name" className="block text-sm font-medium text-gray-700">Apellido *</label>
                         <input
-                            type="checkbox"
-                            name="is_superuser"
-                            id="is_superuser"
-                            checked={formData.is_superuser}
+                            type="text"
+                            id="last_name"
+                            name="last_name"
+                            value={formData.last_name}
                             onChange={handleChange}
-                            className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                            required
+                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
                         />
-                        <label htmlFor="is_superuser" className="block text-sm font-medium text-gray-700">Es Superuser</label>
                     </div>
                 </div>
-            )}
+            </div>
+
+            {/* Información Organizacional */}
+            <div className="border-t pt-4">
+                <h3 className="text-lg font-medium text-gray-900 mb-3">Información Organizacional</h3>
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label htmlFor="puesto" className="block text-sm font-medium text-gray-700">Puesto</label>
+                        <select
+                            id="puesto"
+                            name="puesto"
+                            value={formData.puesto}
+                            onChange={handleChange}
+                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
+                        >
+                            <option value="">-- Seleccionar Puesto --</option>
+                            {PUESTO_CHOICES.map(choice => (
+                                <option key={choice} value={choice}>{choice}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div>
+                        <label htmlFor="departamento" className="block text-sm font-medium text-gray-700">Departamento</label>
+                        <select
+                            id="departamento"
+                            name="departamento"
+                            value={formData.departamento || ''}
+                            onChange={handleChange}
+                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
+                        >
+                            <option value="">-- Sin Departamento --</option>
+                            {departamentos.map(dpto => (
+                                <option key={dpto.id} value={dpto.id}>
+                                    {dpto.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div>
+                        <label htmlFor="region" className="block text-sm font-medium text-gray-700">Región</label>
+                        <select
+                            id="region"
+                            name="region"
+                            value={formData.region || ''}
+                            onChange={handleChange}
+                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
+                        >
+                            <option value="">-- Sin Región --</option>
+                            {regions.map(region => (
+                                <option key={region.id} value={region.id}>
+                                    {region.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div>
+                        <label htmlFor="employee" className="block text-sm font-medium text-gray-700">Empleado</label>
+                        <div className="flex space-x-2">
+                            <input
+                                type="text"
+                                value={employeeName}
+                                readOnly
+                                placeholder="Seleccione un empleado..."
+                                className="flex-1 block w-full rounded-md bg-gray-50 border-gray-400 shadow-md focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowEmployeeModal(true)}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                                Buscar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Roles y Estado */}
+            <div className="border-t pt-4">
+                <h3 className="text-lg font-medium text-gray-900 mb-3">Roles y Estado</h3>
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label htmlFor="assigned_role_ids" className="block text-sm font-medium text-gray-700">Roles</label>
+                        <select
+                            id="assigned_role_ids"
+                            name="assigned_role_ids"
+                            multiple
+                            value={formData.assigned_role_ids}
+                            onChange={handleChange}
+                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
+                        >
+                            {roles.map(role => (
+                                <option key={role.id} value={role.id.toString()}>
+                                    {role.name}
+                                </option>
+                            ))}
+                        </select>
+                        <p className="text-xs text-gray-500 mt-1">Mantén Ctrl (o Cmd) para seleccionar múltiples roles</p>
+                    </div>
+                    <div>
+                        <label htmlFor="status" className="block text-sm font-medium text-gray-700">Estado</label>
+                        <select
+                            id="status"
+                            name="status"
+                            value={formData.status}
+                            onChange={handleChange}
+                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
+                        >
+                            {STATUS_CHOICES.map(choice => (
+                                <option key={choice} value={choice}>{choice}</option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+                {/* Checkboxes de Staff/Superuser (solo para Superusers logueados) */}
+                {loggedInUser?.is_superuser && (
+                    <div className="flex space-x-6 mt-4">
+                        <div className="flex items-center space-x-2">
+                            <input
+                                type="checkbox"
+                                name="is_staff"
+                                id="is_staff"
+                                checked={formData.is_staff}
+                                onChange={handleChange}
+                                className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                            />
+                            <label htmlFor="is_staff" className="block text-sm font-medium text-gray-700">Es Staff</label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            <input
+                                type="checkbox"
+                                name="is_superuser"
+                                id="is_superuser"
+                                checked={formData.is_superuser}
+                                onChange={handleChange}
+                                className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                            />
+                            <label htmlFor="is_superuser" className="block text-sm font-medium text-gray-700">Es Superuser</label>
+                        </div>
+                    </div>
+                )}
+            </div>
 
             {/* Mensaje de Error */}
             {error && (
@@ -356,7 +411,7 @@ function UserForm({ user, onClose, onSubmit, roles }) {
             )}
 
             {/* Botones de acción */}
-            <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+            <div className="flex justify-end space-x-3 pt-4 border-t">
                 <button
                     type="button"
                     onClick={onClose}
@@ -373,6 +428,15 @@ function UserForm({ user, onClose, onSubmit, roles }) {
                 </button>
             </div>
         </form>
+
+        {/* Employee Search Modal */}
+        <EmployeeSearchModal
+            show={showEmployeeModal}
+            onClose={() => setShowEmployeeModal(false)}
+            onSelect={handleEmployeeSelect}
+            availableForUser={true}
+        />
+        </>
     );
 }
 

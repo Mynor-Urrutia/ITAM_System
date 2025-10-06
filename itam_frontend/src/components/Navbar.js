@@ -2,9 +2,9 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSignOutAlt, faUserCircle } from '@fortawesome/free-solid-svg-icons'; // Importamos faUserCircle para el icono de usuario
+import { faSignOutAlt, faUserCircle, faBars } from '@fortawesome/free-solid-svg-icons'; // Importamos faUserCircle para el icono de usuario y faBars para hamburger
 
-function Navbar() {
+function Navbar({ onMenuClick }) {
     const { user, logout } = useAuth();
 
     // Función para obtener el nombre del rol del usuario.
@@ -24,10 +24,19 @@ function Navbar() {
 
     return (
         <nav className="bg-white shadow-md p-4 flex justify-between items-center">
-            {/* Espacio para cualquier elemento a la izquierda del navbar, como un botón de menú para mobile */}
-            <div>
-                {/* Puedes poner un botón de hamburguesa aquí para el sidebar en mobile */}
+            {/* Botón de menú para mobile */}
+            <div className="flex items-center">
+                <button
+                    onClick={onMenuClick}
+                    className="md:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500"
+                    title="Abrir menú"
+                >
+                    <FontAwesomeIcon icon={faBars} className="h-6 w-6" />
+                </button>
             </div>
+
+            {/* Espacio vacío en el centro */}
+            <div></div>
 
             {/* Información del Usuario a la derecha */}
             <div className="flex items-center space-x-4">

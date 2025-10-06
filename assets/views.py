@@ -13,13 +13,15 @@ from django_filters import rest_framework as filters
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 from django.conf import settings
-from datetime import datetime
+from datetime import datetime, time
+from django.http import HttpResponse
 import json
 import os
 import uuid
+import csv
 
-from .models import Activo, Maintenance
-from .serializers import ActivoSerializer, MaintenanceSerializer
+from .models import Activo, Maintenance, Assignment
+from .serializers import ActivoSerializer, MaintenanceSerializer, AssignmentSerializer
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -63,6 +65,14 @@ def serialize_model_data(instance):
         data['marca'] = instance.marca.name
     if hasattr(instance, 'tipo_activo') and instance.tipo_activo:
         data['tipo_activo'] = instance.tipo_activo.name
+    if hasattr(instance, 'area') and instance.area:
+        data['area'] = instance.area.name
+    if hasattr(instance, 'finca') and instance.finca:
+        data['finca'] = instance.finca.name
+    if hasattr(instance, 'modelo') and instance.modelo:
+        data['modelo'] = str(instance.modelo)
+    if hasattr(instance, 'proveedor') and instance.proveedor:
+        data['proveedor'] = instance.proveedor.nombre_empresa
 
     return json.loads(json.dumps(data, cls=DjangoJSONEncoder))
 
@@ -359,64 +369,243 @@ class MaintenanceViewSet(AuditLogMixin, viewsets.ModelViewSet):
         pass
 
 
+class AssignmentViewSet(AuditLogMixin, viewsets.ModelViewSet):
+    queryset = Assignment.objects.select_related(
+        'activo', 'employee', 'assigned_by', 'returned_by'
+    ).all()
+    serializer_class = AssignmentSerializer
+    pagination_class = StandardResultsSetPagination
+    permission_classes = [permissions.IsAuthenticated, permissions.DjangoModelPermissions]
+    filter_backends = [drf_filters.SearchFilter, drf_filters.OrderingFilter]
+    search_fields = ['activo__hostname', 'activo__serie', 'employee__first_name', 'employee__last_name', 'employee__employee_number']
+    ordering_fields = ['assigned_date', 'returned_date', 'activo__hostname', 'employee__first_name']
+    ordering = ['-assigned_date']
+
+    def get_queryset(self):
+        queryset = Assignment.objects.select_related(
+            'activo', 'employee', 'assigned_by', 'returned_by'
+        )
+
+        # Filter by employee if provided
+        employee_id = self.request.query_params.get('employee', None)
+        if employee_id:
+            queryset = queryset.filter(employee_id=employee_id)
+
+        # Filter by activo if provided
+        activo_id = self.request.query_params.get('activo', None)
+        if activo_id:
+            queryset = queryset.filter(activo_id=activo_id)
+
+        # Filter by active assignments only (not returned)
+        active_only = self.request.query_params.get('active_only', 'false').lower() == 'true'
+        if active_only:
+            queryset = queryset.filter(returned_date__isnull=True)
+
+        return queryset
+
+    def perform_create(self, serializer):
+        # Set the assigned_by to the current user
+        serializer.save(assigned_by=self.request.user)
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def return_assignment(self, request, pk=None):
+        """Return an assignment by setting returned_date and returned_by"""
+        assignment = self.get_object()
+
+        if assignment.returned_date:
+            return Response({'error': 'Esta asignación ya fue devuelta'}, status=status.HTTP_400_BAD_REQUEST)
+
+        return_date = request.data.get('return_date')
+        if return_date:
+            try:
+                if isinstance(return_date, str):
+                    parsed_date = datetime.strptime(return_date, '%Y-%m-%d').date()
+                    return_date = datetime.combine(parsed_date, time.min)
+                    return_date = timezone.make_aware(return_date)
+            except ValueError:
+                return Response({'error': 'Formato de fecha inválido. Use YYYY-MM-DD'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return_date = timezone.now()
+
+        # Update the assignment
+        old_data = serialize_model_data(assignment)
+        assignment.returned_date = return_date
+        assignment.returned_by = request.user
+        assignment.save()
+
+        # Log the return
+        try:
+            new_data = serialize_model_data(assignment)
+            self._log_activity('RETURN', assignment, old_data=old_data, new_data=new_data)
+        except Exception as e:
+            print(f"Error logging return assignment: {e}")
+
+        serializer = self.get_serializer(assignment)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    def available_assets(self, request):
+        """Get assets that are not currently assigned (available for assignment)"""
+        # Get all active assets that are not currently assigned
+        assigned_activo_ids = Assignment.objects.filter(
+            returned_date__isnull=True
+        ).values_list('activo_id', flat=True)
+
+        available_assets = Activo.objects.filter(
+            estado='activo'
+        ).exclude(id__in=assigned_activo_ids).select_related(
+            'tipo_activo', 'marca', 'modelo', 'region'
+        )
+
+        # Apply search filter if provided
+        search = request.query_params.get('search', '')
+        if search:
+            available_assets = available_assets.filter(
+                Q(hostname__icontains=search) |
+                Q(serie__icontains=search) |
+                Q(tipo_activo__name__icontains=search) |
+                Q(marca__name__icontains=search) |
+                Q(modelo__name__icontains=search)
+            )
+
+        # Apply tipo_activo filter if provided (for showing only certain types)
+        tipo_activo_id = request.query_params.get('tipo_activo', None)
+        if tipo_activo_id:
+            available_assets = available_assets.filter(tipo_activo_id=tipo_activo_id)
+
+        # Apply pagination
+        paginator = StandardResultsSetPagination()
+        paginated_assets = paginator.paginate_queryset(available_assets, request)
+
+        # Serialize using ActivoSerializer
+        serializer = ActivoSerializer(paginated_assets, many=True)
+        return paginator.get_paginated_response(serializer.data)
+
+    @action(detail=False, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def bulk_assign(self, request):
+        """Assign multiple assets to an employee at once with optional asset updates"""
+        employee_id = request.data.get('employee_id')
+        activo_ids = request.data.get('activo_ids', [])
+        asset_updates = request.data.get('asset_updates', {})  # Dict of activo_id -> update_data
+
+        if not employee_id:
+            return Response({'error': 'employee_id es requerido'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not activo_ids:
+            return Response({'error': 'activo_ids es requerido'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            from employees.models import Employee
+            employee = Employee.objects.get(id=employee_id)
+        except Employee.DoesNotExist:
+            return Response({'error': 'Empleado no encontrado'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Validate all assets exist and are available
+        activos = Activo.objects.filter(id__in=activo_ids, estado='activo')
+        if activos.count() != len(activo_ids):
+            return Response({'error': 'Uno o más activos no existen o no están activos'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Check for already assigned assets
+        assigned_activos = Assignment.objects.filter(
+            activo_id__in=activo_ids,
+            returned_date__isnull=True
+        ).values_list('activo_id', flat=True)
+
+        if assigned_activos:
+            assigned_hostnames = Activo.objects.filter(id__in=assigned_activos).values_list('hostname', flat=True)
+            return Response({
+                'error': f'Los siguientes activos ya están asignados: {", ".join(assigned_hostnames)}'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Check assignment rules: one per tipo_activo
+        employee_active_assignments = Assignment.objects.filter(
+            employee=employee,
+            returned_date__isnull=True
+        ).select_related('activo__tipo_activo')
+
+        assigned_tipos = {assignment.activo.tipo_activo for assignment in employee_active_assignments}
+        conflicting_tipos = []
+
+        for activo in activos:
+            if activo.tipo_activo in assigned_tipos:
+                conflicting_tipos.append(activo.tipo_activo.name)
+
+        if conflicting_tipos:
+            return Response({
+                'error': f'El empleado ya tiene asignado activos de los siguientes tipos: {", ".join(set(conflicting_tipos))}'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Create assignments and update assets
+        created_assignments = []
+        updated_assets = []
+
+        for activo in activos:
+            # Update asset if updates provided
+            activo_id_str = str(activo.id)
+            asset_updated = False
+            if activo_id_str in asset_updates:
+                update_data = asset_updates[activo_id_str]
+                old_asset_data = serialize_model_data(activo)
+                for field, value in update_data.items():
+                    if hasattr(activo, field) and value is not None and str(getattr(activo, field)) != str(value):
+                        setattr(activo, field, value)
+                        asset_updated = True
+
+                if asset_updated:
+                    activo.save()
+                    updated_assets.append(activo)
+                    # Log asset update
+                    new_asset_data = serialize_model_data(activo)
+                    self._log_activity('UPDATE', activo, old_data=old_asset_data, new_data=new_asset_data)
+
+            # Create assignment
+            assignment = Assignment.objects.create(
+                activo=activo,
+                employee=employee,
+                assigned_by=request.user
+            )
+            created_assignments.append(assignment)
+
+            # Log the assignment
+            self._log_activity('CREATE', assignment, old_data=None, new_data=serialize_model_data(assignment))
+
+        serializer = self.get_serializer(created_assignments, many=True)
+        return Response({
+            'assignments': serializer.data,
+            'updated_assets': ActivoSerializer(updated_assets, many=True).data if updated_assets else []
+        }, status=status.HTTP_201_CREATED)
+
+
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
 def dashboard_warranty_data(request):
-    # Get assets with warranty expiring within 90 days
+    # Get assets with warranty expiring within 90 days (past or future)
     today = date.today()
+    ninety_days_ago = today - timedelta(days=90)
     ninety_days_from_now = today + timedelta(days=90)
 
-    # Get assets with warranty expiration in the next 90 days (but not today)
+    # Get assets with warranty expiration within 90 days (including expired and upcoming)
     expiring_assets = Activo.objects.filter(
-        Q(fecha_fin_garantia__gt=today) & Q(fecha_fin_garantia__lte=ninety_days_from_now),
+        Q(fecha_fin_garantia__gte=ninety_days_ago) & Q(fecha_fin_garantia__lte=ninety_days_from_now),
         estado='activo'
-    ).select_related('modelo', 'region').order_by('fecha_fin_garantia')
+    ).select_related('modelo', 'marca', 'region', 'tipo_activo').order_by('fecha_fin_garantia')
 
-    # Group by exact expiration date
-    warranty_data = {}
+    # Return individual assets with required fields
+    data = {
+        'warranty_assets': []
+    }
 
     for asset in expiring_assets:
-        expiry_date_str = asset.fecha_fin_garantia.isoformat()
-        region_name = asset.region.name
-        model_name = asset.modelo.name
-
-        if expiry_date_str not in warranty_data:
-            warranty_data[expiry_date_str] = {}
-
-        if region_name not in warranty_data[expiry_date_str]:
-            warranty_data[expiry_date_str][region_name] = {}
-
-        if model_name not in warranty_data[expiry_date_str][region_name]:
-            warranty_data[expiry_date_str][region_name][model_name] = {
-                'count': 0,
-                'assets': []
-            }
-
-        warranty_data[expiry_date_str][region_name][model_name]['count'] += 1
-        warranty_data[expiry_date_str][region_name][model_name]['assets'].append({
+        data['warranty_assets'].append({
             'id': asset.id,
+            'fecha_vencimiento_garantia': asset.fecha_fin_garantia.isoformat(),
+            'region': asset.region.name if asset.region else '',
+            'marca': asset.marca.name if asset.marca else '',
+            'modelo': asset.modelo.name if asset.modelo else '',
+            'tipo_activo': asset.tipo_activo.name if asset.tipo_activo else '',
             'serie': asset.serie,
             'hostname': asset.hostname
         })
-
-    # Convert to list format for easier frontend consumption
-    data = {
-        'warranty_info': []
-    }
-
-    for expiry_date_str, regions in warranty_data.items():
-        for region_name, models in regions.items():
-            for model_name, info in models.items():
-                data['warranty_info'].append({
-                    'expiry_date': expiry_date_str,
-                    'region': region_name,
-                    'model': model_name,
-                    'count': info['count'],
-                    'assets': info['assets']
-                })
-
-    # Sort by expiry date
-    data['warranty_info'].sort(key=lambda x: x['expiry_date'])
 
     return Response(data)
 
@@ -688,34 +877,52 @@ def dashboard_models_data(request):
 @permission_classes([permissions.IsAuthenticated])
 def maintenance_overview(request):
     """Get maintenance overview data for all active assets"""
-    from datetime import date
+    from datetime import date, timedelta
     today = date.today()
 
-    # Get ordering parameter
-    ordering = request.GET.get('ordering', 'hostname')  # Default ordering
+    # Get filters
+    region_filter = request.GET.getlist('regions', [])
+    tipo_filter = request.GET.getlist('tipos', [])
 
-    activos = Activo.objects.select_related('marca', 'modelo', 'region', 'finca').filter(estado='activo')
+    # Get all active assets
+    activos = Activo.objects.select_related('tipo_activo', 'marca', 'modelo', 'region', 'finca', 'tecnico_mantenimiento').filter(estado='activo')
+
+    # Apply region filter if specified
+    if region_filter:
+        activos = activos.filter(region__name__in=region_filter)
+
+    # Apply tipo filter if specified
+    if tipo_filter:
+        activos = activos.filter(tipo_activo__name__in=tipo_filter)
 
     data = []
     for activo in activos:
-        # Get the latest maintenance for this activo
-        latest_maintenance = Maintenance.objects.filter(activo=activo).select_related('technician').order_by('-created_at').first()
+        # Use the maintenance dates stored directly on the Activo model (these are updated by Maintenance.save())
+        ultimo_mantenimiento = activo.ultimo_mantenimiento
+        proximo_mantenimiento = activo.proximo_mantenimiento
+        tecnico_mantenimiento = activo.tecnico_mantenimiento.username if activo.tecnico_mantenimiento else ''
 
-        if latest_maintenance:
-            status = 'realizados'
-            ultimo_mantenimiento = latest_maintenance.maintenance_date
-            proximo_mantenimiento = latest_maintenance.next_maintenance_date
-            tecnico_mantenimiento = latest_maintenance.technician.username
-        else:
+        # If Activo fields are empty, check Maintenance records as fallback
+        if not ultimo_mantenimiento or not proximo_mantenimiento:
+            latest_maintenance = Maintenance.objects.filter(activo=activo).select_related('technician').order_by('-created_at').first()
+            if latest_maintenance:
+                ultimo_mantenimiento = latest_maintenance.maintenance_date
+                proximo_mantenimiento = latest_maintenance.next_maintenance_date
+                tecnico_mantenimiento = latest_maintenance.technician.username if latest_maintenance.technician else ''
+
+        # Determine status based on maintenance dates
+        if not ultimo_mantenimiento and not proximo_mantenimiento:
             status = 'nunca'
-            ultimo_mantenimiento = None
-            proximo_mantenimiento = None
-            tecnico_mantenimiento = ''
+        elif proximo_mantenimiento and proximo_mantenimiento <= today + timedelta(days=15):
+            status = 'proximos'
+        else:
+            status = 'realizados'
 
         data.append({
             'id': activo.id,
             'hostname': activo.hostname,
             'serie': activo.serie,
+            'tipo': activo.tipo_activo.name if activo.tipo_activo else '',
             'marca': activo.marca.name if activo.marca else '',
             'modelo': activo.modelo.name if activo.modelo else '',
             'ultimo_mantenimiento': ultimo_mantenimiento.isoformat() if ultimo_mantenimiento else None,
@@ -723,27 +930,293 @@ def maintenance_overview(request):
             'region': activo.region.name if activo.region else '',
             'finca': activo.finca.name if activo.finca else '',
             'tecnico_mantenimiento': tecnico_mantenimiento,
+            'usuario': activo.tecnico_mantenimiento.username if activo.tecnico_mantenimiento else '',
             'status': status,
-            'maintenance_id': latest_maintenance.id if latest_maintenance else None
+            'maintenance_id': None  # Not needed for this view
         })
 
-    # Apply sorting
-    reverse = ordering.startswith('-')
-    sort_key = ordering.lstrip('-')
-
+    # Apply custom sorting: status priority (nunca, proxima_a_vencer, realizados) then by proximo_mantenimiento date
     def sort_func(item):
-        value = item.get(sort_key, '')
-        if sort_key in ['ultimo_mantenimiento', 'proximo_mantenimiento']:
-            # Handle date sorting
-            return value or '9999-12-31'  # Put None values at the end
-        elif sort_key == 'status':
-            # Custom status ordering: realizados, proximos, nunca
-            status_order = {'realizados': 0, 'proximos': 1, 'nunca': 2}
-            return status_order.get(value, 3)
-        else:
-            # String sorting
-            return value.lower() if isinstance(value, str) else str(value)
+        # Status priority: nunca (0), proxima_a_vencer (1), realizados (2)
+        status_priority = {'nunca': 0, 'proxima_a_vencer': 1, 'realizados': 2}
+        status_value = status_priority.get(item.get('status'), 3)
 
-    data.sort(key=sort_func, reverse=reverse)
+        # For date sorting, use proximo_mantenimiento, put None values at the end
+        date_value = item.get('proximo_mantenimiento') or '9999-12-31'
 
-    return Response(data)
+        return (status_value, date_value)
+
+    data.sort(key=sort_func)
+
+    # Apply pagination
+    paginator = StandardResultsSetPagination()
+    paginated_data = paginator.paginate_queryset(data, request)
+    response = paginator.get_paginated_response(paginated_data)
+
+    return response
+
+
+# CSV Report Generation Functions
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def assets_report_csv(request):
+    """Generate CSV report for assets with filters"""
+    # Get filter parameters
+    estado = request.GET.get('estado', 'activo')
+    tipo_activo = request.GET.get('tipo_activo')
+    marca = request.GET.get('marca')
+    modelo = request.GET.get('modelo')
+    region = request.GET.get('region')
+    finca = request.GET.get('finca')
+    departamento = request.GET.get('departamento')
+    area = request.GET.get('area')
+
+    # Build queryset
+    queryset = Activo.objects.select_related(
+        'tipo_activo', 'proveedor', 'marca', 'modelo', 'region', 'finca', 'departamento', 'area'
+    )
+
+    if estado == 'all':
+        pass  # Include all
+    elif estado == 'retirado':
+        queryset = queryset.filter(estado='retirado')
+    else:
+        queryset = queryset.filter(estado='activo')
+
+    if tipo_activo:
+        queryset = queryset.filter(tipo_activo_id=tipo_activo)
+    if marca:
+        queryset = queryset.filter(marca_id=marca)
+    if modelo:
+        queryset = queryset.filter(modelo_id=modelo)
+    if region:
+        queryset = queryset.filter(region_id=region)
+    if finca:
+        queryset = queryset.filter(finca_id=finca)
+    if departamento:
+        queryset = queryset.filter(departamento_id=departamento)
+    if area:
+        queryset = queryset.filter(area_id=area)
+
+    # Create CSV response with UTF-8 BOM for Excel compatibility
+    response = HttpResponse(content_type='text/csv; charset=utf-8')
+    response['Content-Disposition'] = 'attachment; filename="reporte_activos.csv"'
+    # Add UTF-8 BOM for proper Excel display
+    response.write('\ufeff')
+
+    writer = csv.writer(response)
+    # Write header
+    writer.writerow([
+        'ID', 'Serie', 'Hostname', 'Tipo Activo', 'Marca', 'Modelo', 'Proveedor',
+        'Región', 'Finca', 'Departamento', 'Área', 'Fecha Registro', 'Fecha Fin Garantía',
+        'Estado', 'Solicitante', 'Correo Electrónico', 'Orden Compra', 'Cuenta Contable',
+        'Tipo Costo', 'Cuotas', 'Moneda', 'Costo', 'Procesador', 'RAM', 'Almacenamiento',
+        'Tarjeta Gráfica', 'WIFI', 'Ethernet', 'Puertos Ethernet', 'Puertos SFP',
+        'Puerto Consola', 'Puertos PoE', 'Alimentación', 'Administrable', 'Tamaño',
+        'Color', 'Conectores', 'Cables'
+    ])
+
+    # Write data
+    for activo in queryset:
+        writer.writerow([
+            activo.id,
+            activo.serie,
+            activo.hostname,
+            activo.tipo_activo.name if activo.tipo_activo else '',
+            activo.marca.name if activo.marca else '',
+            activo.modelo.name if activo.modelo else '',
+            activo.proveedor.nombre_empresa if activo.proveedor else '',
+            activo.region.name if activo.region else '',
+            activo.finca.name if activo.finca else '',
+            activo.departamento.name if activo.departamento else '',
+            activo.area.name if activo.area else '',
+            activo.fecha_registro.isoformat() if activo.fecha_registro else '',
+            activo.fecha_fin_garantia.isoformat() if activo.fecha_fin_garantia else '',
+            activo.estado,
+            activo.solicitante or '',
+            activo.correo_electronico or '',
+            activo.orden_compra or '',
+            activo.cuenta_contable or '',
+            activo.tipo_costo or '',
+            activo.cuotas or '',
+            activo.moneda or '',
+            activo.costo or '',
+            activo.procesador or '',
+            activo.ram or '',
+            activo.almacenamiento or '',
+            activo.tarjeta_grafica or '',
+            'Sí' if activo.wifi else 'No',
+            'Sí' if activo.ethernet else 'No',
+            activo.puertos_ethernet or '',
+            activo.puertos_sfp or '',
+            'Sí' if activo.puerto_consola else 'No',
+            activo.puertos_poe or '',
+            activo.alimentacion or '',
+            'Sí' if activo.administrable else 'No',
+            activo.tamano or '',
+            activo.color or '',
+            activo.conectores or '',
+            activo.cables or ''
+        ])
+
+    return response
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def maintenance_report_csv(request):
+    """Generate CSV report for maintenance with date range and filters"""
+    # Get filter parameters
+    activo_id = request.GET.get('activo')
+    technician_id = request.GET.get('technician')
+    estado = request.GET.get('estado', 'activo')
+    region = request.GET.get('region')
+    finca = request.GET.get('finca')
+    fecha_desde = request.GET.get('fecha_desde')
+    fecha_hasta = request.GET.get('fecha_hasta')
+
+    # Build queryset
+    queryset = Maintenance.objects.select_related('activo', 'technician')
+
+    # Apply filters
+    if activo_id:
+        queryset = queryset.filter(activo_id=activo_id)
+    if technician_id:
+        queryset = queryset.filter(technician_id=technician_id)
+
+    # Filter by activo's estado
+    if estado == 'all':
+        pass  # Include all
+    elif estado == 'retirado':
+        queryset = queryset.filter(activo__estado='retirado')
+    else:
+        queryset = queryset.filter(activo__estado='activo')
+
+    # Filter by activo's region
+    if region:
+        queryset = queryset.filter(activo__region_id=region)
+
+    # Filter by activo's finca
+    if finca:
+        queryset = queryset.filter(activo__finca_id=finca)
+
+    # Date filtering
+    if fecha_desde:
+        try:
+            fecha_desde = datetime.strptime(fecha_desde, '%Y-%m-%d').date()
+            queryset = queryset.filter(maintenance_date__gte=fecha_desde)
+        except ValueError:
+            pass
+
+    if fecha_hasta:
+        try:
+            fecha_hasta = datetime.strptime(fecha_hasta, '%Y-%m-%d').date()
+            queryset = queryset.filter(maintenance_date__lte=fecha_hasta)
+        except ValueError:
+            pass
+
+    # Create CSV response with UTF-8 BOM for Excel compatibility
+    response = HttpResponse(content_type='text/csv; charset=utf-8')
+    response['Content-Disposition'] = 'attachment; filename="reporte_mantenimiento.csv"'
+    # Add UTF-8 BOM for proper Excel display
+    response.write('\ufeff')
+
+    writer = csv.writer(response)
+    # Write header
+    writer.writerow([
+        'ID', 'Activo Hostname', 'Activo Serie', 'Fecha Mantenimiento', 'Técnico',
+        'Próximo Mantenimiento', 'Hallazgos', 'Archivos Adjuntos', 'Fecha Creación'
+    ])
+
+    # Write data
+    for maintenance in queryset.order_by('-maintenance_date'):
+        writer.writerow([
+            maintenance.id,
+            maintenance.activo.hostname,
+            maintenance.activo.serie,
+            maintenance.maintenance_date.isoformat(),
+            maintenance.technician.username,
+            maintenance.next_maintenance_date.isoformat() if maintenance.next_maintenance_date else '',
+            maintenance.findings,
+            ', '.join(maintenance.attachments) if maintenance.attachments else '',
+            maintenance.created_at.isoformat()
+        ])
+
+    return response
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def assignments_report_csv(request):
+    """Generate CSV report for assignments with filters"""
+    # Get filter parameters
+    employee_id = request.GET.get('employee')
+    activo_id = request.GET.get('activo')
+    assigned_by_id = request.GET.get('assigned_by')
+    fecha_desde = request.GET.get('fecha_desde')
+    fecha_hasta = request.GET.get('fecha_hasta')
+    active_only = request.GET.get('active_only', 'true').lower() == 'true'
+
+    # Build queryset
+    queryset = Assignment.objects.select_related(
+        'activo', 'employee', 'assigned_by', 'returned_by'
+    )
+
+    if employee_id:
+        queryset = queryset.filter(employee_id=employee_id)
+    if activo_id:
+        queryset = queryset.filter(activo_id=activo_id)
+    if assigned_by_id:
+        queryset = queryset.filter(assigned_by_id=assigned_by_id)
+
+    # Date filtering
+    if fecha_desde:
+        try:
+            fecha_desde = datetime.strptime(fecha_desde, '%Y-%m-%d')
+            queryset = queryset.filter(assigned_date__gte=fecha_desde)
+        except ValueError:
+            pass
+
+    if fecha_hasta:
+        try:
+            fecha_hasta = datetime.strptime(fecha_hasta, '%Y-%m-%d')
+            queryset = queryset.filter(assigned_date__lte=fecha_hasta)
+        except ValueError:
+            pass
+
+    if active_only:
+        queryset = queryset.filter(returned_date__isnull=True)
+
+    # Create CSV response with UTF-8 BOM for Excel compatibility
+    response = HttpResponse(content_type='text/csv; charset=utf-8')
+    response['Content-Disposition'] = 'attachment; filename="reporte_asignaciones.csv"'
+    # Add UTF-8 BOM for proper Excel display
+    response.write('\ufeff')
+
+    writer = csv.writer(response)
+    # Write header
+    writer.writerow([
+        'ID', 'Activo Hostname', 'Activo Serie', 'Tipo Activo', 'Marca', 'Modelo',
+        'Empleado', 'Número Empleado', 'Fecha Asignación', 'Asignado Por',
+        'Fecha Devolución', 'Devuelto Por', 'Estado'
+    ])
+
+    # Write data
+    for assignment in queryset.order_by('-assigned_date'):
+        writer.writerow([
+            assignment.id,
+            assignment.activo.hostname,
+            assignment.activo.serie,
+            assignment.activo.tipo_activo.name if assignment.activo.tipo_activo else '',
+            assignment.activo.marca.name if assignment.activo.marca else '',
+            assignment.activo.modelo.name if assignment.activo.modelo else '',
+            f"{assignment.employee.first_name} {assignment.employee.last_name}",
+            assignment.employee.employee_number,
+            assignment.assigned_date.isoformat(),
+            assignment.assigned_by.username,
+            assignment.returned_date.isoformat() if assignment.returned_date else '',
+            assignment.returned_by.username if assignment.returned_by else '',
+            'Activa' if assignment.returned_date is None else 'Devuelta'
+        ])
+
+    return response

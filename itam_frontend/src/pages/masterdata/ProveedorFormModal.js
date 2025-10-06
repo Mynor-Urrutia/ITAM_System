@@ -108,7 +108,7 @@ const ProveedorFormModal = ({ show, onClose, onSaveSuccess, proveedorToEdit }) =
                         name="nombre_empresa"
                         value={formData.nombre_empresa}
                         onChange={handleChange}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
                         required
                     />
                     {errors.nombre_empresa && <p className="mt-1 text-sm text-red-600">{errors.nombre_empresa}</p>}
@@ -120,7 +120,7 @@ const ProveedorFormModal = ({ show, onClose, onSaveSuccess, proveedorToEdit }) =
                         name="nit"
                         value={formData.nit}
                         onChange={handleChange}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
                         required
                     />
                     {errors.nit && <p className="mt-1 text-sm text-red-600">{errors.nit}</p>}
@@ -132,7 +132,7 @@ const ProveedorFormModal = ({ show, onClose, onSaveSuccess, proveedorToEdit }) =
                         value={formData.direccion}
                         onChange={handleChange}
                         rows="3"
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
                         required
                     ></textarea>
                     {errors.direccion && <p className="mt-1 text-sm text-red-600">{errors.direccion}</p>}
@@ -144,7 +144,7 @@ const ProveedorFormModal = ({ show, onClose, onSaveSuccess, proveedorToEdit }) =
                         name="nombre_contacto"
                         value={formData.nombre_contacto}
                         onChange={handleChange}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
                         required
                     />
                     {errors.nombre_contacto && <p className="mt-1 text-sm text-red-600">{errors.nombre_contacto}</p>}
@@ -160,7 +160,7 @@ const ProveedorFormModal = ({ show, onClose, onSaveSuccess, proveedorToEdit }) =
                                 name="telefono_ventas"
                                 value={formData.telefono_ventas}
                                 onChange={handleChange}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
                             />
                         </div>
                         <div>
@@ -170,7 +170,7 @@ const ProveedorFormModal = ({ show, onClose, onSaveSuccess, proveedorToEdit }) =
                                 name="correo_ventas"
                                 value={formData.correo_ventas}
                                 onChange={handleChange}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
                             />
                             {errors.correo_ventas && <p className="mt-1 text-sm text-red-600">{errors.correo_ventas}</p>}
                         </div>
@@ -187,7 +187,7 @@ const ProveedorFormModal = ({ show, onClose, onSaveSuccess, proveedorToEdit }) =
                                 name="telefono_soporte"
                                 value={formData.telefono_soporte}
                                 onChange={handleChange}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
                             />
                         </div>
                         <div>
@@ -197,7 +197,7 @@ const ProveedorFormModal = ({ show, onClose, onSaveSuccess, proveedorToEdit }) =
                                 name="correo_soporte"
                                 value={formData.correo_soporte}
                                 onChange={handleChange}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
                             />
                             {errors.correo_soporte && <p className="mt-1 text-sm text-red-600">{errors.correo_soporte}</p>}
                         </div>
@@ -208,7 +208,7 @@ const ProveedorFormModal = ({ show, onClose, onSaveSuccess, proveedorToEdit }) =
                     <button
                         type="button"
                         onClick={onClose}
-                        className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50"
+                        className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border bg-gray-50 border-gray-500 rounded-md shadow-sm hover:bg-gray-50"
                         disabled={loading}
                     >
                         Cancelar

@@ -24,9 +24,11 @@ import {
     faLaptop,
     faHistory,
     faTruck,
+    faLink,
+    faFileAlt,
 } from '@fortawesome/free-solid-svg-icons';
 
-function Sidebar() {
+function Sidebar({ isOpen, onClose }) {
     const [showSettingsDropdown, setShowSettingsDropdown] = useState(false);
     const [showMasterDataDropdown, setShowMasterDataDropdown] = useState(false);
 
@@ -47,11 +49,23 @@ function Sidebar() {
 
     const canViewAssets = hasPermission('assets.view_activo');
 
+    const canViewAssignments = hasPermission('assets.view_assignment');
+
     const canViewEmployees = hasPermission('employees.view_employee');
 
 
     return (
-        <div className="flex flex-col w-64 bg-gray-800 text-white min-h-screen">
+        <>
+            {/* Overlay for mobile */}
+            {isOpen && (
+                <div
+                    className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+                    onClick={onClose}
+                ></div>
+            )}
+            <div className={`flex flex-col w-64 bg-gray-800 text-white min-h-screen fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${
+                isOpen ? 'translate-x-0' : '-translate-x-full'
+            }`}>
             <div className="flex items-center justify-center h-16 shadow-md">
                 <span className="text-xl font-bold uppercase tracking-wider">ITAM System</span>
             </div>
@@ -240,6 +254,22 @@ function Sidebar() {
                 )}
 
                 {/* --------------------------- */}
+                {/* Asignación de Activos */}
+                {canViewAssignments && (
+                    <NavLink
+                        to="/assets/assignments"
+                        className={({ isActive }) =>
+                            `block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 hover:text-white ${
+                                isActive ? 'bg-gray-700 text-white' : ''
+                            }`
+                        }
+                    >
+                        <FontAwesomeIcon icon={faLink} className="mr-3" />
+                        Asignación de Activos
+                    </NavLink>
+                )}
+
+                {/* --------------------------- */}
                 {/* Gestión de Empleados */}
                 {canViewEmployees && (
                     <NavLink
@@ -318,6 +348,22 @@ function Sidebar() {
                         Mantenimiento de Activos
                     </NavLink>
                 )}
+
+                {/* --------------------------- */}
+                {/* Reportes */}
+                {(hasPermission('assets.view_activo') || hasPermission('assets.view_assignment') || hasPermission('masterdata.view_auditlog')) && (
+                    <NavLink
+                        to="/reports"
+                        className={({ isActive }) =>
+                            `block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 hover:text-white ${
+                                isActive ? 'bg-gray-700 text-white' : ''
+                            }`
+                        }
+                    >
+                        <FontAwesomeIcon icon={faFileAlt} className="mr-3" />
+                        Reportes
+                    </NavLink>
+                )}
                 <NavLink
                     to="/about"
                     className={({ isActive }) =>
@@ -342,7 +388,8 @@ function Sidebar() {
                 </NavLink>
             </nav>
         </div>
-    );
+    </>
+);
 }
 
 export default Sidebar;
