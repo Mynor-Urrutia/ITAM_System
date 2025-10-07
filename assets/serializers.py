@@ -52,6 +52,9 @@ class ActivoSerializer(serializers.ModelSerializer):
     # User who retired the asset
     usuario_baja_name = serializers.CharField(source='usuario_baja.username', read_only=True, allow_null=True)
 
+    # User who the asset is assigned to
+    assigned_to_name = serializers.CharField(source='assigned_to.username', read_only=True, allow_null=True)
+
     # Maintenance fields
     tecnico_mantenimiento_name = serializers.SerializerMethodField()
 
@@ -109,13 +112,13 @@ class ActivoSerializer(serializers.ModelSerializer):
             'region_name', 'finca_name', 'departamento_name', 'area_name',
             'tipo_activo_id', 'proveedor_id', 'marca_id', 'modelo_id',
             'region_id', 'finca_id', 'departamento_id', 'area_id',
-            'asset_type_category', 'created_by_user',
+            'asset_type_category', 'created_by_user', 'assigned_to_name',
             # Asset/ModeloActivo fields
             'procesador', 'ram', 'almacenamiento', 'tarjeta_grafica', 'wifi', 'ethernet',
             'puertos_ethernet', 'puertos_sfp', 'puerto_consola', 'puertos_poe', 'alimentacion', 'administrable',
             'tamano', 'color', 'conectores', 'cables',
             # Write fields
-            'tipo_activo', 'proveedor', 'marca', 'modelo', 'region', 'finca', 'departamento', 'area',
+            'tipo_activo', 'proveedor', 'marca', 'modelo', 'region', 'finca', 'departamento', 'area', 'assigned_to',
             # Other fields
             'serie', 'hostname', 'fecha_registro', 'fecha_fin_garantia',
             'solicitante', 'correo_electronico', 'orden_compra',
@@ -134,6 +137,7 @@ class ActivoSerializer(serializers.ModelSerializer):
             'finca': {'write_only': True},
             'departamento': {'write_only': True},
             'area': {'write_only': True},
+            'assigned_to': {'allow_null': True, 'required': False},
             # Allow null/blank values for optional fields
             'solicitante': {'allow_blank': True, 'allow_null': True, 'required': False},
             'correo_electronico': {'allow_blank': True, 'allow_null': True, 'required': False},

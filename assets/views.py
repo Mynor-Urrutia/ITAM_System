@@ -3,6 +3,7 @@ from rest_framework import filters as drf_filters
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.decorators import api_view, permission_classes, action
+from django.db import models
 from django.db.models import ProtectedError, Count, Q
 from datetime import date, timedelta
 from django.contrib.contenttypes.models import ContentType
@@ -23,6 +24,7 @@ import csv
 from .models import Activo, Maintenance, Assignment
 from .serializers import ActivoSerializer, MaintenanceSerializer, AssignmentSerializer
 from django.contrib.auth import get_user_model
+from users.permissions import CanViewReports
 
 User = get_user_model()
 from masterdata.models import TipoActivo, Region
@@ -36,10 +38,11 @@ class ActivoFilter(filters.FilterSet):
     fecha_garantia_desde = filters.DateFilter(field_name='fecha_fin_garantia', lookup_expr='gte')
     fecha_garantia_hasta = filters.DateFilter(field_name='fecha_fin_garantia', lookup_expr='lte')
     region_name = filters.CharFilter(field_name='region__name', lookup_expr='icontains')
+    assigned_to = filters.NumberFilter(field_name='assigned_to', lookup_expr='exact')
 
     class Meta:
         model = Activo
-        fields = ['id', 'estado', 'tipo_activo', 'proveedor', 'marca', 'modelo', 'region', 'finca', 'departamento', 'area']
+        fields = ['id', 'estado', 'tipo_activo', 'proveedor', 'marca', 'modelo', 'region', 'finca', 'departamento', 'area', 'assigned_to']
 
 def serialize_model_data(instance):
     """Serialize model instance data to JSON-compatible format."""
@@ -158,7 +161,7 @@ class ActivoViewSet(AuditLogMixin, viewsets.ModelViewSet):
     serializer_class = ActivoSerializer
     pagination_class = StandardResultsSetPagination
     permission_classes = [permissions.IsAuthenticated, permissions.DjangoModelPermissions]
-    filter_backends = [drf_filters.SearchFilter, drf_filters.OrderingFilter]
+    filter_backends = [drf_filters.SearchFilter, drf_filters.OrderingFilter, filters.DjangoFilterBackend]
     filterset_class = ActivoFilter
     search_fields = ['serie', 'hostname', 'solicitante', 'correo_electronico', 'orden_compra', 'region__name', 'cuenta_contable', 'departamento__name', 'area__name']
     ordering_fields = ['hostname', 'serie', 'tipo_activo__name', 'marca__name', 'modelo__name', 'fecha_fin_garantia', 'region__name', 'finca__name', 'estado']
@@ -184,7 +187,7 @@ class ActivoViewSet(AuditLogMixin, viewsets.ModelViewSet):
 
         return queryset
 
-    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated, permissions.DjangoModelPermissions])
     def retire(self, request, pk=None):
         """Retire an asset by setting its estado to 'retirado', fecha_baja to now, and recording motivo, usuario, and documents"""
         activo = self.get_object()
@@ -229,7 +232,7 @@ class ActivoViewSet(AuditLogMixin, viewsets.ModelViewSet):
         serializer = self.get_serializer(activo)
         return Response(serializer.data)
 
-    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated, permissions.DjangoModelPermissions])
     def reactivate(self, request, pk=None):
         """Reactivate a retired asset by setting its estado to 'activo' and clearing retirement fields"""
         activo = self.get_object()
@@ -547,9 +550,16 @@ class AssignmentViewSet(AuditLogMixin, viewsets.ModelViewSet):
                 update_data = asset_updates[activo_id_str]
                 old_asset_data = serialize_model_data(activo)
                 for field, value in update_data.items():
-                    if hasattr(activo, field) and value is not None and str(getattr(activo, field)) != str(value):
-                        setattr(activo, field, value)
-                        asset_updated = True
+                    # Skip empty strings for integer fields
+                    if hasattr(activo, field) and value is not None:
+                        field_obj = activo._meta.get_field(field)
+                        # Skip empty strings for integer fields
+                        if isinstance(field_obj, models.IntegerField) and value == '':
+                            continue
+                        # Check if value has actually changed
+                        if str(getattr(activo, field)) != str(value):
+                            setattr(activo, field, value)
+                            asset_updated = True
 
                 if asset_updated:
                     activo.save()
@@ -1116,6 +1126,7 @@ def maintenance_report_csv(request):
     estado = request.GET.get('estado', 'activo')
     region = request.GET.get('region')
     finca = request.GET.get('finca')
+    tipos_activos = request.GET.getlist('tipos_activos', [])
     fecha_desde = request.GET.get('fecha_desde')
     fecha_hasta = request.GET.get('fecha_hasta')
 
@@ -1143,6 +1154,10 @@ def maintenance_report_csv(request):
     # Filter by activo's finca
     if finca:
         queryset = queryset.filter(activo__finca_id=finca)
+
+    # Filter by activo's tipos_activos (multiple selection)
+    if tipos_activos:
+        queryset = queryset.filter(activo__tipo_activo__name__in=tipos_activos)
 
     # Date filtering
     if fecha_desde:

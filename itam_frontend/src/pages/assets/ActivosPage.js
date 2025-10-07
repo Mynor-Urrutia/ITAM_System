@@ -30,9 +30,9 @@ function ActivosPage() {
     const [expandedCards, setExpandedCards] = useState(new Set());
     const { hasPermission } = useAuth();
 
-    const canAddActivo = hasPermission('masterdata.add_activo');
-    const canChangeActivo = hasPermission('masterdata.change_activo');
-    const canDeleteActivo = hasPermission('masterdata.delete_activo');
+    const canAddActivo = hasPermission('assets.add_activo');
+    const canChangeActivo = hasPermission('assets.change_activo');
+    const canDeleteActivo = hasPermission('assets.delete_activo');
 
     useEffect(() => {
         fetchActivos(currentPage, pageSize);

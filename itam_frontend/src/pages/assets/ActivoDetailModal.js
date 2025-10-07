@@ -5,7 +5,7 @@ import Modal from '../../components/Modal';
 import MaintenanceModal from './MaintenanceModal';
 import MaintenanceDetailModal from './MaintenanceDetailModal';
 import Pagination from '../../components/Pagination';
-import { getMaintenances } from '../../api';
+import { getMaintenances, getAssignments } from '../../api';
 import { toast } from 'react-toastify';
 
 const ActivoDetailModal = ({ show, onClose, activo, onActivoUpdate }) => {
@@ -19,6 +19,14 @@ const ActivoDetailModal = ({ show, onClose, activo, onActivoUpdate }) => {
     const [maintenancePageSize] = useState(5);
     const [maintenanceTotalCount, setMaintenanceTotalCount] = useState(0);
     const [maintenanceTotalPages, setMaintenanceTotalPages] = useState(0);
+    const [assignment, setAssignment] = useState(null);
+    const [assignmentLoading, setAssignmentLoading] = useState(false);
+    const [assignmentHistory, setAssignmentHistory] = useState([]);
+    const [assignmentHistoryLoading, setAssignmentHistoryLoading] = useState(false);
+    const [assignmentHistoryPage, setAssignmentHistoryPage] = useState(1);
+    const [assignmentHistoryPageSize] = useState(5);
+    const [assignmentHistoryTotalCount, setAssignmentHistoryTotalCount] = useState(0);
+    const [assignmentHistoryTotalPages, setAssignmentHistoryTotalPages] = useState(0);
 
     useEffect(() => {
         if (show && activo) {
@@ -32,6 +40,22 @@ const ActivoDetailModal = ({ show, onClose, activo, onActivoUpdate }) => {
             fetchMaintenances();
         }
     }, [maintenancePage]);
+
+    useEffect(() => {
+        if (show && activo && assignmentHistoryPage > 1) {
+            fetchAssignmentHistory();
+        }
+    }, [assignmentHistoryPage]);
+
+    useEffect(() => {
+        if (show && activo) {
+            fetchAssignment();
+            fetchAssignmentHistory(1);
+        } else {
+            setAssignment(null);
+            setAssignmentHistory([]);
+        }
+    }, [show, activo]);
 
     const fetchMaintenances = async (page = maintenancePage) => {
         if (!activo) return;
@@ -54,6 +78,45 @@ const ActivoDetailModal = ({ show, onClose, activo, onActivoUpdate }) => {
         }
     };
 
+    const fetchAssignment = async () => {
+        if (!activo) return;
+        try {
+            setAssignmentLoading(true);
+            const response = await getAssignments({
+                activo: activo.id,
+                active_only: true
+            });
+            // Get the first active assignment
+            const activeAssignment = response.data.results && response.data.results.length > 0 ? response.data.results[0] : null;
+            setAssignment(activeAssignment);
+        } catch (error) {
+            console.error('Error fetching assignment:', error);
+            toast.error('Error al cargar la información de asignación.');
+        } finally {
+            setAssignmentLoading(false);
+        }
+    };
+
+    const fetchAssignmentHistory = async (page = assignmentHistoryPage) => {
+        if (!activo) return;
+        try {
+            setAssignmentHistoryLoading(true);
+            const response = await getAssignments({
+                activo: activo.id,
+                page: page,
+                page_size: assignmentHistoryPageSize
+            });
+            setAssignmentHistory(response.data.results || []);
+            setAssignmentHistoryTotalCount(response.data.count || 0);
+            setAssignmentHistoryTotalPages(Math.ceil((response.data.count || 0) / assignmentHistoryPageSize));
+        } catch (error) {
+            console.error('Error fetching assignment history:', error);
+            toast.error('Error al cargar el historial de asignaciones.');
+        } finally {
+            setAssignmentHistoryLoading(false);
+        }
+    };
+
     const handleMaintenanceClick = (maintenanceId) => {
         setSelectedMaintenanceId(maintenanceId);
         setShowMaintenanceDetailModal(true);
@@ -61,6 +124,10 @@ const ActivoDetailModal = ({ show, onClose, activo, onActivoUpdate }) => {
 
     const handleMaintenancePageChange = (page) => {
         setMaintenancePage(page);
+    };
+
+    const handleAssignmentHistoryPageChange = (page) => {
+        setAssignmentHistoryPage(page);
     };
 
     if (!activo) return null;
@@ -168,6 +235,16 @@ const ActivoDetailModal = ({ show, onClose, activo, onActivoUpdate }) => {
                                     }`}
                                 >
                                     Pedido
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('asignacion')}
+                                    className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                                        activeTab === 'asignacion'
+                                            ? 'border-blue-500 text-blue-600'
+                                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                    }`}
+                                >
+                                    Asignación
                                 </button>
                             </nav>
                         </div>
@@ -589,6 +666,139 @@ const ActivoDetailModal = ({ show, onClose, activo, onActivoUpdate }) => {
                                            </div>
                                        )}
                                    </div>
+                               </div>
+                           </div>
+                       )}
+
+                       {activeTab === 'asignacion' && (
+                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                               {/* Información de Asignación */}
+                               <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                                   <h3 className="text-lg font-semibold text-gray-800 mb-3">👥 Información de Asignación</h3>
+
+                                   {assignmentLoading ? (
+                                       <div className="text-center py-4">
+                                           <div className="text-gray-500">Cargando información de asignación...</div>
+                                       </div>
+                                   ) : !assignment ? (
+                                       <div className="text-center py-4">
+                                           <div className="text-gray-500">Este activo no está asignado a ningún empleado.</div>
+                                       </div>
+                                   ) : (
+                                       <div className="space-y-3">
+                                           <div>
+                                               <span className="text-sm font-medium text-gray-600">Empleado Asignado:</span>
+                                               <p className="text-base font-semibold text-gray-900">{assignment.employee_name}</p>
+                                           </div>
+                                           <div className="flex justify-between">
+                                               <span className="text-sm font-medium text-gray-600">Número de Empleado:</span>
+                                               <span className="text-sm text-gray-900">{assignment.employee_number}</span>
+                                           </div>
+                                           <div className="flex justify-between">
+                                               <span className="text-sm font-medium text-gray-600">Fecha de Asignación:</span>
+                                               <span className="text-sm text-gray-900">{formatDate(assignment.assigned_date)}</span>
+                                           </div>
+                                           <div className="flex justify-between">
+                                               <span className="text-sm font-medium text-gray-600">Asignado por:</span>
+                                               <span className="text-sm text-gray-900">{assignment.assigned_by_name}</span>
+                                           </div>
+                                           {assignment.returned_date && (
+                                               <>
+                                                   <div className="flex justify-between">
+                                                       <span className="text-sm font-medium text-gray-600">Fecha de Devolución:</span>
+                                                       <span className="text-sm text-gray-900">{formatDate(assignment.returned_date)}</span>
+                                                   </div>
+                                                   <div className="flex justify-between">
+                                                       <span className="text-sm font-medium text-gray-600">Devuelto por:</span>
+                                                       <span className="text-sm text-gray-900">{assignment.returned_by_name || 'No especificado'}</span>
+                                                   </div>
+                                               </>
+                                           )}
+                                           <div className="flex justify-between">
+                                               <span className="text-sm font-medium text-gray-600">Estado de Asignación:</span>
+                                               <span className={`text-sm font-semibold ${assignment.returned_date ? 'text-red-600' : 'text-green-600'}`}>
+                                                   {assignment.returned_date ? 'Devuelto' : 'Activo'}
+                                               </span>
+                                           </div>
+                                       </div>
+                                   )}
+                               </div>
+
+                               {/* Historial de Asignaciones */}
+                               <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm col-span-2">
+                                   <h3 className="text-lg font-semibold text-gray-800 mb-3">📋 Historial de Asignaciones</h3>
+
+                                   {assignmentHistoryLoading ? (
+                                       <div className="text-center py-4">
+                                           <div className="text-gray-500">Cargando historial de asignaciones...</div>
+                                       </div>
+                                   ) : assignmentHistory.length === 0 ? (
+                                       <div className="text-center py-4">
+                                           <div className="text-gray-500">No hay registros de asignaciones para este activo.</div>
+                                       </div>
+                                   ) : (
+                                       <>
+                                           <div className="overflow-x-auto">
+                                               <table className="min-w-full divide-y divide-gray-200">
+                                                   <thead className="bg-gray-50">
+                                                       <tr>
+                                                           <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Fecha de Asignación</th>
+                                                           <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Empleado</th>
+                                                           <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Número Empleado</th>
+                                                           <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Asignado por</th>
+                                                           <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Fecha de Devolución</th>
+                                                           <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
+                                                       </tr>
+                                                   </thead>
+                                                   <tbody className="bg-white divide-y divide-gray-200">
+                                                       {assignmentHistory.map((assignmentRecord) => (
+                                                           <tr key={assignmentRecord.id} className="hover:bg-gray-50">
+                                                               <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                                                                   {formatDate(assignmentRecord.assigned_date)}
+                                                               </td>
+                                                               <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                                                                   {assignmentRecord.employee_name}
+                                                               </td>
+                                                               <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                                                                   {assignmentRecord.employee_number}
+                                                               </td>
+                                                               <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                                                                   {assignmentRecord.assigned_by_name}
+                                                               </td>
+                                                               <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                                                                   {assignmentRecord.returned_date ? formatDate(assignmentRecord.returned_date) : 'No devuelto'}
+                                                               </td>
+                                                               <td className="px-4 py-2 whitespace-nowrap text-sm font-medium">
+                                                                   <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                                                       assignmentRecord.returned_date
+                                                                           ? 'bg-red-100 text-red-800'
+                                                                           : 'bg-green-100 text-green-800'
+                                                                   }`}>
+                                                                       {assignmentRecord.returned_date ? 'Devuelto' : 'Activo'}
+                                                                   </span>
+                                                               </td>
+                                                           </tr>
+                                                       ))}
+                                                   </tbody>
+                                               </table>
+                                           </div>
+
+                                           {/* Pagination for Assignment History */}
+                                           {assignmentHistoryTotalPages > 1 && (
+                                               <div className="mt-4">
+                                                   <Pagination
+                                                       currentPage={assignmentHistoryPage}
+                                                       totalPages={assignmentHistoryTotalPages}
+                                                       pageSize={assignmentHistoryPageSize}
+                                                       pageSizeOptions={[5, 10, 20, 50]}
+                                                       onPageChange={handleAssignmentHistoryPageChange}
+                                                       onPageSizeChange={() => {}} // No page size change needed
+                                                       hidePageSize={true} // Hide page size selector for assignment history
+                                                   />
+                                               </div>
+                                           )}
+                                       </>
+                                   )}
                                </div>
                            </div>
                        )}

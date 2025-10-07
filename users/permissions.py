@@ -11,3 +11,13 @@ class IsActiveUser(permissions.BasePermission):
         # === ¡CAMBIA ESTO! ===
         return request.user and request.user.is_authenticated and request.user.is_active # Ahora verifica 'is_active'
         # =====================
+
+
+class CanViewReports(permissions.BasePermission):
+    """
+    Custom permission to allow users to view reports.
+    """
+    message = 'No tienes permisos para ver reportes.'
+
+    def has_permission(self, request, view):
+        return request.user and request.user.is_authenticated and request.user.is_active and request.user.has_perm('custom.view_reports')

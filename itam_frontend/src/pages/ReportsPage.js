@@ -48,6 +48,7 @@ function ReportsPage() {
             technician: '',
             region: '',
             finca: '',
+            tipos_activos: [],
             estado: 'activo',
             fecha_desde: '',
             fecha_hasta: ''
@@ -159,8 +160,17 @@ function ReportsPage() {
 
             // Add filters to params
             Object.entries(currentFilters).forEach(([key, value]) => {
-                if (value && value !== '') {
-                    params.append(key, value);
+                if (value && value !== '' && value !== null) {
+                    if (Array.isArray(value)) {
+                        // Handle array values (like tipos_activos)
+                        value.forEach(item => {
+                            if (item && item !== '') {
+                                params.append(key, item);
+                            }
+                        });
+                    } else {
+                        params.append(key, value);
+                    }
                 }
             });
 
@@ -329,7 +339,7 @@ function ReportsPage() {
     );
 
     const renderMaintenanceFilters = () => (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-8 gap-2">
             <div className="min-w-0">
                 <label className="block text-xs font-medium text-gray-700 mb-1">Activo</label>
                 <input
@@ -390,6 +400,48 @@ function ReportsPage() {
                         <option key={finca.id} value={finca.id}>{finca.name}</option>
                     ))}
                 </select>
+            </div>
+            <div className="min-w-0">
+                <label className="block text-xs font-medium text-gray-700 mb-1">Tipos de Activo</label>
+                <div className="relative">
+                    <select
+                        value=""
+                        onChange={(e) => {
+                            const selectedValue = e.target.value;
+                            if (selectedValue && !filters.maintenance.tipos_activos.includes(selectedValue)) {
+                                handleFilterChange('maintenance', 'tipos_activos', [...filters.maintenance.tipos_activos, selectedValue]);
+                            }
+                        }}
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    >
+                        <option value="">Seleccionar tipos...</option>
+                        {masterData.tipos_activo?.filter(tipo => !filters.maintenance.tipos_activos.includes(tipo.name)).map(tipo => (
+                            <option key={tipo.id} value={tipo.name}>{tipo.name}</option>
+                        ))}
+                    </select>
+                    {filters.maintenance.tipos_activos.length > 0 && (
+                        <div className="mt-1 flex flex-wrap gap-1">
+                            {filters.maintenance.tipos_activos.map((tipo, index) => (
+                                <span
+                                    key={index}
+                                    className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-indigo-100 text-indigo-800"
+                                >
+                                    {tipo}
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const newTipos = filters.maintenance.tipos_activos.filter((_, i) => i !== index);
+                                            handleFilterChange('maintenance', 'tipos_activos', newTipos);
+                                        }}
+                                        className="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full text-indigo-400 hover:bg-indigo-200 hover:text-indigo-500"
+                                    >
+                                        <span className="text-xs">×</span>
+                                    </button>
+                                </span>
+                            ))}
+                        </div>
+                    )}
+                </div>
             </div>
             <div className="min-w-0">
                 <label className="block text-xs font-medium text-gray-700 mb-1">Fecha Desde</label>

@@ -149,6 +149,17 @@ class Activo(models.Model):
         help_text="Lista de rutas de archivos subidos al dar de baja el activo"
     )
 
+    # Assignment to user
+    assigned_to = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        verbose_name="Asignado a",
+        blank=True,
+        null=True,
+        related_name='assigned_assets',
+        help_text="Usuario al que está asignado este activo"
+    )
+
     # Maintenance tracking fields
     ultimo_mantenimiento = models.DateField(
         verbose_name="Último Mantenimiento",
@@ -339,6 +350,34 @@ class Assignment(models.Model):
     def is_active(self):
         """Check if assignment is currently active (not returned)"""
         return self.returned_date is None
+
+    def save(self, *args, **kwargs):
+        # If this is a new assignment (no returned_date), set the activo's assigned_to
+        if not self.returned_date and self.employee:
+            # Get the user associated with this employee
+            try:
+                user = self.employee.user_account.first()  # Get the user that has this employee
+                if user:
+                    self.activo.assigned_to = user
+                    self.activo.save(update_fields=['assigned_to'])
+            except Exception:
+                # If no user account found, just continue without setting assigned_to
+                pass
+
+        # If this assignment is being returned, check if there are other active assignments
+        elif self.returned_date and self.activo.assigned_to:
+            # Check if there are other active assignments for this activo
+            other_active_assignments = Assignment.objects.filter(
+                activo=self.activo,
+                returned_date__isnull=True
+            ).exclude(id=self.id)
+
+            # If no other active assignments, clear the assigned_to field
+            if not other_active_assignments.exists():
+                self.activo.assigned_to = None
+                self.activo.save(update_fields=['assigned_to'])
+
+        super().save(*args, **kwargs)
 
     def return_assignment(self, returned_by_user, return_date=None):
         """Mark assignment as returned"""

@@ -2,8 +2,15 @@
 import axios from 'axios';
 import { jwtDecode } from 'jwt-decode'; // Make sure you have jwt-decode installed
 
+// Dynamic API base URL based on current host (replace port 3000 with 8000)
+const getApiBaseUrl = () => {
+    const currentHost = window.location.hostname;
+    const protocol = window.location.protocol;
+    return `${protocol}//${currentHost}:8000/api/`;
+};
+
 const api = axios.create({
-    baseURL: 'http://127.0.0.1:8000/api/', // Your Django API base URL
+    baseURL: getApiBaseUrl(), // Dynamic Django API base URL
     headers: {
         'Content-Type': 'application/json',
     },
@@ -37,7 +44,8 @@ api.interceptors.response.use(
 
             if (refreshToken) {
                 try {
-                    const response = await axios.post('http://127.0.0.1:8000/api/login/refresh/', {
+                    const refreshUrl = getApiBaseUrl().replace('/api/', '/api/login/refresh/');
+                    const response = await axios.post(refreshUrl, {
                         refresh: refreshToken,
                     });
                     const newAccessToken = response.data.access;

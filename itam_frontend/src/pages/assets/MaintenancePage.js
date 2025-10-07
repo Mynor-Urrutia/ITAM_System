@@ -36,8 +36,8 @@ function MaintenancePage() {
     const [showMaintenanceDetailModal, setShowMaintenanceDetailModal] = useState(false);
     const [selectedMaintenanceId, setSelectedMaintenanceId] = useState(null);
 
-    const canViewMaintenance = hasPermission('assets.view_mantenimiento');
-    const canCreateMaintenance = hasPermission('assets.add_mantenimiento');
+    const canViewMaintenance = hasPermission('assets.view_maintenance');
+    const canCreateMaintenance = hasPermission('assets.add_maintenance');
 
     useEffect(() => {
         if (canViewMaintenance) {

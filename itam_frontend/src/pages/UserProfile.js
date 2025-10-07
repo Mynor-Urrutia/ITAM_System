@@ -1,7 +1,7 @@
 // itam_frontend/src/pages/UserProfile.js
 
 import React, { useState, useEffect } from 'react';
-import { getCurrentUser, getAssignments } from '../api';
+import { getCurrentUser, getAssignments, getActivos } from '../api';
 import { useAuth } from '../context/AuthContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -54,16 +54,26 @@ function UserProfile() {
     };
 
     const fetchAssignedAssets = async () => {
-        if (!userData?.employee_data?.id) return;
-
         try {
             setAssetsLoading(true);
-            const params = {
-                employee: userData.employee_data.id,
-                active_only: true
-            };
-            const response = await getAssignments(params);
-            setAssignedAssets(response.data.results || response.data);
+
+            if (userData.employee_data) {
+                // User is an employee, fetch assignments
+                const params = {
+                    employee: userData.employee_data.id,
+                    active_only: true
+                };
+                const response = await getAssignments(params);
+                setAssignedAssets(response.data.results || response.data);
+            } else {
+                // User is a system user, fetch directly assigned assets
+                const params = {
+                    assigned_to: userData.id,
+                    estado: 'activo'
+                };
+                const response = await getActivos(params);
+                setAssignedAssets(response.data.results || response.data);
+            }
         } catch (error) {
             console.error('Error fetching assigned assets:', error);
         } finally {
@@ -222,21 +232,19 @@ function UserProfile() {
                         </div>
                     </div>
 
-                    {userData.employee_data && (
-                        <div className="bg-white rounded-lg shadow-sm border p-6">
-                            <div className="flex items-center">
-                                <div className="bg-purple-100 p-3 rounded-lg">
-                                    <FontAwesomeIcon icon={faBuilding} className="text-purple-600 text-xl" />
-                                </div>
-                                <div className="ml-4">
-                                    <p className="text-sm font-medium text-gray-600">Activos Asignados</p>
-                                    <p className="text-lg font-semibold text-gray-900">
-                                        {assetsLoading ? '...' : assignedAssets.length}
-                                    </p>
-                                </div>
+                    <div className="bg-white rounded-lg shadow-sm border p-6">
+                        <div className="flex items-center">
+                            <div className="bg-purple-100 p-3 rounded-lg">
+                                <FontAwesomeIcon icon={faBuilding} className="text-purple-600 text-xl" />
+                            </div>
+                            <div className="ml-4">
+                                <p className="text-sm font-medium text-gray-600">Activos Asignados</p>
+                                <p className="text-lg font-semibold text-gray-900">
+                                    {assetsLoading ? '...' : assignedAssets.length}
+                                </p>
                             </div>
                         </div>
-                    )}
+                    </div>
                 </div>
 
                 {/* Information Cards Grid */}
@@ -390,7 +398,7 @@ function UserProfile() {
                 </div>
 
                 {/* Assigned Assets Section */}
-                {userData?.employee_data && (
+                {userData && (
                     <div className="bg-white rounded-lg shadow-sm border">
                         <div className="bg-indigo-50 px-6 py-4 border-b border-indigo-100">
                             <h2 className="text-lg font-semibold text-indigo-900 flex items-center">
@@ -414,19 +422,48 @@ function UserProfile() {
                                 </div>
                             ) : (
                                 <div className="space-y-4">
-                                    {assignedAssets.map((assignment) => {
-                                        const isExpanded = expandedAssetCards.has(assignment.id);
+                                    {assignedAssets.map((item) => {
+                                        // Handle both assignment objects (flattened activo_ fields) and direct activo objects
+                                        const isAssignment = item.activo_hostname !== undefined;
+                                        const activo = isAssignment ? {
+                                            id: item.activo_id,
+                                            hostname: item.activo_hostname,
+                                            serie: item.activo_serie,
+                                            tipo_activo_name: item.activo_tipo_activo_name,
+                                            marca_name: item.activo_marca_name,
+                                            modelo_name: item.activo_modelo_name,
+                                            procesador: item.activo_procesador,
+                                            ram: item.activo_ram,
+                                            almacenamiento: item.activo_almacenamiento,
+                                            tarjeta_grafica: item.activo_tarjeta_grafica,
+                                            wifi: item.activo_wifi,
+                                            ethernet: item.activo_ethernet,
+                                            puertos_ethernet: item.activo_puertos_ethernet,
+                                            puertos_sfp: item.activo_puertos_sfp,
+                                            puerto_consola: item.activo_puerto_consola,
+                                            puertos_poe: item.activo_puertos_poe,
+                                            alimentacion: item.activo_alimentacion,
+                                            administrable: item.activo_administrable,
+                                            tamano: item.activo_tamano,
+                                            color: item.activo_color,
+                                            conectores: item.activo_conectores,
+                                            cables: item.activo_cables,
+                                            fecha_registro: null // Not available in assignment data
+                                        } : item;
+                                        const assignmentDate = item.assigned_date;
+                                        const isExpanded = expandedAssetCards.has(activo.id);
+
                                         return (
-                                            <div key={assignment.id} className="bg-gray-50 rounded-lg border border-gray-200 shadow-sm">
+                                            <div key={activo.id} className="bg-gray-50 rounded-lg border border-gray-200 shadow-sm">
                                                 {/* Card Header - Always Visible */}
                                                 <div className="p-4">
                                                     <div className="flex justify-between items-start mb-2">
                                                         <div className="flex-1">
                                                             <h4 className="font-semibold text-gray-900 text-lg leading-tight">
-                                                                {assignment.activo_hostname}
+                                                                {activo.hostname}
                                                             </h4>
                                                             <p className="text-sm text-gray-600 mt-1">
-                                                                <span className="font-medium">Serie:</span> {assignment.activo_serie}
+                                                                <span className="font-medium">Serie:</span> {activo.serie}
                                                             </p>
                                                         </div>
                                                         <div className="flex flex-col items-end space-y-2">
@@ -434,7 +471,7 @@ function UserProfile() {
                                                                 Asignado
                                                             </span>
                                                             <button
-                                                                onClick={() => toggleAssetCardExpansion(assignment.id)}
+                                                                onClick={() => toggleAssetCardExpansion(activo.id)}
                                                                 className="text-gray-500 hover:text-gray-700 p-1 transition-colors"
                                                                 title={isExpanded ? "Contraer detalles" : "Ver más detalles"}
                                                             >
@@ -449,7 +486,7 @@ function UserProfile() {
                                                     {/* Asset Type Badge - Always Visible */}
                                                     <div className="flex items-center justify-between">
                                                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-                                                            {assignment.activo_tipo_activo_name}
+                                                            {activo.tipo_activo_name}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -461,23 +498,26 @@ function UserProfile() {
                                                             <div className="grid grid-cols-1 gap-2 text-sm">
                                                                 <div className="flex justify-between">
                                                                     <span className="text-gray-600">Marca:</span>
-                                                                    <span className="text-gray-900 font-medium">{assignment.activo_marca_name}</span>
+                                                                    <span className="text-gray-900 font-medium">{activo.marca_name}</span>
                                                                 </div>
                                                                 <div className="flex justify-between">
                                                                     <span className="text-gray-600">Modelo:</span>
-                                                                    <span className="text-gray-900 font-medium">{assignment.activo_modelo_name}</span>
+                                                                    <span className="text-gray-900 font-medium">{activo.modelo_name}</span>
                                                                 </div>
                                                                 <div className="flex justify-between">
-                                                                    <span className="text-gray-600">Fecha de Asignación:</span>
+                                                                    <span className="text-gray-600">Fecha de {assignmentDate ? 'Asignación' : 'Registro'}:</span>
                                                                     <span className="text-gray-900 font-medium">
-                                                                        {new Date(assignment.assigned_date).toLocaleDateString('es-ES')}
+                                                                        {assignmentDate
+                                                                            ? new Date(assignmentDate).toLocaleDateString('es-ES')
+                                                                            : (activo.fecha_registro ? new Date(activo.fecha_registro).toLocaleDateString('es-ES') : 'N/A')
+                                                                        }
                                                                     </span>
                                                                 </div>
                                                             </div>
 
                                                             {/* Asset Specs */}
                                                             {(() => {
-                                                                const tipo = assignment.activo_tipo_activo_name?.toLowerCase() || '';
+                                                                const tipo = activo.tipo_activo_name?.toLowerCase() || '';
                                                                 const computoTypes = ['computadora', 'laptop', 'desktop', 'servidor', 'all in one'];
                                                                 const redTypes = ['switch', 'router', 'routers', 'firewall', 'ap wifi', 'p2p'];
                                                                 const isComputo = computoTypes.some(t => tipo.includes(t));
@@ -486,26 +526,26 @@ function UserProfile() {
 
                                                                 // Check if there are any specs to show for this asset type
                                                                 const hasComputoSpecs = isComputo && (
-                                                                    (assignment.activo_procesador && assignment.activo_procesador.trim()) ||
-                                                                    (assignment.activo_ram && assignment.activo_ram > 0) ||
-                                                                    (assignment.activo_almacenamiento && assignment.activo_almacenamiento.trim()) ||
-                                                                    (assignment.activo_tarjeta_grafica && assignment.activo_tarjeta_grafica.trim()) ||
-                                                                    assignment.activo_wifi !== null ||
-                                                                    assignment.activo_ethernet !== null
+                                                                    (activo.procesador && activo.procesador.trim()) ||
+                                                                    (activo.ram && activo.ram > 0) ||
+                                                                    (activo.almacenamiento && activo.almacenamiento.trim()) ||
+                                                                    (activo.tarjeta_grafica && activo.tarjeta_grafica.trim()) ||
+                                                                    activo.wifi !== null ||
+                                                                    activo.ethernet !== null
                                                                 );
                                                                 const hasRedSpecs = isRed && (
-                                                                    (assignment.activo_puertos_ethernet && assignment.activo_puertos_ethernet.trim()) ||
-                                                                    (assignment.activo_puertos_sfp && assignment.activo_puertos_sfp.trim()) ||
-                                                                    assignment.activo_puerto_consola !== null ||
-                                                                    (assignment.activo_puertos_poe && assignment.activo_puertos_poe.trim()) ||
-                                                                    (assignment.activo_alimentacion && assignment.activo_alimentacion.trim()) ||
-                                                                    assignment.activo_administrable !== null
+                                                                    (activo.puertos_ethernet && activo.puertos_ethernet.trim()) ||
+                                                                    (activo.puertos_sfp && activo.puertos_sfp.trim()) ||
+                                                                    activo.puerto_consola !== null ||
+                                                                    (activo.puertos_poe && activo.puertos_poe.trim()) ||
+                                                                    (activo.alimentacion && activo.alimentacion.trim()) ||
+                                                                    activo.administrable !== null
                                                                 );
                                                                 const hasPerifericoSpecs = isPeriferico && (
-                                                                    (assignment.activo_tamano && assignment.activo_tamano.trim()) ||
-                                                                    (assignment.activo_color && assignment.activo_color.trim()) ||
-                                                                    (assignment.activo_conectores && assignment.activo_conectores.trim()) ||
-                                                                    (assignment.activo_cables && assignment.activo_cables.trim())
+                                                                    (activo.tamano && activo.tamano.trim()) ||
+                                                                    (activo.color && activo.color.trim()) ||
+                                                                    (activo.conectores && activo.conectores.trim()) ||
+                                                                    (activo.cables && activo.cables.trim())
                                                                 );
 
                                                                 if (!hasComputoSpecs && !hasRedSpecs && !hasPerifericoSpecs) {
@@ -519,40 +559,40 @@ function UserProfile() {
                                                                             {/* Computo Specs */}
                                                                             {isComputo && (
                                                                                 <>
-                                                                                    {assignment.activo_procesador && assignment.activo_procesador.trim() && (
+                                                                                    {activo.procesador && activo.procesador.trim() && (
                                                                                         <div className="flex justify-between">
                                                                                             <span>Procesador:</span>
-                                                                                            <span className="font-medium">{assignment.activo_procesador}</span>
+                                                                                            <span className="font-medium">{activo.procesador}</span>
                                                                                         </div>
                                                                                     )}
-                                                                                    {assignment.activo_ram && assignment.activo_ram > 0 && (
+                                                                                    {activo.ram && activo.ram > 0 && (
                                                                                         <div className="flex justify-between">
                                                                                             <span>RAM:</span>
-                                                                                            <span className="font-medium">{assignment.activo_ram} GB</span>
+                                                                                            <span className="font-medium">{activo.ram} GB</span>
                                                                                         </div>
                                                                                     )}
-                                                                                    {assignment.activo_almacenamiento && assignment.activo_almacenamiento.trim() && (
+                                                                                    {activo.almacenamiento && activo.almacenamiento.trim() && (
                                                                                         <div className="flex justify-between">
                                                                                             <span>Almacenamiento:</span>
-                                                                                            <span className="font-medium">{assignment.activo_almacenamiento}</span>
+                                                                                            <span className="font-medium">{activo.almacenamiento}</span>
                                                                                         </div>
                                                                                     )}
-                                                                                    {assignment.activo_tarjeta_grafica && assignment.activo_tarjeta_grafica.trim() && (
+                                                                                    {activo.tarjeta_grafica && activo.tarjeta_grafica.trim() && (
                                                                                         <div className="flex justify-between">
                                                                                             <span>Tarjeta Gráfica:</span>
-                                                                                            <span className="font-medium">{assignment.activo_tarjeta_grafica}</span>
+                                                                                            <span className="font-medium">{activo.tarjeta_grafica}</span>
                                                                                         </div>
                                                                                     )}
-                                                                                    {assignment.activo_wifi !== null && assignment.activo_wifi !== undefined && (
+                                                                                    {activo.wifi !== null && activo.wifi !== undefined && (
                                                                                         <div className="flex justify-between">
                                                                                             <span>WIFI:</span>
-                                                                                            <span className="font-medium">{Boolean(assignment.activo_wifi) ? 'Sí' : 'No'}</span>
+                                                                                            <span className="font-medium">{Boolean(activo.wifi) ? 'Sí' : 'No'}</span>
                                                                                         </div>
                                                                                     )}
-                                                                                    {assignment.activo_ethernet !== null && assignment.activo_ethernet !== undefined && (
+                                                                                    {activo.ethernet !== null && activo.ethernet !== undefined && (
                                                                                         <div className="flex justify-between">
                                                                                             <span>Ethernet:</span>
-                                                                                            <span className="font-medium">{Boolean(assignment.activo_ethernet) ? 'Sí' : 'No'}</span>
+                                                                                            <span className="font-medium">{Boolean(activo.ethernet) ? 'Sí' : 'No'}</span>
                                                                                         </div>
                                                                                     )}
                                                                                 </>
@@ -561,40 +601,40 @@ function UserProfile() {
                                                                             {/* Red Specs */}
                                                                             {isRed && (
                                                                                 <>
-                                                                                    {assignment.activo_puertos_ethernet && assignment.activo_puertos_ethernet.trim() && (
+                                                                                    {activo.puertos_ethernet && activo.puertos_ethernet.trim() && (
                                                                                         <div className="flex justify-between">
                                                                                             <span>Puertos Ethernet:</span>
-                                                                                            <span className="font-medium">{assignment.activo_puertos_ethernet}</span>
+                                                                                            <span className="font-medium">{activo.puertos_ethernet}</span>
                                                                                         </div>
                                                                                     )}
-                                                                                    {assignment.activo_puertos_sfp && assignment.activo_puertos_sfp.trim() && (
+                                                                                    {activo.puertos_sfp && activo.puertos_sfp.trim() && (
                                                                                         <div className="flex justify-between">
                                                                                             <span>Puertos SFP:</span>
-                                                                                            <span className="font-medium">{assignment.activo_puertos_sfp}</span>
+                                                                                            <span className="font-medium">{activo.puertos_sfp}</span>
                                                                                         </div>
                                                                                     )}
-                                                                                    {assignment.activo_puerto_consola !== null && assignment.activo_puerto_consola !== undefined && (
+                                                                                    {activo.puerto_consola !== null && activo.puerto_consola !== undefined && (
                                                                                         <div className="flex justify-between">
                                                                                             <span>Puerto Consola:</span>
-                                                                                            <span className="font-medium">{Boolean(assignment.activo_puerto_consola) ? 'Sí' : 'No'}</span>
+                                                                                            <span className="font-medium">{Boolean(activo.puerto_consola) ? 'Sí' : 'No'}</span>
                                                                                         </div>
                                                                                     )}
-                                                                                    {assignment.activo_puertos_poe && assignment.activo_puertos_poe.trim() && (
+                                                                                    {activo.puertos_poe && activo.puertos_poe.trim() && (
                                                                                         <div className="flex justify-between">
                                                                                             <span>Puertos PoE:</span>
-                                                                                            <span className="font-medium">{assignment.activo_puertos_poe}</span>
+                                                                                            <span className="font-medium">{activo.puertos_poe}</span>
                                                                                         </div>
                                                                                     )}
-                                                                                    {assignment.activo_alimentacion && assignment.activo_alimentacion.trim() && (
+                                                                                    {activo.alimentacion && activo.alimentacion.trim() && (
                                                                                         <div className="flex justify-between">
                                                                                             <span>Alimentación:</span>
-                                                                                            <span className="font-medium">{assignment.activo_alimentacion}</span>
+                                                                                            <span className="font-medium">{activo.alimentacion}</span>
                                                                                         </div>
                                                                                     )}
-                                                                                    {assignment.activo_administrable !== null && assignment.activo_administrable !== undefined && (
+                                                                                    {activo.administrable !== null && activo.administrable !== undefined && (
                                                                                         <div className="flex justify-between">
                                                                                             <span>Administrable:</span>
-                                                                                            <span className="font-medium">{Boolean(assignment.activo_administrable) ? 'Sí' : 'No'}</span>
+                                                                                            <span className="font-medium">{Boolean(activo.administrable) ? 'Sí' : 'No'}</span>
                                                                                         </div>
                                                                                     )}
                                                                                 </>
@@ -603,28 +643,28 @@ function UserProfile() {
                                                                             {/* Periferico Specs */}
                                                                             {isPeriferico && (
                                                                                 <>
-                                                                                    {assignment.activo_tamano && assignment.activo_tamano.trim() && (
+                                                                                    {activo.tamano && activo.tamano.trim() && (
                                                                                         <div className="flex justify-between">
                                                                                             <span>Tamaño:</span>
-                                                                                            <span className="font-medium">{assignment.activo_tamano}</span>
+                                                                                            <span className="font-medium">{activo.tamano}</span>
                                                                                         </div>
                                                                                     )}
-                                                                                    {assignment.activo_color && assignment.activo_color.trim() && (
+                                                                                    {activo.color && activo.color.trim() && (
                                                                                         <div className="flex justify-between">
                                                                                             <span>Color:</span>
-                                                                                            <span className="font-medium">{assignment.activo_color}</span>
+                                                                                            <span className="font-medium">{activo.color}</span>
                                                                                         </div>
                                                                                     )}
-                                                                                    {assignment.activo_conectores && assignment.activo_conectores.trim() && (
+                                                                                    {activo.conectores && activo.conectores.trim() && (
                                                                                         <div className="flex justify-between">
                                                                                             <span>Conectores:</span>
-                                                                                            <span className="font-medium">{assignment.activo_conectores}</span>
+                                                                                            <span className="font-medium">{activo.conectores}</span>
                                                                                         </div>
                                                                                     )}
-                                                                                    {assignment.activo_cables && assignment.activo_cables.trim() && (
+                                                                                    {activo.cables && activo.cables.trim() && (
                                                                                         <div className="flex justify-between">
                                                                                             <span>Cables:</span>
-                                                                                            <span className="font-medium">{assignment.activo_cables}</span>
+                                                                                            <span className="font-medium">{activo.cables}</span>
                                                                                         </div>
                                                                                     )}
                                                                                 </>
@@ -674,33 +714,51 @@ function UserProfile() {
                                                     Hostname
                                                 </th>
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    Fecha de Asignación
+                                                    Fecha de {userData?.employee_data ? 'Asignación' : 'Registro'}
                                                 </th>
                                             </tr>
                                         </thead>
                                         <tbody className="bg-white divide-y divide-gray-200">
-                                            {assignedAssets.map((assignment) => (
-                                                <tr key={assignment.id} className="hover:bg-gray-50">
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                        {assignment.activo_tipo_activo_name}
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                        {assignment.activo_marca_name}
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                        {assignment.activo_modelo_name}
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">
-                                                        {assignment.activo_serie}
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                        {assignment.activo_hostname}
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                        {new Date(assignment.assigned_date).toLocaleDateString('es-ES')}
-                                                    </td>
-                                                </tr>
-                                            ))}
+                                            {assignedAssets.map((item) => {
+                                                // Handle both assignment objects (flattened activo_ fields) and direct activo objects
+                                                const isAssignment = item.activo_hostname !== undefined;
+                                                const activo = isAssignment ? {
+                                                    id: item.activo_id,
+                                                    hostname: item.activo_hostname,
+                                                    serie: item.activo_serie,
+                                                    tipo_activo_name: item.activo_tipo_activo_name,
+                                                    marca_name: item.activo_marca_name,
+                                                    modelo_name: item.activo_modelo_name,
+                                                    fecha_registro: null
+                                                } : item;
+                                                const assignmentDate = item.assigned_date;
+
+                                                return (
+                                                    <tr key={activo.id} className="hover:bg-gray-50">
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                            {activo.tipo_activo_name}
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                            {activo.marca_name}
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                            {activo.modelo_name}
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">
+                                                            {activo.serie}
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                            {activo.hostname}
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                            {assignmentDate
+                                                                ? new Date(assignmentDate).toLocaleDateString('es-ES')
+                                                                : (activo.fecha_registro ? new Date(activo.fecha_registro).toLocaleDateString('es-ES') : 'N/A')
+                                                            }
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
                                         </tbody>
                                     </table>
                                 )}

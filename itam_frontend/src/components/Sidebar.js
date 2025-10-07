@@ -53,6 +53,10 @@ function Sidebar({ isOpen, onClose }) {
 
     const canViewEmployees = hasPermission('employees.view_employee');
 
+    const canViewMaintenance = hasPermission('assets.view_maintenance');
+
+    const canViewReports = hasPermission('custom.view_reports');
+
 
     return (
         <>
@@ -334,8 +338,9 @@ function Sidebar({ isOpen, onClose }) {
                 )}
 
 
-                {/* Otras Secciones */}
-                {hasPermission('assets.view_activo') && ( // Asume que este permiso aplica a la vista general de activos
+                {/* --------------------------- */}
+                {/* Mantenimiento de Activos */}
+                {canViewMaintenance && (
                     <NavLink
                         to="/assets/maintenance"
                         className={({ isActive }) =>
@@ -351,7 +356,7 @@ function Sidebar({ isOpen, onClose }) {
 
                 {/* --------------------------- */}
                 {/* Reportes */}
-                {(hasPermission('assets.view_activo') || hasPermission('assets.view_assignment') || hasPermission('masterdata.view_auditlog')) && (
+                {canViewReports && (
                     <NavLink
                         to="/reports"
                         className={({ isActive }) =>

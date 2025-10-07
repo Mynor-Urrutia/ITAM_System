@@ -80,9 +80,8 @@ class UserSerializer(serializers.ModelSerializer):
         return AuditLog.objects.filter(user=obj).count()
 
     def get_assets_count(self, obj):
-        # TODO: Add assigned_to field to Activo model to properly count user's assets
-        # For now, return 0 as assets are not linked to users
-        return 0
+        from assets.models import Activo
+        return Activo.objects.filter(assigned_to=obj, estado='activo').count()
 
     def get_groups(self, obj):
         return list(obj.groups.values('id', 'name'))
@@ -94,6 +93,33 @@ class UserSerializer(serializers.ModelSerializer):
         if obj.employee:
             serializer = EmployeeSerializer(obj.employee)
             return serializer.data
+        # Fallback: try to find employee by matching name
+        try:
+            from employees.models import Employee
+            # Try exact name match first
+            employee = Employee.objects.filter(
+                first_name__iexact=obj.first_name,
+                last_name__iexact=obj.last_name
+            ).first()
+
+            # If no exact match, try partial name match
+            if not employee:
+                # Split user first_name and try to match with employee first_name
+                user_first_names = obj.first_name.split()
+                for first_name_part in user_first_names:
+                    if len(first_name_part) > 2:  # Avoid matching very short names
+                        employee = Employee.objects.filter(
+                            first_name__icontains=first_name_part,
+                            last_name__iexact=obj.last_name
+                        ).first()
+                        if employee:
+                            break
+
+            if employee:
+                serializer = EmployeeSerializer(employee)
+                return serializer.data
+        except Exception:
+            pass
         return None
 
 

@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-v^2u)3-%-0vsy75g0bbafaqj&7g0nxg6dsbr(t$ue7bkta6ike
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '10.10.24.63', '10.10.240.164']
 
 
 # Application definition
@@ -196,6 +196,8 @@ SIMPLE_JWT = {
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",  # Permite peticiones desde tu frontend de React
     "http://127.0.0.1:3000",  # Puede que React use 127.0.0.1 en algunos casos
+    "http://10.10.24.63:3000",  # IP principal de la red
+    "http://10.10.240.164:3000",  # IP secundaria de la red
 ]
 
 # También puedes usar CORS_ALLOW_ALL_ORIGINS = True para desarrollo

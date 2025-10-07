@@ -212,7 +212,14 @@ def audit_logs_report_csv(request):
     if user_id:
         queryset = queryset.filter(user_id=user_id)
     if content_type_id:
-        queryset = queryset.filter(content_type_id=content_type_id)
+        try:
+            # content_type_id comes as 'app_label.model' format from frontend
+            app_label, model = content_type_id.split('.')
+            content_type = ContentType.objects.get(app_label=app_label, model=model)
+            queryset = queryset.filter(content_type=content_type)
+        except (ValueError, ContentType.DoesNotExist):
+            # If parsing fails or content type doesn't exist, return empty queryset
+            queryset = queryset.none()
 
     # Date filtering
     if fecha_desde:

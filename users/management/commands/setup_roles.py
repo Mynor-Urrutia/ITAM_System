@@ -1,10 +1,22 @@
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import Group, Permission
+from django.contrib.contenttypes.models import ContentType
 
 class Command(BaseCommand):
     help = 'Create predefined roles with specific permissions'
 
     def handle(self, *args, **options):
+        # Create custom permissions if they don't exist
+        # Get or create a content type for the Permission model itself
+        permission_content_type = ContentType.objects.get_for_model(Permission)
+
+        # Create view_reports permission
+        Permission.objects.get_or_create(
+            codename='view_reports',
+            name='Can view reports',
+            content_type=permission_content_type
+        )
+
         # Define roles and their permissions
         roles_permissions = {
             'Administrador': [
@@ -45,6 +57,34 @@ class Command(BaseCommand):
                 # Manage roles and permissions
                 'add_group', 'change_group', 'delete_group', 'view_group',
                 'view_permission',
+            ],
+            'Técnico de IT': [
+                # All permissions for assets management
+                'add_activo', 'change_activo', 'delete_activo', 'view_activo',
+                # All permissions for maintenance
+                'add_maintenance', 'change_maintenance', 'delete_maintenance', 'view_maintenance',
+                # All permissions for assignments
+                'add_assignment', 'change_assignment', 'delete_assignment', 'view_assignment',
+                # All permissions for employees
+                'add_employee', 'change_employee', 'delete_employee', 'view_employee',
+                # Custom permissions for reports (to be created if needed)
+                'view_reports',
+            ],
+            'Analistas': [
+                # All permissions for assets management
+                'add_activo', 'change_activo', 'delete_activo', 'view_activo',
+                # All permissions for maintenance
+                'add_maintenance', 'change_maintenance', 'delete_maintenance', 'view_maintenance',
+                # All permissions for assignments
+                'add_assignment', 'change_assignment', 'delete_assignment', 'view_assignment',
+                # All permissions for employees
+                'add_employee', 'change_employee', 'delete_employee', 'view_employee',
+                # Custom permissions for reports
+                'view_reports',
+            ],
+            'Gestor de Activos': [
+                # Only CRUD permissions for assets management
+                'add_activo', 'change_activo', 'delete_activo', 'view_activo',
             ],
         }
 
