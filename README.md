@@ -66,7 +66,7 @@ npm --version     # Debe ser 7+
 5. Crear una nueva base de datos llamada `itam_db`
 6. Crear un usuario con los siguientes privilegios:
    - Usuario: `root`
-   - Contraseña: `Myn0r0406.` (o su contraseña preferida)
+   - Contraseña: `Your Password` (o su contraseña preferida)
    - Host: `localhost`
    - Otorgar todos los privilegios en `itam_db`
 
@@ -83,7 +83,7 @@ mysql -u root -p
 
 # Crear base de datos y usuario
 CREATE DATABASE itam_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE USER 'root'@'localhost' IDENTIFIED BY 'Myn0r0406.';
+CREATE USER 'root'@'localhost' IDENTIFIED BY 'Your Password';
 GRANT ALL PRIVILEGES ON itam_db.* TO 'root'@'localhost';
 FLUSH PRIVILEGES;
 EXIT;
@@ -124,7 +124,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'itam_db',           # Nombre de la base de datos
         'USER': 'root',              # Usuario de la base de datos
-        'PASSWORD': 'Myn0r0406.',    # Contraseña de la base de datos
+        'PASSWORD': 'Your Password',    # Contraseña de la base de datos
         'HOST': '127.0.0.1',         # Host de la base de datos
         'PORT': '3306',              # Puerto de la base de datos
     }
@@ -174,7 +174,7 @@ Crear un archivo `.env` en la raíz del proyecto (opcional pero recomendado para
 # Archivo .env
 DEBUG=True
 SECRET_KEY=your-secret-key-here
-DATABASE_URL=mysql://root:Myn0r0406.@127.0.0.1:3306/itam_db
+DATABASE_URL=mysql://root:Your Password@127.0.0.1:3306/itam_db
 ALLOWED_HOSTS=localhost,127.0.0.1
 ```
 
