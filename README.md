@@ -1,16 +1,16 @@
-# ITAM System
+# Sistema ITAM
 
-A comprehensive IT Asset Management system built with Django (backend) and React (frontend). This system provides complete asset tracking, user management, maintenance scheduling, and reporting capabilities for IT infrastructure management.
+Un sistema completo de Gestión de Activos de TI construido con Django (backend) y React (frontend). Este sistema proporciona capacidades completas de seguimiento de activos, gestión de usuarios, programación de mantenimiento e informes para la gestión de infraestructura de TI.
 
-## 🚀 Quick Start
+## 🚀 Inicio Rápido
 
-For experienced developers, here's the condensed setup:
+Para desarrolladores experimentados, aquí está la configuración condensada:
 
 ```bash
 git clone https://github.com/Mynor-Urrutia/ITAM_System.git
 cd ITAM_System
 
-# Backend setup
+# Configuración del backend
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
@@ -19,69 +19,69 @@ python manage.py setup_roles
 python manage.py create_superadmin
 python manage.py runserver
 
-# Frontend setup (new terminal)
+# Configuración del frontend (nueva terminal)
 cd itam_frontend
 npm install
 npm start
 ```
 
-## 📋 Prerequisites
+## 📋 Prerrequisitos
 
-### System Requirements
-- **Python**: 3.8 or higher (Python 3.13 recommended)
-- **Node.js**: 16 or higher (Node.js 18+ recommended)
-- **npm**: 7 or higher (comes with Node.js)
-- **Git**: Latest version
-- **MySQL Server**: 8.0 or higher (MariaDB 10.5+ compatible)
+### Requisitos del Sistema
+- **Python**: 3.8 o superior (Python 3.13 recomendado)
+- **Node.js**: 16 o superior (Node.js 18+ recomendado)
+- **npm**: 7 o superior (viene con Node.js)
+- **Git**: Versión más reciente
+- **MySQL Server**: 8.0 o superior (MariaDB 10.5+ compatible)
 
-### Development Tools
-- **Code Editor**: VS Code, PyCharm, or similar
-- **Terminal**: Command prompt, PowerShell, or bash
-- **Browser**: Chrome, Firefox, or Edge (latest versions)
+### Herramientas de Desarrollo
+- **Editor de Código**: VS Code, PyCharm, o similar
+- **Terminal**: Command prompt, PowerShell, o bash
+- **Navegador**: Chrome, Firefox, o Edge (versiones más recientes)
 
-## 🛠️ Detailed Setup Instructions
+## 🛠️ Instrucciones Detalladas de Configuración
 
-### Step 1: Clone and Prepare the Repository
+### Paso 1: Clonar y Preparar el Repositorio
 
 ```bash
-# Clone the repository
+# Clonar el repositorio
 git clone https://github.com/Mynor-Urrutia/ITAM_System.git
 cd ITAM_System
 
-# Verify Python version
-python --version  # Should be 3.8+
+# Verificar versión de Python
+python --version  # Debe ser 3.8+
 
-# Verify Node.js version
-node --version    # Should be 16+
-npm --version     # Should be 7+
+# Verificar versión de Node.js
+node --version    # Debe ser 16+
+npm --version     # Debe ser 7+
 ```
 
-### Step 2: Database Setup (MySQL)
+### Paso 2: Configuración de Base de Datos (MySQL)
 
-#### Option A: Using XAMPP (Recommended for Windows)
-1. Download and install XAMPP from https://www.apachefriends.org/
-2. Start XAMPP Control Panel
-3. Start MySQL module
-4. Open phpMyAdmin (http://localhost/phpmyadmin)
-5. Create a new database named `itam_db`
-6. Create a user with the following privileges:
-   - Username: `root`
-   - Password: `Myn0r0406.` (or your preferred password)
+#### Opción A: Usando XAMPP (Recomendado para Windows)
+1. Descargar e instalar XAMPP desde https://www.apachefriends.org/
+2. Iniciar Panel de Control de XAMPP
+3. Iniciar módulo MySQL
+4. Abrir phpMyAdmin (http://localhost/phpmyadmin)
+5. Crear una nueva base de datos llamada `itam_db`
+6. Crear un usuario con los siguientes privilegios:
+   - Usuario: `root`
+   - Contraseña: `Myn0r0406.` (o su contraseña preferida)
    - Host: `localhost`
-   - Grant all privileges on `itam_db`
+   - Otorgar todos los privilegios en `itam_db`
 
-#### Option B: Using MySQL Workbench
-1. Download MySQL Workbench from https://dev.mysql.com/downloads/workbench/
-2. Connect to your MySQL server
-3. Create a new schema named `itam_db`
-4. Create a user account with appropriate permissions
+#### Opción B: Usando MySQL Workbench
+1. Descargar MySQL Workbench desde https://dev.mysql.com/downloads/workbench/
+2. Conectarse a su servidor MySQL
+3. Crear un nuevo esquema llamado `itam_db`
+4. Crear una cuenta de usuario con permisos apropiados
 
-#### Option C: Command Line
+#### Opción C: Línea de Comandos
 ```bash
-# Login to MySQL
+# Iniciar sesión en MySQL
 mysql -u root -p
 
-# Create database and user
+# Crear base de datos y usuario
 CREATE DATABASE itam_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE USER 'root'@'localhost' IDENTIFIED BY 'Myn0r0406.';
 GRANT ALL PRIVILEGES ON itam_db.* TO 'root'@'localhost';
@@ -89,97 +89,97 @@ FLUSH PRIVILEGES;
 EXIT;
 ```
 
-### Step 3: Backend Configuration
+### Paso 3: Configuración del Backend
 
-#### Create Virtual Environment
+#### Crear Entorno Virtual
 ```bash
-# Create virtual environment
+# Crear entorno virtual
 python -m venv venv
 
-# Activate virtual environment
-# On Windows:
+# Activar entorno virtual
+# En Windows:
 venv\Scripts\activate
-# On macOS/Linux:
+# En macOS/Linux:
 source venv/bin/activate
 
-# Verify activation (you should see (venv) in your prompt)
+# Verificar activación (debería ver (venv) en su prompt)
 ```
 
-#### Install Dependencies
+#### Instalar Dependencias
 ```bash
-# Install Python packages
+# Instalar paquetes Python
 pip install -r requirements.txt
 
-# Verify installation
+# Verificar instalación
 pip list | grep -E "(Django|djangorestframework|mysqlclient)"
 ```
 
-#### Database Configuration
-The database is pre-configured in `itam_backend/settings.py`. If you need to modify the database settings:
+#### Configuración de Base de Datos
+La base de datos está preconfigurada en `itam_backend/settings.py`. Si necesita modificar la configuración de la base de datos:
 
 ```python
-# itam_backend/settings.py - DATABASES section
+# itam_backend/settings.py - sección DATABASES
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'itam_db',           # Database name
-        'USER': 'root',              # Database user
-        'PASSWORD': 'Myn0r0406.',    # Database password
-        'HOST': '127.0.0.1',         # Database host
-        'PORT': '3306',              # Database port
+        'NAME': 'itam_db',           # Nombre de la base de datos
+        'USER': 'root',              # Usuario de la base de datos
+        'PASSWORD': 'Myn0r0406.',    # Contraseña de la base de datos
+        'HOST': '127.0.0.1',         # Host de la base de datos
+        'PORT': '3306',              # Puerto de la base de datos
     }
 }
 ```
 
-#### Apply Migrations
+#### Aplicar Migraciones
 ```bash
-# Apply database migrations
+# Aplicar migraciones de base de datos
 python manage.py migrate
 
-# Verify migrations applied
+# Verificar migraciones aplicadas
 python manage.py showmigrations
 ```
 
-#### Create Superuser and Initial Data
+#### Crear Superusuario y Datos Iniciales
 ```bash
-# Create superuser (interactive)
+# Crear superusuario (interactivo)
 python manage.py createsuperuser
 
-# Setup roles and permissions
+# Configurar roles y permisos
 python manage.py setup_roles
 
-# Create initial superadmin user (alternative)
+# Crear usuario superadmin inicial (alternativa)
 python manage.py create_superadmin
 ```
 
-### Step 4: Frontend Configuration
+### Paso 4: Configuración del Frontend
 
 ```bash
-# Navigate to frontend directory
+# Navegar al directorio del frontend
 cd itam_frontend
 
-# Install dependencies
+# Instalar dependencias
 npm install
 
-# Verify installation
+# Verificar instalación
 npm list --depth=0
 ```
 
-### Step 5: Environment Configuration
+### Paso 5: Configuración del Entorno
 
-#### Backend Environment Variables
-Create a `.env` file in the project root (optional but recommended for production):
+#### Variables de Entorno del Backend
+Crear un archivo `.env` en la raíz del proyecto (opcional pero recomendado para producción):
 
 ```bash
-# .env file
+# Archivo .env
 DEBUG=True
 SECRET_KEY=your-secret-key-here
 DATABASE_URL=mysql://root:Myn0r0406.@127.0.0.1:3306/itam_db
 ALLOWED_HOSTS=localhost,127.0.0.1
 ```
 
-#### Frontend Environment Variables
-Create a `.env` file in `itam_frontend/` directory:
+#### Variables de Entorno del Frontend
+Crear un archivo `.env` en el directorio `itam_frontend/`:
 
 ```bash
 # itam_frontend/.env
@@ -187,9 +187,9 @@ REACT_APP_API_BASE_URL=http://localhost:8000/api
 GENERATE_SOURCEMAP=false
 ```
 
-### Step 6: Running the Application
+### Paso 6: Ejecutar la Aplicación
 
-#### Development Mode (Recommended)
+#### Modo Desarrollo (Recomendado)
 ```bash
 # Terminal 1: Backend
 cd ITAM_System
@@ -201,7 +201,7 @@ cd ITAM_System/itam_frontend
 npm start
 ```
 
-#### Production Mode (Optional)
+#### Modo Producción (Opcional)
 ```bash
 # Backend
 python manage.py collectstatic --noinput
@@ -213,78 +213,78 @@ npm run build
 npx serve -s build -l 3000
 ```
 
-## 🏗️ Project Structure
+## 🏗️ Estructura del Proyecto
 
 ```
 ITAM_System/
-├── itam_backend/              # Django backend
-│   ├── settings.py           # Django settings
-│   ├── urls.py              # URL configuration
-│   └── wsgi.py              # WSGI application
-├── itam_frontend/            # React frontend
+├── itam_backend/              # Backend Django
+│   ├── settings.py           # Configuraciones Django
+│   ├── urls.py              # Configuración de URLs
+│   └── wsgi.py              # Aplicación WSGI
+├── itam_frontend/            # Frontend React
 │   ├── src/
-│   │   ├── components/      # Reusable components
-│   │   ├── pages/          # Page components
-│   │   ├── context/        # React context
-│   │   └── api.js          # API configuration
-│   └── package.json         # Node dependencies
-├── assets/                   # Asset management app
-├── employees/               # Employee management app
-├── masterdata/              # Master data management app
-├── users/                   # User management app
-├── manage.py                # Django management script
-├── requirements.txt         # Python dependencies
-└── README.md               # This file
+│   │   ├── components/      # Componentes reutilizables
+│   │   ├── pages/          # Componentes de página
+│   │   ├── context/        # Contexto React
+│   │   └── api.js          # Configuración de API
+│   └── package.json         # Dependencias Node
+├── assets/                   # Aplicación de gestión de activos
+├── employees/               # Aplicación de gestión de empleados
+├── masterdata/              # Aplicación de gestión de datos maestros
+├── users/                   # Aplicación de gestión de usuarios
+├── manage.py                # Script de gestión Django
+├── requirements.txt         # Dependencias Python
+└── README.md               # Este archivo
 ```
 
-## 🔧 Available Management Commands
+## 🔧 Comandos de Gestión Disponibles
 
 ```bash
-# Database operations
-python manage.py makemigrations    # Create migrations
-python manage.py migrate          # Apply migrations
-python manage.py showmigrations   # Show migration status
+# Operaciones de base de datos
+python manage.py makemigrations    # Crear migraciones
+python manage.py migrate          # Aplicar migraciones
+python manage.py showmigrations   # Mostrar estado de migraciones
 
-# User management
-python manage.py createsuperuser  # Create admin user
-python manage.py create_superadmin # Create predefined superadmin
-python manage.py setup_roles      # Initialize user roles
+# Gestión de usuarios
+python manage.py createsuperuser  # Crear usuario admin
+python manage.py create_superadmin # Crear superadmin predefinido
+python manage.py setup_roles      # Inicializar roles de usuario
 
-# Asset management
-python manage.py update_activo_assignments  # Update asset assignments
-python manage.py update_activo_maintenance  # Update maintenance schedules
+# Gestión de activos
+python manage.py update_activo_assignments  # Actualizar asignaciones de activos
+python manage.py update_activo_maintenance  # Actualizar programaciones de mantenimiento
 
-# Development
-python manage.py shell            # Django shell
-python manage.py dbshell          # Database shell
+# Desarrollo
+python manage.py shell            # Shell Django
+python manage.py dbshell          # Shell de base de datos
 ```
 
-## 🌐 Access Points
+## 🌐 Puntos de Acceso
 
-Once running, access the application at:
+Una vez ejecutándose, acceder a la aplicación en:
 
 - **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:8000/api/
-- **Admin Panel**: http://localhost:8000/admin/
-- **API Documentation**: http://localhost:8000/api/ (DRF browsable API)
+- **API del Backend**: http://localhost:8000/api/
+- **Panel de Administración**: http://localhost:8000/admin/
+- **Documentación de API**: http://localhost:8000/api/ (API navegable DRF)
 
-## 🐛 Troubleshooting
+## 🐛 Solución de Problemas
 
-### Common Issues
+### Problemas Comunes
 
-#### 1. Database Connection Errors
+#### 1. Errores de Conexión a Base de Datos
 ```bash
-# Check MySQL service status
+# Verificar estado del servicio MySQL
 # Windows: services.msc → MySQL
 # Linux: sudo systemctl status mysql
 
-# Test database connection
+# Probar conexión a base de datos
 python manage.py dbshell
 ```
 
-#### 2. Port Conflicts
+#### 2. Conflictos de Puertos
 ```bash
-# Check what's using ports 8000 and 3000
+# Verificar qué está usando los puertos 8000 y 3000
 # Windows:
 netstat -ano | findstr :8000
 netstat -ano | findstr :3000
@@ -294,28 +294,28 @@ lsof -i :8000
 lsof -i :3000
 ```
 
-#### 3. Permission Errors
+#### 3. Errores de Permisos
 ```bash
-# Fix file permissions
+# Corregir permisos de archivos
 chmod +x manage.py
 chmod -R 755 .
 
-# On Windows, run terminal as Administrator
+# En Windows, ejecutar terminal como Administrador
 ```
 
-#### 4. Node.js/npm Issues
+#### 4. Problemas de Node.js/npm
 ```bash
-# Clear npm cache
+# Limpiar caché de npm
 npm cache clean --force
 
-# Reinstall dependencies
+# Reinstalar dependencias
 rm -rf node_modules package-lock.json
 npm install
 ```
 
-#### 5. Python Virtual Environment Issues
+#### 5. Problemas de Entorno Virtual Python
 ```bash
-# Recreate virtual environment
+# Recrear entorno virtual
 deactivate
 rm -rf venv
 python -m venv venv
@@ -323,11 +323,11 @@ source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### Error Messages and Solutions
+### Mensajes de Error y Soluciones
 
 #### "mysqlclient not found"
 ```bash
-# Install MySQL development headers
+# Instalar encabezados de desarrollo MySQL
 # Ubuntu/Debian:
 sudo apt-get install python3-dev default-libmysqlclient-dev build-essential
 
@@ -340,7 +340,7 @@ pip install mysqlclient
 
 #### "Port already in use"
 ```bash
-# Kill process using port
+# Matar proceso usando el puerto
 # Linux/Mac:
 sudo lsof -ti:8000 | xargs kill -9
 
@@ -349,73 +349,73 @@ netstat -ano | findstr :8000
 taskkill /PID <PID> /F
 ```
 
-#### "Module not found" errors
+#### Errores de "Module not found"
 ```bash
-# Reinstall requirements
+# Reinstalar requirements
 pip uninstall -r requirements.txt -y
 pip install -r requirements.txt
 
-# For frontend
+# Para frontend
 cd itam_frontend
 rm -rf node_modules
 npm install
 ```
 
-## 🚀 Deployment Checklist
+## 🚀 Lista de Verificación de Despliegue
 
-- [ ] Repository cloned
-- [ ] Python virtual environment created and activated
-- [ ] Dependencies installed (`pip install -r requirements.txt`)
-- [ ] MySQL database created and configured
-- [ ] Migrations applied (`python manage.py migrate`)
-- [ ] Superuser created (`python manage.py createsuperuser`)
-- [ ] Roles initialized (`python manage.py setup_roles`)
-- [ ] Frontend dependencies installed (`npm install`)
-- [ ] Backend server running (`python manage.py runserver`)
-- [ ] Frontend server running (`npm start`)
-- [ ] Application accessible at http://localhost:3000
+- [ ] Repositorio clonado
+- [ ] Entorno virtual Python creado y activado
+- [ ] Dependencias instaladas (`pip install -r requirements.txt`)
+- [ ] Base de datos MySQL creada y configurada
+- [ ] Migraciones aplicadas (`python manage.py migrate`)
+- [ ] Superusuario creado (`python manage.py createsuperuser`)
+- [ ] Roles inicializados (`python manage.py setup_roles`)
+- [ ] Dependencias del frontend instaladas (`npm install`)
+- [ ] Servidor backend ejecutándose (`python manage.py runserver`)
+- [ ] Servidor frontend ejecutándose (`npm start`)
+- [ ] Aplicación accesible en http://localhost:3000
 
-## 📞 Support
+## 📞 Soporte
 
-For technical support, contact:
-- **Email**: soporte@naturaceites.com
-- **Phone**: +502 2328-5200
-- **Department**: Área de Soporte
+Para soporte técnico, contactar:
+- **Correo**: soporte@naturaceites.com
+- **Teléfono**: +502 2328-5200
+- **Departamento**: Área de Soporte
 
-## 📝 Development Notes
+## 📝 Notas de Desarrollo
 
-- The system uses JWT authentication for API security
-- CORS is configured for frontend-backend communication
-- Database uses UTF-8 encoding for international characters
-- Static files are served by Django in development
-- The frontend uses React Router for navigation
+- El sistema utiliza autenticación JWT para seguridad de API
+- CORS está configurado para comunicación frontend-backend
+- La base de datos utiliza codificación UTF-8 para caracteres internacionales
+- Los archivos estáticos son servidos por Django en desarrollo
+- El frontend utiliza React Router para navegación
 
-## 🔄 Updating the Application
+## 🔄 Actualizando la Aplicación
 
 ```bash
-# Pull latest changes
+# Obtener últimos cambios
 git pull origin main
 
-# Update dependencies
+# Actualizar dependencias
 pip install -r requirements.txt
 cd itam_frontend && npm install
 
-# Apply new migrations
+# Aplicar nuevas migraciones
 python manage.py migrate
 
-# Restart servers
+# Reiniciar servidores
 ```
 
-## 📊 Features Overview
+## 📊 Resumen de Características
 
-- **User Management**: Role-based access control with JWT authentication
-- **Asset Management**: Complete lifecycle tracking of IT assets
-- **Maintenance Scheduling**: Automated maintenance reminders and tracking
-- **Master Data**: Centralized management of regions, departments, brands, etc.
-- **Audit Logging**: Complete audit trail of all system activities
-- **Reporting**: Comprehensive reports and analytics
-- **REST API**: Full REST API with OpenAPI documentation
+- **Gestión de Usuarios**: Control de acceso basado en roles con autenticación JWT
+- **Gestión de Activos**: Seguimiento completo del ciclo de vida de activos de TI
+- **Programación de Mantenimiento**: Recordatorios y seguimiento automatizados de mantenimiento
+- **Datos Maestros**: Gestión centralizada de regiones, departamentos, marcas, etc.
+- **Registro de Auditoría**: Registro de auditoría completo de todas las actividades del sistema
+- **Reportes**: Reportes y análisis completos
+- **API REST**: API REST completa con documentación OpenAPI
 
 ---
 
-**ITAM System v1.0.0** - Developed by Mynor Urrutia
+**Sistema ITAM v1.0.0** - Desarrollado por Mynor Urrutia
