@@ -39,7 +39,7 @@ class ActivoFilter(filters.FilterSet):
 
     class Meta:
         model = Activo
-        fields = ['estado', 'tipo_activo', 'proveedor', 'marca', 'modelo', 'region', 'finca', 'departamento', 'area']
+        fields = ['id', 'estado', 'tipo_activo', 'proveedor', 'marca', 'modelo', 'region', 'finca', 'departamento', 'area']
 
 def serialize_model_data(instance):
     """Serialize model instance data to JSON-compatible format."""
@@ -883,9 +883,15 @@ def maintenance_overview(request):
     # Get filters
     region_filter = request.GET.getlist('regions', [])
     tipo_filter = request.GET.getlist('tipos', [])
+    status_filter = request.GET.getlist('status', [])
 
     # Get all active assets
     activos = Activo.objects.select_related('tipo_activo', 'marca', 'modelo', 'region', 'finca', 'tecnico_mantenimiento').filter(estado='activo')
+
+    # Get filter options from all active assets
+    all_activos = Activo.objects.filter(estado='activo')
+    unique_regions = list(all_activos.values_list('region__name', flat=True).distinct().exclude(region__name__isnull=True).order_by('region__name'))
+    unique_tipos = list(all_activos.values_list('tipo_activo__name', flat=True).distinct().exclude(tipo_activo__name__isnull=True).order_by('tipo_activo__name'))
 
     # Apply region filter if specified
     if region_filter:
@@ -910,12 +916,26 @@ def maintenance_overview(request):
                 proximo_mantenimiento = latest_maintenance.next_maintenance_date
                 tecnico_mantenimiento = latest_maintenance.technician.username if latest_maintenance.technician else ''
 
-        # Determine status based on maintenance dates
+        # Determine status based on maintenance dates - COMPREHENSIVE LOGIC
         if not ultimo_mantenimiento and not proximo_mantenimiento:
+            # No maintenance history at all
             status = 'nunca'
-        elif proximo_mantenimiento and proximo_mantenimiento <= today + timedelta(days=15):
-            status = 'proximos'
+        elif ultimo_mantenimiento and not proximo_mantenimiento:
+            # Has maintenance history but no next scheduled
+            status = 'realizados'
+        elif proximo_mantenimiento:
+            # Has next maintenance scheduled
+            if proximo_mantenimiento < today:
+                # Next maintenance is overdue
+                status = 'vencidos'
+            elif proximo_mantenimiento <= today + timedelta(days=30):
+                # Next maintenance is within 30 days (extended from 15)
+                status = 'proximos'
+            else:
+                # Next maintenance is scheduled but not urgent
+                status = 'realizados'
         else:
+            # Fallback case - has last maintenance
             status = 'realizados'
 
         data.append({
@@ -935,23 +955,47 @@ def maintenance_overview(request):
             'maintenance_id': None  # Not needed for this view
         })
 
-    # Apply custom sorting: status priority (nunca, proxima_a_vencer, realizados) then by proximo_mantenimiento date
-    def sort_func(item):
-        # Status priority: nunca (0), proxima_a_vencer (1), realizados (2)
-        status_priority = {'nunca': 0, 'proxima_a_vencer': 1, 'realizados': 2}
-        status_value = status_priority.get(item.get('status'), 3)
+    # Apply custom sorting or user-specified ordering
+    ordering = request.GET.get('ordering')
+    if ordering:
+        reverse = ordering.startswith('-')
+        field = ordering.lstrip('-')
+        def sort_key(item):
+            value = item.get(field)
+            if value is None:
+                # None values always at end for ascending, beginning for descending
+                return ('z' * 100,)
+            return (value,)
+        data.sort(key=sort_key, reverse=reverse)
+    else:
+        # Default sorting: status priority (nunca, vencidos, proximos, realizados) then by proximo_mantenimiento date
+        def sort_func(item):
+            # Status priority: nunca (0), vencidos (1), proximos (2), realizados (3)
+            status_priority = {'nunca': 0, 'vencidos': 1, 'proximos': 2, 'realizados': 3}
+            status_value = status_priority.get(item.get('status'), 4)
 
-        # For date sorting, use proximo_mantenimiento, put None values at the end
-        date_value = item.get('proximo_mantenimiento') or '9999-12-31'
+            # For date sorting, use proximo_mantenimiento, put None values at the end
+            date_value = item.get('proximo_mantenimiento') or '9999-12-31'
 
-        return (status_value, date_value)
+            return (status_value, date_value)
 
-    data.sort(key=sort_func)
+        data.sort(key=sort_func)
+    
+        # Apply status filter if specified
+        if status_filter:
+            data = [item for item in data if item['status'] in status_filter]
 
     # Apply pagination
     paginator = StandardResultsSetPagination()
     paginated_data = paginator.paginate_queryset(data, request)
     response = paginator.get_paginated_response(paginated_data)
+
+    # Add filter options to response
+    response.data['filter_options'] = {
+        'regions': unique_regions,
+        'tipos': unique_tipos,
+        'statuses': ['nunca', 'proximos', 'vencidos', 'realizados']
+    }
 
     return response
 
