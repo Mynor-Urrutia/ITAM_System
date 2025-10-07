@@ -31,6 +31,8 @@ import AuditLogsPage from './pages/masterdata/AuditLogsPage'; // ¡NUEVO!
 import UserProfile from './pages/UserProfile'; // ¡NUEVO!
 import EmployeesPage from './pages/employees/EmployeesPage'; // ¡NUEVO!
 import ReportsPage from './pages/ReportsPage'; // ¡NUEVO!
+import AboutPage from './pages/AboutPage'; // ¡NUEVO!
+import ContactPage from './pages/ContactPage'; // ¡NUEVO!
 
 
 
@@ -174,7 +176,7 @@ const AppContent = () => {
                                 <Route
                                     path="/assets/maintenance"
                                     element={
-                                        <PrivateRoute requiredPermissions={['assets.view_mantenimiento']}>
+                                        <PrivateRoute requiredPermissions={['assets.view_maintenance']}>
                                             <MaintenancePage />
                                         </PrivateRoute>
                                     }
@@ -191,7 +193,8 @@ const AppContent = () => {
                                 />
 
                                 {/* Rutas de Información */}
-                                <Route path="/about" element={<div>Acerca de</div>} />
+                                <Route path="/about" element={<AboutPage />} />
+                                <Route path="/contact" element={<ContactPage />} />
                                 <Route path="/contact" element={<div>Contacto</div>} />
 
                                 {/* Ruta por defecto para autenticados */}
