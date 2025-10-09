@@ -71,6 +71,7 @@ function Sidebar({ isOpen, onClose }) {
                 isOpen ? 'translate-x-0' : '-translate-x-full'
             }`}>
             <div className="flex items-center justify-center h-16 shadow-md">
+                <img src="/logo.png" alt="ITAM Logo" className="h-12 w-12 mr-2" />
                 <span className="text-xl font-bold uppercase tracking-wider">ITAM System</span>
             </div>
 

@@ -5,6 +5,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import usePageTitle from './hooks/usePageTitle';
 
 // Importa tus componentes existentes
 import Login from './components/Login';
@@ -40,6 +41,9 @@ import ContactPage from './pages/ContactPage'; // ¡NUEVO!
 const AppContent = () => {
     const { isAuthenticated, loading } = useAuth();
     const [sidebarOpen, setSidebarOpen] = useState(false);
+
+    // Set page title based on route
+    usePageTitle();
 
     if (loading) {
         return <div className="flex justify-center items-center h-screen text-2xl">Cargando...</div>;
