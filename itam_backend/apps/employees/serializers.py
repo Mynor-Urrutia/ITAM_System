@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import Employee
-from masterdata.models import Region, Finca, Departamento, Area
+from apps.masterdata.models import Region, Finca, Departamento, Area
 
 class EmployeeSerializer(serializers.ModelSerializer):
     # Read-only fields for displaying names

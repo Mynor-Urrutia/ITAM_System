@@ -13,7 +13,7 @@ import json
 from .permissions import IsActiveUser # ¡Importa tu permiso personalizado!
 # Asume que CustomUser está importado o definido en models.py
 from rest_framework.permissions import IsAuthenticated
-from masterdata.models import AuditLog
+from apps.masterdata.models import AuditLog
 
 # Obtiene tu CustomUser
 User = get_user_model()

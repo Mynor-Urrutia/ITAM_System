@@ -24,10 +24,10 @@ import csv
 from .models import Activo, Maintenance, Assignment
 from .serializers import ActivoSerializer, MaintenanceSerializer, AssignmentSerializer
 from django.contrib.auth import get_user_model
-from users.permissions import CanViewReports
+from apps.users.permissions import CanViewReports
 
 User = get_user_model()
-from masterdata.models import TipoActivo, Region
+from apps.masterdata.models import TipoActivo, Region
 
 class StandardResultsSetPagination(PageNumberPagination):
     page_size = 5  # Default page size
@@ -142,7 +142,7 @@ class AuditLogMixin:
         super().perform_destroy(instance)
 
     def _log_activity(self, activity_type, instance, old_data=None, new_data=None):
-        from masterdata.models import AuditLog, ContentType
+        from apps.masterdata.models import AuditLog, ContentType
         content_type = ContentType.objects.get_for_model(instance)
         AuditLog.objects.create(
             activity_type=activity_type,
@@ -498,7 +498,7 @@ class AssignmentViewSet(AuditLogMixin, viewsets.ModelViewSet):
             return Response({'error': 'activo_ids es requerido'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            from employees.models import Employee
+            from apps.employees.models import Employee
             employee = Employee.objects.get(id=employee_id)
         except Employee.DoesNotExist:
             return Response({'error': 'Empleado no encontrado'}, status=status.HTTP_404_NOT_FOUND)
@@ -805,7 +805,7 @@ def dashboard_data(request):
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
 def dashboard_models_data(request):
-    from masterdata.models import ModeloActivo
+    from apps.masterdata.models import ModeloActivo
 
     regions = Region.objects.all().order_by('name')
 

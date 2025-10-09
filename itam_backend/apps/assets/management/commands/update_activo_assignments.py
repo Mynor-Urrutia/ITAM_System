@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
-from assets.models import Assignment, Activo
-from users.models import CustomUser
+from apps.assets.models import Assignment, Activo
+from apps.users.models import CustomUser
 
 class Command(BaseCommand):
     help = 'Update Activo assigned_to field based on active assignments'

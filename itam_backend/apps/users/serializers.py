@@ -2,9 +2,9 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from masterdata.models import Region, Departamento
-from employees.models import Employee
-from employees.serializers import EmployeeSerializer
+from apps.masterdata.models import Region, Departamento
+from apps.employees.models import Employee
+from apps.employees.serializers import EmployeeSerializer
 
 User = get_user_model()
 
@@ -76,11 +76,11 @@ class UserSerializer(serializers.ModelSerializer):
         return len(obj.get_all_permissions())
 
     def get_audit_logs_count(self, obj):
-        from masterdata.models import AuditLog
+        from apps.masterdata.models import AuditLog
         return AuditLog.objects.filter(user=obj).count()
 
     def get_assets_count(self, obj):
-        from assets.models import Activo
+        from apps.assets.models import Activo
         return Activo.objects.filter(assigned_to=obj, estado='activo').count()
 
     def get_groups(self, obj):
@@ -95,7 +95,7 @@ class UserSerializer(serializers.ModelSerializer):
             return serializer.data
         # Fallback: try to find employee by matching name
         try:
-            from employees.models import Employee
+            from apps.employees.models import Employee
             # Try exact name match first
             employee = Employee.objects.filter(
                 first_name__iexact=obj.first_name,

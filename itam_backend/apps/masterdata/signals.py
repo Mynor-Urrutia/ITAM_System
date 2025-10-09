@@ -4,7 +4,7 @@ from django.contrib.auth.signals import user_logged_in
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth import get_user_model
 from .models import AuditLog, Region, Finca, Departamento, Area, TipoActivo, Marca, ModeloActivo
-from itam_backend.threadlocals import get_current_user
+# from ..threadlocals import get_current_user  # Commented out as not used
 
 User = get_user_model()
 

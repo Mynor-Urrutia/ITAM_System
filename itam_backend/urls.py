@@ -13,7 +13,7 @@ from rest_framework_simplejwt.views import (
 # Importa la vista base TokenObtainPairView
 from rest_framework_simplejwt.views import TokenObtainPairView
 # Importa tu serializer personalizado
-from users.serializers import CustomTokenObtainPairSerializer
+from apps.users.serializers import CustomTokenObtainPairSerializer
 
 def download_media(request, path):
     """Serve media files with Content-Disposition: attachment to force download."""
@@ -26,13 +26,13 @@ urlpatterns = [
     path('api/login/', TokenObtainPairView.as_view(serializer_class=CustomTokenObtainPairSerializer), name='token_obtain_pair'),
     path('api/login/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/login/verify/', TokenVerifyView.as_view(), name='token_verify'),
-    path('api/', include('users.urls')), # Esto incluirá todas las rutas definidas en users/urls.py
+    path('api/', include('apps.users.urls')), # Esto incluirá todas las rutas definidas en users/urls.py
     # --- ¡NUEVA LÍNEA PARA INCLUIR LAS URLS DE MASTERDATA! ---
-    path('api/masterdata/', include('masterdata.urls')),
+    path('api/masterdata/', include('apps.masterdata.urls')),
     # --- ¡NUEVA LÍNEA PARA INCLUIR LAS URLS DE ASSETS! ---
-    path('api/assets/', include('assets.urls')),
+    path('api/assets/', include('apps.assets.urls')),
     # --- ¡NUEVA LÍNEA PARA INCLUIR LAS URLS DE EMPLOYEES! ---
-    path('api/employees/', include('employees.urls')),
+    path('api/employees/', include('apps.employees.urls')),
     # --------------------------------------------------------
 ]
 

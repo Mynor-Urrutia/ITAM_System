@@ -38,14 +38,14 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'users',
+    'apps.users',
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',  # ¡Agrega esta línea!
     'django_filters',
-    'masterdata',
-    'assets',
-    'employees',
+    'apps.masterdata',
+    'apps.assets',
+    'apps.employees',
 ]
 
 AUTH_USER_MODEL = 'users.CustomUser' # ¡Esto es CRÍTICO!
@@ -57,12 +57,12 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'itam_backend.middleware.CurrentUserMiddleware',
+    'middleware.CurrentUserMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'itam_backend.urls'
+ROOT_URLCONF = 'urls'
 
 TEMPLATES = [
     {
@@ -79,7 +79,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'itam_backend.wsgi.application'
+WSGI_APPLICATION = 'wsgi.application'
 
 
 # Database

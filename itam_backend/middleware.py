@@ -1,4 +1,4 @@
-from .threadlocals import set_current_user
+from threadlocals import set_current_user
 
 class CurrentUserMiddleware:
     def __init__(self, get_response):

@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from .models import Activo, Maintenance, Assignment
-from masterdata.models import TipoActivo, Marca, ModeloActivo, Proveedor, Region, Finca, Departamento, Area, AuditLog
-from employees.models import Employee
+from apps.masterdata.models import TipoActivo, Marca, ModeloActivo, Proveedor, Region, Finca, Departamento, Area, AuditLog
+from apps.employees.models import Employee
 from django.contrib.contenttypes.models import ContentType
 
 class ActivoSerializer(serializers.ModelSerializer):

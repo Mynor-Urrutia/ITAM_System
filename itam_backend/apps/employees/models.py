@@ -1,5 +1,5 @@
 from django.db import models
-from masterdata.models import Region, Finca, Departamento, Area
+from apps.masterdata.models import Region, Finca, Departamento, Area
 
 class Employee(models.Model):
     employee_number = models.CharField(max_length=50, unique=True, verbose_name="No. Empleado")

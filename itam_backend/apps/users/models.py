@@ -1,7 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-from masterdata.models import Region, Departamento # Asegúrate de importar Departamento aquí también
-from employees.models import Employee
+from apps.masterdata.models import Region, Departamento # Asegúrate de importar Departamento aquí también
+from apps.employees.models import Employee
 
 class CustomUser(AbstractUser):
     email = models.EmailField(unique=True)

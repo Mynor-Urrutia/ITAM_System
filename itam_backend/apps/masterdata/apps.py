@@ -3,7 +3,7 @@ from django.apps import AppConfig
 
 class MasterdataConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'masterdata'
+    name = 'apps.masterdata'
 
     def ready(self):
-        import masterdata.signals  # noqa
+        from . import signals  # noqa

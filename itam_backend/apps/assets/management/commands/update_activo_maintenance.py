@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from assets.models import Activo, Maintenance
+from apps.assets.models import Activo, Maintenance
 
 
 class Command(BaseCommand):
