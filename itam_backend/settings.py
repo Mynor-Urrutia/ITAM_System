@@ -21,12 +21,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-v^2u)3-%-0vsy75g0bbafaqj&7g0nxg6dsbr(t$ue7bkta6ike'
+SECRET_KEY =  config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '10.10.24.63', '10.10.240.164']
+ALLOWED_HOSTS = ['35.333.196.157', '127.0.0.1', 'localhost', '10.10.24.63', '10.10.240.164']
 
 
 # Application definition
@@ -90,12 +90,12 @@ WSGI_APPLICATION = 'wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql', # Motor de la base de datos
-        'NAME': 'itam_db',                    # Nombre de la base de datos que creaste
-        'USER': 'root',                       # Usuario de MySQL (normalmente root para desarrollo)
-        'PASSWORD': 'Myn0r0406.',             # ¡Tu contraseña de root de MySQL aquí!
-        'HOST': '127.0.0.1',                  # Dirección del servidor de la base de datos
-        'PORT': '3306',                       # Puerto de MySQL
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': config('DB_NAME'),
+        'USER': config('DB_USER'),
+        'PASSWORD': config('DB_PASSWORD'),
+        'HOST': config('DB_HOST'),
+        'PORT': config('DB_PORT'),
     }
 }
 
@@ -194,6 +194,8 @@ SIMPLE_JWT = {
 
 # Configuración de CORS
 CORS_ALLOWED_ORIGINS = [
+    "http://35.222.196.157", # IP del servidor
+    "https://35.222.196.157", # IP del servidor con HTTPS
     "http://localhost:3000",  # Permite peticiones desde tu frontend de React
     "http://127.0.0.1:3000",  # Puede que React use 127.0.0.1 en algunos casos
     "http://10.10.24.63:3000",  # IP principal de la red

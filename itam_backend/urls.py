@@ -41,3 +41,4 @@ if settings.DEBUG:
     urlpatterns += [
         re_path(r'^media/(?P<path>.*)$', download_media, name='media'),
     ]
+    
