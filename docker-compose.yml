@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  # 1. Servicio de la Base de Datos
+  db:
+    image: mysql:8.0
+    container_name: itam_mysql
+    environment:
+      # *** ¡IMPORTANTE! Reemplaza con tus valores seguros ***
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD} 
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      # Mapeo de volumen para persistencia de datos (¡Crucial!)
+      - mysql_data:/var/lib/mysql
+    # Exponer el puerto solo si lo necesitas para acceder desde tu máquina local (opcional)
+    # ports:
+    #   - "3306:3306"
+
+  # 2. Servicio de Backend (Django)
+  backend:
+    build:
+      context: .
+      # Indica el directorio del Dockerfile de Django
+      dockerfile: itam_backend/Dockerfile 
+    container_name: itam_django
+    # Mapea el puerto del contenedor al host
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mapeo de volumen para desarrollo (opcional en producción)
+      - ./itam_backend:/app/backend
+    environment:
+      # Variables de entorno para que Django se conecte a MySQL
+      DATABASE_NAME: ${DB_NAME}
+      DATABASE_USER: ${DB_USER}
+      DATABASE_PASSWORD: ${DB_PASSWORD}
+      DATABASE_HOST: db # Usa el nombre del servicio de Docker Compose
+      DATABASE_PORT: 3306
+      SECRET_KEY: ${DJANGO_SECRET_KEY}
+      DJANGO_SETTINGS_MODULE: itam_backend.settings
+      CORS_ALLOWED_ORIGINS: "http://localhost:3000,http://127.0.0.1:3000" # Ajusta o usa la URL del frontend en prod
+    depends_on:
+      - db
+    # Comando de entrada si no usaste CMD en el Dockerfile (para migraciones, etc.)
+    # entrypoint: ["/bin/sh", "-c", "python manage.py makemigrations && python manage.py migrate && gunicorn --bind 0.0.0.0:8000 itam_backend.wsgi:application"]
+
+  # 3. Servicio de Frontend (si usas la estrategia separada con Nginx)
+  # Si usaste la estrategia unificada (1.A), puedes omitir este servicio.
+  # frontend:
+  #   build:
+  #     context: ./itam_frontend
+  #     dockerfile: Dockerfile
+  #   container_name: itam_react
+  #   ports:
+  #     - "3000:80" # Mapea el puerto 80 de Nginx a 3000 en el host
+  #   depends_on:
+  #     - backend
+
+volumes:
+  # Define el volumen para la persistencia de datos de MySQL
+  mysql_data:
