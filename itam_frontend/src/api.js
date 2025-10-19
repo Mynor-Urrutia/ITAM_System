@@ -21,7 +21,7 @@ const api = axios.create({
 api.interceptors.request.use(
     (config) => {
         const accessToken = localStorage.getItem('access_token'); // Make sure this key matches
-        console.log('API Interceptor: Access Token from localStorage:', accessToken ? accessToken.substring(0, 30) + '...' : 'No token'); // Log del token (parcial)
+        //console.log('API Interceptor: Access Token from localStorage:', accessToken ? accessToken.substring(0, 30) + '...' : 'No token'); // Log del token (parcial)
         if (accessToken) {
             config.headers.Authorization = `Bearer ${accessToken}`;
         }

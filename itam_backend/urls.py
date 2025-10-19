@@ -15,11 +15,6 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 # Importa tu serializer personalizado
 from apps.users.serializers import CustomTokenObtainPairSerializer
 
-def download_media(request, path):
-    """Serve media files with Content-Disposition: attachment to force download."""
-    response = serve(request, path, document_root=settings.MEDIA_ROOT)
-    response['Content-Disposition'] = f'attachment; filename="{path.split("/")[-1]}"'
-    return response
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -35,15 +30,3 @@ urlpatterns = [
     path('api/employees/', include('apps.employees.urls')),
     # --------------------------------------------------------
 ]
-
-# Serve media files during development with forced download
-if settings.DEBUG:
-    urlpatterns += [
-        re_path(r'^media/(?P<path>.*)$', download_media, name='media'),
-    ]
-else:
-    # Serve media files in production with forced download
-    urlpatterns += [
-        re_path(r'^media/(?P<path>.*)$', download_media, name='media'),
-    ]
-    

@@ -58,7 +58,7 @@ export const AuthProvider = ({ children }) => {
 
     const updateToken = useCallback(async () => {
         const refresh_token = localStorage.getItem('refresh_token');
-        console.log('AuthContext: Attempting to update token. Refresh Token:', refresh_token ? refresh_token.substring(0, 30) + '...' : 'No refresh token');
+        //console.log('AuthContext: Attempting to update token. Refresh Token:', refresh_token ? refresh_token.substring(0, 30) + '...' : 'No refresh token');
         if (!refresh_token) {
             logout();
             setLoading(false);
@@ -68,7 +68,7 @@ export const AuthProvider = ({ children }) => {
         try {
             const response = await api.post('/login/refresh/', { refresh: refresh_token });
             localStorage.setItem('access_token', response.data.access);
-            console.log('AuthContext: Token refreshed successfully. New Access Token:', response.data.access.substring(0, 30) + '...');
+            //console.log('AuthContext: Token refreshed successfully. New Access Token:', response.data.access.substring(0, 30) + '...');
             await fetchUserDetails(); // Fetch user details and permissions after token refresh
 
         } catch (err) {
@@ -89,8 +89,8 @@ export const AuthProvider = ({ children }) => {
             localStorage.setItem('access_token', access);
             localStorage.setItem('refresh_token', refresh);
 
-            console.log('AuthContext: Login successful. Access Token:', access.substring(0, 30) + '...');
-            console.log('AuthContext: Refresh Token:', refresh.substring(0, 30) + '...');
+            //console.log('AuthContext: Login successful. Access Token:', access.substring(0, 30) + '...');
+            //console.log('AuthContext: Refresh Token:', refresh.substring(0, 30) + '...');
 
             await fetchUserDetails(); // Fetch user details and permissions after successful login
 
@@ -136,7 +136,7 @@ export const AuthProvider = ({ children }) => {
                     const currentTime = Date.now() / 1000;
 
                     if (decodedToken.exp > currentTime + 60) { // Token valid for more than 60 seconds
-                        console.log("AuthContext: Access token valid, attempting to use stored user data or fetch.");
+                        //console.log("AuthContext: Access token valid, attempting to use stored user data or fetch.");
                         if (storedUserData) {
                             const parsedUserData = JSON.parse(storedUserData);
                             setUser({
@@ -157,7 +157,7 @@ export const AuthProvider = ({ children }) => {
                             setLoading(false);
                         }
                     } else { // Token expired or expiring soon, try refreshing
-                        console.log("AuthContext: Access token expired or expiring, refreshing.");
+                        //console.log("AuthContext: Access token expired or expiring, refreshing.");
                         await updateToken();
                     }
                 } catch (err) {
@@ -175,7 +175,7 @@ export const AuthProvider = ({ children }) => {
         const fourMinutes = 4 * 60 * 1000;
         const interval = setInterval(() => {
             if (localStorage.getItem('refresh_token') && isAuthenticated) { // Only refresh if refresh token exists and user is considered authenticated
-                console.log("AuthContext: Interval triggered token refresh.");
+                //console.log("AuthContext: Interval triggered token refresh.");
                 updateToken();
             }
         }, fourMinutes);
