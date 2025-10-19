@@ -26,6 +26,7 @@ import {
     faTruck,
     faLink,
     faFileAlt,
+    faCode,
 } from '@fortawesome/free-solid-svg-icons';
 
 function Sidebar({ isOpen, onClose }) {
@@ -56,6 +57,8 @@ function Sidebar({ isOpen, onClose }) {
     const canViewMaintenance = hasPermission('assets.view_maintenance');
 
     const canViewReports = hasPermission('custom.view_reports');
+
+    const canViewAPIDocs = hasPermission('auth.view_api_docs');
 
 
     return (
@@ -392,6 +395,19 @@ function Sidebar({ isOpen, onClose }) {
                     <FontAwesomeIcon icon={faEnvelope} className="mr-3" />
                     Contacto
                 </NavLink>
+                {canViewAPIDocs && (
+                    <NavLink
+                        to="/api-docs"
+                        className={({ isActive }) =>
+                            `block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 hover:text-white ${
+                                isActive ? 'bg-gray-700 text-white' : ''
+                            }`
+                        }
+                    >
+                        <FontAwesomeIcon icon={faCode} className="mr-3" />
+                        Documentación API
+                    </NavLink>
+                )}
             </nav>
         </div>
     </>

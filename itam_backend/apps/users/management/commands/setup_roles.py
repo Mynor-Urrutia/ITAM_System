@@ -17,6 +17,13 @@ class Command(BaseCommand):
             content_type=permission_content_type
         )
 
+        # Create view_api_docs permission
+        Permission.objects.get_or_create(
+            codename='view_api_docs',
+            name='Can view API documentation',
+            content_type=permission_content_type
+        )
+
         # Define roles and their permissions
         roles_permissions = {
             'Administrador': [

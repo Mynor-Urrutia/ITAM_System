@@ -7,6 +7,18 @@ import { toast } from 'react-toastify';
 const PrivateRoute = ({ children, requiredPermissions = [] }) => {
     const { isAuthenticated, loading, hasPermission } = useAuth();
 
+    // Use useEffect to handle side effects like showing toasts
+    React.useEffect(() => {
+        if (!loading && !isAuthenticated) {
+            toast.error("Necesitas iniciar sesión para acceder a esta página.");
+        } else if (!loading && isAuthenticated && requiredPermissions.length > 0) {
+            const authorized = requiredPermissions.every(permission => hasPermission(permission));
+            if (!authorized) {
+                toast.error("No tienes los permisos necesarios para acceder a esta función.");
+            }
+        }
+    }, [loading, isAuthenticated, hasPermission, requiredPermissions]);
+
     if (loading) {
         // Muestra un estado de carga mientras se verifica la autenticación
         return <div className="flex justify-center items-center h-screen text-2xl">Verificando acceso...</div>;
@@ -14,7 +26,6 @@ const PrivateRoute = ({ children, requiredPermissions = [] }) => {
 
     if (!isAuthenticated) {
         // Si no está autenticado, redirige al login
-        toast.error("Necesitas iniciar sesión para acceder a esta página.");
         return <Navigate to="/login" replace />;
     }
 
@@ -23,10 +34,7 @@ const PrivateRoute = ({ children, requiredPermissions = [] }) => {
         const authorized = requiredPermissions.every(permission => hasPermission(permission));
         if (!authorized) {
             // Si no tiene los permisos requeridos, redirige a una página de inicio
-            // o muestra un mensaje de acceso denegado
-            toast.error("No tienes los permisos necesarios para acceder a esta función.");
-            // Puedes redirigir a /home o mostrar un componente de "Acceso Denegado"
-            return <Navigate to="/home" replace />; 
+            return <Navigate to="/home" replace />;
         }
     }
 

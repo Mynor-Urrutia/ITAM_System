@@ -263,13 +263,25 @@ class PermissionSerializer(serializers.ModelSerializer):
             'auth': 'Autenticación y Roles',
             'users': 'Usuarios del Sistema',
             'admin': 'Administración',
+            'contenttypes': 'Permisos del Sistema',
         }
         return app_labels_map.get(obj.content_type.app_label, obj.content_type.app_label.replace('_', ' ').title())
 
     def get_action_type(self, obj):
+        # Special handling for custom permissions
+        if obj.codename == 'view_api_docs':
+            return 'View API Docs'
+        elif obj.codename == 'view_reports':
+            return 'View Reports'
+
+        # Default handling for standard permissions
         parts = obj.codename.split('_')
         if len(parts) > 0:
-            return parts[0].capitalize()
+            action = parts[0].capitalize()
+            # Handle multi-word actions
+            if len(parts) > 1 and parts[1] in ['api', 'reports']:
+                action += f' {parts[1].capitalize()}'
+            return action
         return ''
 
 class RoleSerializer(serializers.ModelSerializer):

@@ -34,6 +34,7 @@ import EmployeesPage from './pages/employees/EmployeesPage'; // ¡NUEVO!
 import ReportsPage from './pages/ReportsPage'; // ¡NUEVO!
 import AboutPage from './pages/AboutPage'; // ¡NUEVO!
 import ContactPage from './pages/ContactPage'; // ¡NUEVO!
+import APIDocumentationPage from './pages/APIDocumentationPage'; // ¡NUEVO!
 
 
 
@@ -199,6 +200,14 @@ const AppContent = () => {
                                 {/* Rutas de Información */}
                                 <Route path="/about" element={<AboutPage />} />
                                 <Route path="/contact" element={<ContactPage />} />
+                                <Route
+                                    path="/api-docs"
+                                    element={
+                                        <PrivateRoute requiredPermissions={['auth.view_api_docs']}>
+                                            <APIDocumentationPage />
+                                        </PrivateRoute>
+                                    }
+                                />
                                 <Route path="/contact" element={<div>Contacto</div>} />
 
                                 {/* Ruta por defecto para autenticados */}
