@@ -466,7 +466,7 @@ const ActivoDetailModal = ({ show, onClose, activo, onActivoUpdate }) => {
                                                     <div className="space-y-1">
                                                         {activo.documentos_baja.map((docPath, index) => {
                                                             const fileName = docPath.split('/').pop();
-                                                            const fileUrl = `http://127.0.0.1:8000/media/${docPath}`;
+                                                            const fileUrl = `/media/${docPath}`;
                                                             return (
                                                                 <a
                                                                     key={index}
@@ -522,7 +522,7 @@ const ActivoDetailModal = ({ show, onClose, activo, onActivoUpdate }) => {
                                                <div className="space-y-1">
                                                    {activo.ultimo_mantenimiento_adjuntos.map((filePath, index) => {
                                                        const fileName = filePath.split('/').pop();
-                                                       const fileUrl = `http://127.0.0.1:8000/media/${filePath}`;
+                                                       const fileUrl = `/media/${filePath}`;
                                                        return (
                                                            <a
                                                                key={index}

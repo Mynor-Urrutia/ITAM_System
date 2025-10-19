@@ -146,7 +146,7 @@ MEDIA_ROOT = BASE_DIR / 'media'
 from django.conf import settings
 
 if not settings.DEBUG:
-    MEDIA_URL = 'http://34.10.197.140/media/'
+    MEDIA_URL = 'http://35.222.196.157/media/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

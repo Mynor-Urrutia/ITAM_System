@@ -151,7 +151,7 @@ const MaintenanceDetailModal = ({ show, onClose, maintenanceId }) => {
                                      <div className="space-y-2">
                                          {maintenance.attachments.map((filePath, index) => {
                                              const fileName = filePath.split('/').pop();
-                                             const fileUrl = `http://127.0.0.1:8000/media/${filePath}`;
+                                             const fileUrl = `/media/${filePath}`;
                                              const viewable = isViewable(fileName);
                                              const ext = fileName.split('.').pop().toLowerCase();
                                              return (
@@ -235,7 +235,7 @@ const MaintenanceDetailModal = ({ show, onClose, maintenanceId }) => {
                                                                      return viewable ? (
                                                                          <button
                                                                              onClick={() => {
-                                                                                 const fileUrl = `http://127.0.0.1:8000/media/${firstFile}`;
+                                                                                 const fileUrl = `/media/${firstFile}`;
                                                                                  setCurrentFile(fileUrl);
                                                                                  setZoom(1);
                                                                                  setShowViewer(true);
