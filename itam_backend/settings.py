@@ -143,11 +143,6 @@ STATIC_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'staticfi
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR.parent / 'media'
 
-from django.conf import settings
-
-if not settings.DEBUG:
-    MEDIA_URL = 'http://35.222.196.157/media/'
-
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
