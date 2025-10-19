@@ -141,7 +141,7 @@ STATIC_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'staticfi
 
 # Media files (uploaded files)
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = BASE_DIR.parent / 'media'
 
 from django.conf import settings
 
