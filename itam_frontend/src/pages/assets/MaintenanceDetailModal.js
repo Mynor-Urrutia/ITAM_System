@@ -151,7 +151,8 @@ const MaintenanceDetailModal = ({ show, onClose, maintenanceId }) => {
                                      <div className="space-y-2">
                                          {maintenance.attachments.map((filePath, index) => {
                                              const fileName = filePath.split('/').pop();
-                                             const fileUrl = `/media/${filePath}`;
+                                             const baseHost = window.location.origin; // <-- NUEVA LÍNEA
+                                             const fileUrl = `${baseHost}/media/${filePath}`; // <-- LÍNEA MODIFICADA
                                              const viewable = isViewable(fileName);
                                              const ext = fileName.split('.').pop().toLowerCase();
                                              return (
