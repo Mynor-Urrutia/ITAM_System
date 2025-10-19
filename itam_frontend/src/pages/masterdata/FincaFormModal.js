@@ -1,7 +1,8 @@
 // C:\Proyectos\ITAM_System\itam_frontend\src\pages\masterdata\FincaFormModal.js
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import axios from '../../axiosConfig'; // Asegúrate de que esta ruta sea correcta
+import api from '../../api'; // Use the correct global instance
+//import axios from '../../axiosConfig'; // Asegúrate de que esta ruta sea correcta
 import Modal from '../../components/Modal'; // Asegúrate de que esta ruta sea correcta
 
 const FincaFormModal = ({ show, onClose, onSaveSuccess, fincaToEdit, regions }) => {
@@ -38,14 +39,14 @@ const FincaFormModal = ({ show, onClose, onSaveSuccess, fincaToEdit, regions }) 
             };
 
             if (fincaToEdit) {
-                // Actualizar finca existente
-                await axios.put(`masterdata/fincas/${fincaToEdit.id}/`, payload);
-                toast.success('Finca actualizada exitosamente!');
-            } else {
-                // Crear nueva finca
-                await axios.post('masterdata/fincas/', payload);
-                toast.success('Finca creada exitosamente!');
-            }
+                // Actualizar finca existente
+                await api.put(`masterdata/fincas/${fincaToEdit.id}/`, payload); // <--- CAMBIO AQUÍ
+                toast.success('Finca actualizada exitosamente!');
+            } else {
+                // Crear nueva finca
+                await api.post('masterdata/fincas/', payload); // <--- CAMBIO AQUÍ
+                toast.success('Finca creada exitosamente!');
+            }
             onSaveSuccess();
             onClose();
         } catch (error) {

@@ -41,4 +41,9 @@ if settings.DEBUG:
     urlpatterns += [
         re_path(r'^media/(?P<path>.*)$', download_media, name='media'),
     ]
+else:
+    # Serve media files in production with forced download
+    urlpatterns += [
+        re_path(r'^media/(?P<path>.*)$', download_media, name='media'),
+    ]
     

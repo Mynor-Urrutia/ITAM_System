@@ -239,3 +239,10 @@ Thumbs.db
 /media
 /static_root
 /static
+
+# Directorios específicos del proyecto ITAM
+itam_frontend/node_modules/
+itam_frontend/build/
+itam_backend/__pycache__/
+itam_backend/static/
+itam_backend/media/

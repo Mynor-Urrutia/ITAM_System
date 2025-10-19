@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import axios from '../../axiosConfig'; 
 import Modal from '../../components/Modal'; 
+import api from '../../api'; // Instancia corregida para producción
 
 const TipoActivoFormModal = ({ show, onClose, onSaveSuccess, tipoActivoToEdit }) => {
     const [name, setName] = useState('');
@@ -29,12 +29,14 @@ const TipoActivoFormModal = ({ show, onClose, onSaveSuccess, tipoActivoToEdit })
         try {
             const payload = { name, description };
             if (tipoActivoToEdit) {
-                await axios.put(`masterdata/tipos-activos/${tipoActivoToEdit.id}/`, payload);
-                toast.success('Tipo de activo actualizado exitosamente!');
-            } else {
-                await axios.post('masterdata/tipos-activos/', payload);
-                toast.success('Tipo de activo creado exitosamente!');
-            }
+	        // Change from axios.put to api.put
+	        await api.put(`masterdata/tipos-activos/${tipoActivoToEdit.id}/`, payload); 
+	        toast.success('Tipo de activo actualizado exitosamente!');
+	    } else {
+	        // Change from axios.post to api.post
+	        await api.post('masterdata/tipos-activos/', payload); 
+       		toast.success('Tipo de activo creado exitosamente!');
+	    }
             onSaveSuccess();
             onClose();
         } catch (error) {

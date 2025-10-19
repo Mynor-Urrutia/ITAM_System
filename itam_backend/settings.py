@@ -10,8 +10,10 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os 
 from pathlib import Path
 from datetime import timedelta
+from decouple import config 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -26,7 +28,7 @@ SECRET_KEY =  config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = ['35.333.196.157', '127.0.0.1', 'localhost', '10.10.24.63', '10.10.240.164']
+ALLOWED_HOSTS = ['35.222.196.157', '127.0.0.1', 'localhost', '10.10.24.63', '10.10.240.164']
 
 
 # Application definition
@@ -135,10 +137,16 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'staticfiles')
 
 # Media files (uploaded files)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+from django.conf import settings
+
+if not settings.DEBUG:
+    MEDIA_URL = 'http://34.10.197.140/media/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

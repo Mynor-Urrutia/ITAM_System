@@ -1,7 +1,7 @@
 // C:\Proyectos\ITAM_System\itam_frontend\src\pages\masterdata\RegionFormModal.js
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import axios from '../../axiosConfig'; // Asegúrate de que esta ruta sea correcta
+import api from '../../api';
 import Modal from '../../components/Modal'; // Asegúrate de que esta ruta sea correcta
 
 const RegionFormModal = ({ show, onClose, onSaveSuccess, regionToEdit }) => {
@@ -30,14 +30,14 @@ const RegionFormModal = ({ show, onClose, onSaveSuccess, regionToEdit }) => {
         try {
             const payload = { name, description };
             if (regionToEdit) {
-                // Actualizar región existente
-                await axios.put(`masterdata/regions/${regionToEdit.id}/`, payload);
-                toast.success('Región actualizada exitosamente!');
-            } else {
-                // Crear nueva región
-                await axios.post('masterdata/regions/', payload);
+                 // Actualizar región existente
+                 await api.put(`masterdata/regions/${regionToEdit.id}/`, payload);
+                 toast.success('Región actualizada exitosamente!');
+             } else {
+                 // Crear nueva región
+                await api.post('masterdata/regions/', payload); 
                 toast.success('Región creada exitosamente!');
-            }
+             }
             onSaveSuccess(); // Llama a la función para refrescar la lista en el padre
             onClose(); // Cierra el modal
         } catch (error) {
