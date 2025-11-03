@@ -1,4 +1,18 @@
-// itam_frontend/src/pages/assets/AssignmentFormModal.js
+/**
+ * Modal de Asignación Masiva de Activos.
+ *
+ * Interfaz para asignar múltiples activos a un empleado simultáneamente,
+ * permitiendo editar especificaciones técnicas de cada activo durante
+ * el proceso de asignación.
+ *
+ * Características principales:
+ * - Asignación masiva con validación de reglas de negocio
+ * - Navegación entre activos con vista previa
+ * - Edición de especificaciones técnicas por categoría de activo
+ * - Formularios dinámicos basados en tipo de activo (computo/red/periferico)
+ * - Estados de carga y manejo de errores
+ * - Confirmación de asignación antes de envío
+ */
 
 import React, { useState, useEffect } from 'react';
 import Modal from '../../components/Modal';

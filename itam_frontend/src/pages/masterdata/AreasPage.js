@@ -1,4 +1,22 @@
-// C:\Proyectos\ITAM_System\itam_frontend\src\pages\masterdata\AreasPage.js
+/**
+ * Página de Gestión de Áreas del sistema ITAM.
+ *
+ * Gestiona las áreas funcionales dentro de los departamentos:
+ * - CRUD completo de áreas (crear, leer, actualizar, eliminar)
+ * - Vista responsiva con cards expandibles para móvil y tabla para desktop
+ * - Relación jerárquica con departamentos
+ * - Paginación configurable
+ * - Control de permisos basado en roles
+ * - Validación de integridad referencial
+ *
+ * Características principales:
+ * - Gestión de subdivisiones departamentales
+ * - Relaciones padre-hijo con departamentos
+ * - Interfaz intuitiva para administración
+ * - Mensajes de confirmación para operaciones destructivas
+ * - Modales para formularios de creación/edición
+ */
+
 import React, { useState, useEffect } from 'react';
 import { getAreas, deleteArea } from '../../api'; // Importa las funciones API
 import AreaFormModal from './AreaFormModal'; // Importa el modal del formulario
@@ -8,6 +26,13 @@ import { useAuth } from '../../context/AuthContext'; // Para permisos
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus, faEdit, faTrash, faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons';
 
+/**
+ * Componente principal de la página de áreas.
+ *
+ * Gestiona la visualización y manipulación de las áreas funcionales,
+ * incluyendo operaciones CRUD con validaciones de integridad
+ * referencial y relaciones jerárquicas con departamentos.
+ */
 function AreasPage() {
     const [areas, setAreas] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);

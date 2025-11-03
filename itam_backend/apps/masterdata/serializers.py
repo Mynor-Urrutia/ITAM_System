@@ -1,7 +1,14 @@
-# itam_backend/masterdata/serializers.py
+"""
+Serializadores para los modelos de datos maestros del sistema ITAM.
+
+Este archivo contiene todos los serializadores necesarios para convertir
+instancias de modelos de datos maestros a JSON y viceversa, incluyendo
+campos calculados para mostrar nombres de relaciones y campos de escritura
+para enviar IDs durante operaciones CRUD.
+"""
 
 from rest_framework import serializers
-from .models import Region, Finca, Departamento, Area, TipoActivo, Marca, ModeloActivo, Proveedor, AuditLog    # Asegúrate de importar todos tus modelos
+from .models import Region, Finca, Departamento, Area, TipoActivo, Marca, ModeloActivo, Proveedor, AuditLog
 from rest_framework.validators import UniqueTogetherValidator
 
 class RegionSerializer(serializers.ModelSerializer):

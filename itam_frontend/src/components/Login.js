@@ -1,9 +1,31 @@
-// src/components/Login.js
+/**
+ * Componente de Login del sistema ITAM.
+ *
+ * Maneja la autenticación de usuarios mediante formulario de credenciales:
+ * - Formulario de usuario y contraseña con validación
+ * - Integración con AuthContext para gestión de estado de autenticación
+ * - Navegación automática después del login exitoso
+ * - Manejo de errores con notificaciones toast
+ * - Diseño responsivo con gradiente de fondo
+ *
+ * Características principales:
+ * - Validación de campos requeridos
+ * - Estados de carga manejados por AuthContext
+ * - Notificaciones de error automáticas
+ * - Navegación programática post-login
+ * - Diseño moderno con Tailwind CSS
+ */
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext'; // ¡Importa useAuth!
 import { toast } from 'react-toastify'; // Importa toast para notificaciones
 
+/**
+ * Componente funcional que renderiza el formulario de login.
+ * Utiliza el hook useAuth para acceder a la función de login
+ * y manejar el estado de autenticación global.
+ */
 const Login = () => { // Ya no recibe 'onLogin' como prop
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');

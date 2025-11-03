@@ -1,23 +1,39 @@
+"""
+Serializador para la gestión de empleados en el sistema ITAM.
+
+Convierte instancias de Employee a JSON y viceversa, incluyendo
+campos calculados para mostrar nombres de relaciones y campos
+de escritura para enviar IDs de las entidades relacionadas.
+"""
+
 from rest_framework import serializers
 from .models import Employee
 from apps.masterdata.models import Region, Finca, Departamento, Area
 
 class EmployeeSerializer(serializers.ModelSerializer):
-    # Read-only fields for displaying names
+    """
+    Serializador principal para el modelo Employee.
+
+    Incluye campos calculados para mostrar nombres de las relaciones
+    jerárquicas (departamento, área, región, finca) y campos de escritura
+    para enviar IDs durante las operaciones CRUD.
+    """
+
+    # Campos de solo lectura para mostrar nombres de las relaciones
     department_name = serializers.CharField(source='department.name', read_only=True)
     area_name = serializers.CharField(source='area.name', read_only=True)
     region_name = serializers.CharField(source='region.name', read_only=True)
     finca_name = serializers.CharField(source='finca.name', read_only=True)
     supervisor_name = serializers.SerializerMethodField()
 
-    # Read-only fields for IDs (needed for form editing)
+    # Campos de solo lectura para IDs (necesarios para edición en formularios)
     department_id = serializers.IntegerField(source='department.id', read_only=True)
     area_id = serializers.IntegerField(source='area.id', read_only=True)
     region_id = serializers.IntegerField(source='region.id', read_only=True)
     finca_id = serializers.IntegerField(source='finca.id', read_only=True)
     supervisor_id = serializers.IntegerField(source='supervisor.id', read_only=True, allow_null=True)
 
-    # Write-only fields for sending IDs
+    # Campos de escritura para enviar IDs de las relaciones
     department = serializers.PrimaryKeyRelatedField(
         queryset=Departamento.objects.all(),
         write_only=True,

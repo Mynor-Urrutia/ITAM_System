@@ -1,3 +1,21 @@
+/**
+ * Componente principal de Gestión de Usuarios.
+ *
+ * Interfaz completa para administrar usuarios del sistema con todas sus
+ * características organizacionales y de seguridad. Incluye CRUD completo,
+ * gestión de roles, cambio de contraseñas y vista detallada.
+ *
+ * Características principales:
+ * - CRUD completo de usuarios con validaciones
+ * - Asignación múltiple de roles con interfaz intuitiva
+ * - Cambio de contraseña con validaciones de seguridad
+ * - Vista detallada de usuarios con información organizacional
+ * - Diseño responsive (cards móviles / tabla desktop)
+ * - Paginación y filtros avanzados
+ * - Estados de carga y manejo de errores completo
+ * - Actualización automática del perfil propio
+ */
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { getUsers, getRoles, createUser, updateUser, changeUserPassword } from '../api';
 import { useNavigate } from 'react-router-dom';

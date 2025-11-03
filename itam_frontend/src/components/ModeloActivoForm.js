@@ -1,4 +1,18 @@
-// C:\\Proyectos\\ITAM_System\\itam_frontend\\src\\components\\ModeloActivoForm.js
+/**
+ * Formulario Completo para Modelos de Activos.
+ *
+ * Formulario avanzado para crear y editar modelos de activos tecnológicos
+ * con campos dinámicos basados en el tipo de activo seleccionado.
+ * Incluye validaciones específicas y manejo inteligente de datos.
+ *
+ * Características principales:
+ * - Campos dinámicos según tipo de activo (computo/red/periférico)
+ * - Especificaciones técnicas detalladas por categoría
+ * - Validación inteligente de campos obligatorios
+ * - Estados de carga y manejo de errores completo
+ * - Diseño responsive con secciones organizadas
+ * - Categorización automática basada en tipo de activo
+ */
 
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';

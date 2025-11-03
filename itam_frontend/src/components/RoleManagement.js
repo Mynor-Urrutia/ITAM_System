@@ -1,4 +1,18 @@
-// C:\Proyectos\ITAM_System\itam_frontend\src\components\RoleManagement.js
+/**
+ * Componente de Gestión de Roles y Permisos.
+ *
+ * Interfaz completa para administrar roles del sistema con sus permisos asociados.
+ * Permite crear, editar y eliminar roles, asignando permisos granulares por modelo.
+ *
+ * Características principales:
+ * - CRUD completo de roles con permisos agrupados por modelo
+ * - Interfaz de selección múltiple de permisos organizada por modelo
+ * - Vista dual: cards móviles / tabla desktop
+ * - Agrupamiento inteligente de permisos (Add, Change, Delete, View)
+ * - Validación de permisos del usuario actual
+ * - Paginación y filtros avanzados
+ * - Estados de carga y manejo de errores
+ */
 
 import React, { useState, useEffect } from 'react';
 import { getRoles, getPermissions, createRole, updateRole, deleteRole } from '../api';

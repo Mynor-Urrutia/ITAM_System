@@ -1,4 +1,23 @@
-// itam_frontend/src/pages/assets/MaintenancePage.js
+/**
+ * Página de Vista General de Mantenimientos del sistema ITAM.
+ *
+ * Proporciona una visión completa del estado de mantenimiento de todos los activos:
+ * - Vista general de todos los activos con estado de mantenimiento
+ * - Filtros por pestañas: Todos, Realizados, Próximos, Vencidos, Nunca
+ * - Búsqueda por hostname o serie
+ * - Ordenamiento por múltiples campos
+ * - Estados de mantenimiento: nunca realizado, realizados, próximos (30 días), vencidos
+ * - Registro manual de mantenimientos
+ * - Visualización de detalles de mantenimientos existentes
+ * - Vista responsiva con cards expandibles y tabla
+ *
+ * Características principales:
+ * - Dashboard de estado de mantenimiento
+ * - Lógica de estados basada en fechas de último y próximo mantenimiento
+ * - Paginación y ordenamiento avanzado
+ * - Control de permisos para operaciones de mantenimiento
+ * - Modales para registro y visualización de detalles
+ */
 
 import React, { useState, useEffect } from 'react';
 import { getMaintenanceOverview } from '../../api';
@@ -10,6 +29,14 @@ import Pagination from '../../components/Pagination';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus, faEdit, faTrash, faEye, faSort, faSortUp, faSortDown, faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons';
 
+/**
+ * Componente principal de la página de vista general de mantenimientos.
+ *
+ * Muestra el estado de mantenimiento de todos los activos activos,
+ * permitiendo filtrar, buscar y ordenar la información.
+ * Incluye funcionalidades para registrar nuevos mantenimientos
+ * y ver detalles de mantenimientos existentes.
+ */
 function MaintenancePage() {
     const [maintenanceData, setMaintenanceData] = useState([]);
     const [filteredData, setFilteredData] = useState([]);

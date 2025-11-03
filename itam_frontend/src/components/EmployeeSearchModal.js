@@ -1,4 +1,18 @@
-// itam_frontend/src/components/EmployeeSearchModal.js
+/**
+ * Modal de búsqueda avanzada de empleados.
+ *
+ * Proporciona una interfaz modal para buscar y seleccionar empleados
+ * con filtros avanzados. Utilizado principalmente para asignar
+ * supervisores o empleados a usuarios.
+ *
+ * Características principales:
+ * - Búsqueda en tiempo real con debounce
+ * - Filtro opcional para empleados disponibles para usuarios
+ * - Selección visual con indicadores
+ * - Información detallada de empleados (departamento, área)
+ * - Estados de carga y manejo de errores
+ * - Confirmación de selección antes de cerrar
+ */
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { debounce } from 'lodash';

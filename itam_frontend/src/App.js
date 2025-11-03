@@ -1,4 +1,20 @@
-// C:\Proyectos\ITAM_System\itam_frontend\src\App.js
+/**
+ * Componente Principal de la Aplicación ITAM.
+ *
+ * Punto de entrada principal de la aplicación React. Configura el enrutamiento,
+ * el contexto de autenticación, y maneja la navegación entre páginas públicas
+ * y privadas con protección de rutas basada en permisos.
+ *
+ * Características principales:
+ * - Configuración completa de React Router con rutas protegidas
+ * - Integración del contexto de autenticación global
+ * - Sistema de permisos por ruta con PrivateRoute
+ * - Configuración de títulos dinámicos de página
+ * - Notificaciones globales con React Toastify
+ * - Redirecciones automáticas basadas en estado de autenticación
+ * - Layout responsive con sidebar y navbar
+ * - Manejo de rutas duplicadas y redirecciones
+ */
 
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';

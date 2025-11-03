@@ -1,3 +1,22 @@
+/**
+ * Componente Sidebar del sistema ITAM.
+ *
+ * Barra lateral de navegación principal con menú jerárquico:
+ * - Navegación responsive con overlay móvil
+ * - Menús desplegables para agrupar funcionalidades relacionadas
+ * - Control de acceso basado en permisos de usuario
+ * - Navegación con indicadores visuales de página activa
+ * - Diseño moderno con tema oscuro
+ *
+ * Características principales:
+ * - Navegación jerárquica con submenús
+ * - Control de permisos granular por funcionalidad
+ * - Diseño responsive (colapsable en móvil)
+ * - Iconografía consistente con FontAwesome
+ * - Estados de hover y active visuales
+ * - Overlay para cerrar en dispositivos móviles
+ */
+
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -29,6 +48,16 @@ import {
     faCode,
 } from '@fortawesome/free-solid-svg-icons';
 
+/**
+ * Componente de barra lateral de navegación.
+ *
+ * Renderiza la navegación principal del sistema con menús
+ * organizados por funcionalidad y control de acceso basado
+ * en permisos del usuario autenticado.
+ *
+ * @param {boolean} isOpen - Estado de apertura del sidebar
+ * @param {function} onClose - Función para cerrar el sidebar
+ */
 function Sidebar({ isOpen, onClose }) {
     const [showSettingsDropdown, setShowSettingsDropdown] = useState(false);
     const [showMasterDataDropdown, setShowMasterDataDropdown] = useState(false);

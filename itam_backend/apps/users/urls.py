@@ -1,36 +1,37 @@
-# C:\Proyectos\ITAM_System\itam_backend\users\urls.py
+"""
+URLs para la aplicación de usuarios del sistema ITAM.
+
+Define todas las rutas API para:
+- CRUD completo de usuarios
+- Gestión de roles y permisos
+- Cambio de contraseñas
+- Obtención del usuario actual
+"""
 
 from django.urls import path
 from .views import (
     UserListCreateAPIView,
     UserRetrieveUpdateDestroyAPIView,
-    CurrentUserView, # Para /api/users/me/
+    CurrentUserView,  # Para obtener el usuario autenticado
     RoleListCreateAPIView,
     RoleRetrieveUpdateDestroyAPIView,
     PermissionListAPIView,
     ChangeUserPasswordView,
-    # Si tienes una RegisterView personalizada y la usas
-    # RegisterView,
 )
 
 urlpatterns = [
-    # Rutas para el CRUD de usuarios
+    # CRUD completo de usuarios
     path('users/', UserListCreateAPIView.as_view(), name='user-list-create'),
     path('users/<int:pk>/', UserRetrieveUpdateDestroyAPIView.as_view(), name='user-detail'),
-    path('users/me/', CurrentUserView.as_view(), name='current-user'), # Ruta para obtener el usuario actual
+    path('users/me/', CurrentUserView.as_view(), name='current-user'),  # Usuario autenticado actual
 
-    # Rutas para CRUD de Roles
+    # Gestión de roles (grupos de permisos)
     path('roles/', RoleListCreateAPIView.as_view(), name='role-list-create'),
     path('roles/<int:pk>/', RoleRetrieveUpdateDestroyAPIView.as_view(), name='role-detail'),
 
-    # Ruta para listar permisos
+    # Lista de permisos disponibles
     path('permissions/', PermissionListAPIView.as_view(), name='permission-list'),
 
-    # Ruta para cambiar contraseña de usuario
+    # Cambio de contraseña
     path('users/<int:pk>/change-password/', ChangeUserPasswordView.as_view(), name='user-change-password'),
-
-    # Si usas una RegisterView personalizada
-    # path('register/', RegisterView.as_view(), name='register'),
-    
-    
 ]

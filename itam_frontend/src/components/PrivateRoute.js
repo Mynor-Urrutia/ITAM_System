@@ -1,9 +1,35 @@
-// C:\Proyectos\ITAM_System\itam_frontend\src\components\PrivateRoute.js
+/**
+ * Componente PrivateRoute del sistema ITAM.
+ *
+ * Controla el acceso a rutas protegidas mediante autenticación y permisos:
+ * - Verificación de estado de autenticación
+ * - Validación de permisos específicos por ruta
+ * - Redirección automática a login o home según el caso
+ * - Notificaciones toast para errores de acceso
+ * - Estados de carga durante verificación
+ *
+ * Características principales:
+ * - Verificación de autenticación antes del render
+ * - Control granular de permisos por funcionalidad
+ * - Mensajes de error contextuales
+ * - Navegación programática de fallback
+ * - Estados de carga para UX mejorada
+ */
+
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-toastify';
 
+/**
+ * Componente de ruta protegida que verifica autenticación y permisos.
+ *
+ * Envuelve componentes que requieren acceso restringido, verificando
+ * que el usuario esté autenticado y tenga los permisos necesarios.
+ *
+ * @param {ReactNode} children - Componente(s) hijo(s) a renderizar si autorizado
+ * @param {string[]} requiredPermissions - Array de permisos requeridos (opcional)
+ */
 const PrivateRoute = ({ children, requiredPermissions = [] }) => {
     const { isAuthenticated, loading, hasPermission } = useAuth();
 

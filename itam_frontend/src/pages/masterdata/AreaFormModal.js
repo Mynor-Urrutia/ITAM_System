@@ -1,4 +1,18 @@
-// C:\Proyectos\ITAM_System\itam_frontend\src\pages\masterdata\AreaFormModal.js
+/**
+ * Modal de Formulario para Áreas.
+ *
+ * Formulario completo para crear y editar áreas organizacionales.
+ * Incluye validación de campos, selección de departamento padre,
+ * y manejo de estados de carga y errores.
+ *
+ * Características principales:
+ * - Creación y edición de áreas
+ * - Selección de departamento padre con carga dinámica
+ * - Validación de campos obligatorios
+ * - Estados de carga y manejo de errores completo
+ * - Diseño responsive con secciones organizadas
+ */
+
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { createArea, updateArea, getDepartamentos } from '../../api'; // Importa las funciones API

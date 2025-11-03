@@ -1,4 +1,18 @@
-// itam_frontend/src/pages/masterdata/ProveedorFormModal.js
+/**
+ * Modal de Formulario para Proveedores.
+ *
+ * Formulario completo para crear y editar proveedores con información
+ * de contacto detallada. Incluye validaciones de email, NIT único,
+ * y secciones organizadas para contactos de ventas y soporte.
+ *
+ * Características principales:
+ * - Creación y edición de proveedores
+ * - Información completa de empresa (NIT, dirección, contacto)
+ * - Contactos separados para ventas y soporte
+ * - Validación de emails y campos obligatorios
+ * - Estados de carga y manejo de errores completo
+ * - Diseño responsive con secciones organizadas
+ */
 
 import React, { useState, useEffect } from 'react';
 import Modal from '../../components/Modal';

@@ -1,4 +1,22 @@
-// itam_frontend/src/pages/assets/ActivosPage.js
+/**
+ * Página de Gestión de Activos del sistema ITAM.
+ *
+ * Permite gestionar el inventario completo de activos tecnológicos:
+ * - Visualización de activos activos y retirados
+ * - Búsqueda y filtrado por hostname, serie, ubicación, etc.
+ * - Ordenamiento por múltiples campos
+ * - Operaciones CRUD: crear, editar, ver detalles, retirar, reactivar, eliminar
+ * - Vista responsiva con cards para móvil y tabla para desktop
+ * - Control de permisos basado en roles de usuario
+ *
+ * Características principales:
+ * - Filtros: estado (activo/retirado), búsqueda por texto
+ * - Ordenamiento: hostname, serie, tipo, marca, modelo, fecha garantía, región, finca, estado
+ * - Estados de garantía: activa, próxima (30 días), vencida, sin garantía
+ * - Gestión del ciclo de vida: retiro con motivo y documentos, reactivación
+ * - Paginación configurable
+ * - Modales para formularios y detalles
+ */
 
 import React, { useState, useEffect } from 'react';
 import { getActivos, deleteActivo, reactivateActivo } from '../../api';
@@ -11,6 +29,13 @@ import { useAuth } from '../../context/AuthContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus, faEdit, faTrash, faEye, faSort, faSortUp, faSortDown, faUndo, faArchive, faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons';
 
+/**
+ * Componente principal de la página de activos.
+ *
+ * Gestiona el estado completo de la lista de activos con filtros,
+ * búsqueda, ordenamiento y operaciones CRUD. Maneja tanto vista
+ * móvil (cards expandibles) como desktop (tabla).
+ */
 function ActivosPage() {
     const [activos, setActivos] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);

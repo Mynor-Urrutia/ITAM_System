@@ -1,28 +1,67 @@
+/**
+ * Componente de paginación reutilizable para el sistema ITAM.
+ *
+ * Proporciona navegación entre páginas con diferentes estrategias de visualización:
+ * - Páginas consecutivas para pocos resultados
+ * - Páginas con ellipsis (...) para muchos resultados
+ * - Selector de tamaño de página configurable
+ * - Diseño responsive para móvil y desktop
+ * - Navegación inteligente con límites de páginas visibles
+ *
+ * Características principales:
+ * - Algoritmo inteligente de visualización de páginas
+ * - Soporte para ellipsis en rangos grandes
+ * - Selector dinámico de elementos por página
+ * - Navegación responsive (botones de texto en desktop, símbolos en móvil)
+ * - Estados de página actual destacados visualmente
+ * - Información de página actual y total
+ */
+
 import React from 'react';
 
+/**
+ * Componente de paginación con navegación inteligente.
+ *
+ * @param {number} currentPage - Página actual
+ * @param {number} totalPages - Total de páginas disponibles
+ * @param {number} pageSize - Número de elementos por página
+ * @param {number[]} pageSizeOptions - Opciones disponibles para tamaño de página
+ * @param {function} onPageChange - Función para cambiar de página
+ * @param {function} onPageSizeChange - Función para cambiar tamaño de página
+ * @param {boolean} hidePageSize - Si debe ocultar el selector de tamaño de página
+ */
 const Pagination = ({ currentPage, totalPages, pageSize, pageSizeOptions, onPageChange, onPageSizeChange, hidePageSize = false }) => {
+    /**
+     * Calcula qué números de página mostrar en la navegación.
+     * Usa ellipsis (...) para evitar mostrar demasiados números.
+     */
     const getPageNumbers = () => {
         const pages = [];
-        const maxVisiblePages = 5;
+        const maxVisiblePages = 5; // Máximo de páginas visibles a la vez
 
+        // Si hay pocas páginas, mostrar todas
         if (totalPages <= maxVisiblePages) {
             for (let i = 1; i <= totalPages; i++) {
                 pages.push(i);
             }
         } else {
+            // Lógica para mostrar páginas con ellipsis
             if (currentPage <= 3) {
+                // Principio: mostrar primeras 4 páginas + ... + última
                 for (let i = 1; i <= 4; i++) {
                     pages.push(i);
                 }
                 pages.push('...');
                 pages.push(totalPages);
             } else if (currentPage >= totalPages - 2) {
+                // Final: mostrar primera + ... + últimas 4 páginas
                 pages.push(1);
                 pages.push('...');
                 for (let i = totalPages - 3; i <= totalPages; i++) {
                     pages.push(i);
                 }
             } else {
+                // Medio: mostrar primera + ... + páginas alrededor de la actual + ... + última
                 pages.push(1);
                 pages.push('...');
                 for (let i = currentPage - 1; i <= currentPage + 1; i++) {

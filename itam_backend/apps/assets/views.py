@@ -1,3 +1,14 @@
+"""
+Vistas API para la gestión de activos tecnológicos en el sistema ITAM.
+
+Este archivo contiene:
+- ViewSets para CRUD de activos, mantenimientos y asignaciones
+- Funciones de dashboard con estadísticas en tiempo real
+- Endpoints para reportes CSV
+- Lógica de negocio para retiro, reactivación y asignación de activos
+- Auditoría automática de todas las operaciones
+"""
+
 from rest_framework import viewsets, permissions, status
 from rest_framework import filters as drf_filters
 from rest_framework.response import Response
@@ -155,17 +166,31 @@ class AuditLogMixin:
         )
 
 class ActivoViewSet(AuditLogMixin, viewsets.ModelViewSet):
+    """
+    ViewSet principal para gestión CRUD de activos tecnológicos.
+
+    Proporciona endpoints para:
+    - Listar activos con filtros y búsqueda
+    - Crear nuevos activos
+    - Ver, actualizar y eliminar activos existentes
+    - Retirar y reactivar activos
+    - Auditoría automática de todas las operaciones
+    """
+
+    # Query optimizada con select_related para evitar N+1 queries
     queryset = Activo.objects.select_related(
         'tipo_activo', 'proveedor', 'marca', 'modelo', 'region', 'finca', 'departamento', 'area'
     ).all()
     serializer_class = ActivoSerializer
     pagination_class = StandardResultsSetPagination
     permission_classes = [permissions.IsAuthenticated, permissions.DjangoModelPermissions]
+
+    # Configuración de filtros y búsqueda
     filter_backends = [drf_filters.SearchFilter, drf_filters.OrderingFilter, filters.DjangoFilterBackend]
     filterset_class = ActivoFilter
     search_fields = ['serie', 'hostname', 'solicitante', 'correo_electronico', 'orden_compra', 'region__name', 'cuenta_contable', 'departamento__name', 'area__name']
     ordering_fields = ['hostname', 'serie', 'tipo_activo__name', 'marca__name', 'modelo__name', 'fecha_fin_garantia', 'region__name', 'finca__name', 'estado']
-    ordering = ['hostname']  # Default ordering
+    ordering = ['hostname']  # Ordenamiento por defecto
 
     def get_queryset(self):
         queryset = Activo.objects.select_related(

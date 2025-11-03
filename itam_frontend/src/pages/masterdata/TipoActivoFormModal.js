@@ -1,6 +1,20 @@
+/**
+ * Modal de Formulario para Tipos de Activo.
+ *
+ * Formulario simple para crear y editar tipos de activos tecnológicos.
+ * Incluye validación básica y manejo de estados de carga.
+ *
+ * Características principales:
+ * - Creación y edición de tipos de activo
+ * - Validación de nombre obligatorio
+ * - Descripción opcional
+ * - Estados de carga y manejo de errores
+ * - Diseño responsive y accesible
+ */
+
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import Modal from '../../components/Modal'; 
+import Modal from '../../components/Modal';
 import api from '../../api'; // Instancia corregida para producción
 
 const TipoActivoFormModal = ({ show, onClose, onSaveSuccess, tipoActivoToEdit }) => {

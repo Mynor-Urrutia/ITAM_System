@@ -1,3 +1,18 @@
+/**
+ * Página de Contacto.
+ *
+ * Página informativa con información de contacto del equipo de soporte
+ * del sistema ITAM. Incluye datos de contacto, departamento responsable
+ * y mensaje motivacional para contactar al soporte.
+ *
+ * Características principales:
+ * - Información de contacto clara y accesible
+ * - Enlaces directos a email y teléfono
+ * - Diseño responsive centrado
+ * - Mensaje motivacional para contactar soporte
+ * - Información del departamento responsable
+ */
+
 import React from 'react';
 
 function ContactPage() {

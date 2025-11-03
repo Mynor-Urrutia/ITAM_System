@@ -1,4 +1,25 @@
-// itam_frontend/src/pages/assets/ActivoFormModal.js
+/**
+ * Modal de Formulario de Activos del sistema ITAM.
+ *
+ * Formulario completo para crear y editar activos tecnológicos:
+ * - Campos organizados en secciones: Básica, Control, Especificaciones, Financiera
+ * - Validaciones en tiempo real y al envío
+ * - Filtros dinámicos en cascada (tipo->marca->modelo, región->finca, departamento->área)
+ * - Carga automática de opciones desde APIs
+ * - Manejo de archivos para documentos
+ * - Vista previa de especificaciones del modelo seleccionado
+ * - Estados de carga y manejo de errores
+ * - Diseño responsivo con grid adaptable
+ *
+ * Características principales:
+ * - Formulario dividido en 4 secciones lógicas
+ * - Validación completa de campos obligatorios
+ * - Filtros inteligentes que dependen unos de otros
+ * - Conversión automática de tipos de datos
+ * - Soporte para archivos PDF y manejo de FormData
+ * - Estados de carga y feedback visual
+ * - Manejo de errores con mensajes específicos
+ */
 
 import React, { useState, useEffect } from 'react';
 import Modal from '../../components/Modal';
@@ -9,6 +30,18 @@ import {
 } from '../../api';
 import { toast } from 'react-toastify';
 
+/**
+ * Componente modal para crear y editar activos.
+ *
+ * Gestiona el formulario completo de activos con validaciones,
+ * filtros dinámicos y manejo de archivos. Incluye vista previa
+ * de especificaciones del modelo y conversión automática de datos.
+ *
+ * @param {boolean} show - Estado de visibilidad del modal
+ * @param {function} onClose - Función para cerrar el modal
+ * @param {function} onSaveSuccess - Callback ejecutado tras guardar exitosamente
+ * @param {object} activoToEdit - Objeto activo para editar (opcional)
+ */
 const ActivoFormModal = ({ show, onClose, onSaveSuccess, activoToEdit }) => {
     const [formData, setFormData] = useState({
         tipo_activo: '',

@@ -1,3 +1,20 @@
+/**
+ * Página de Documentación de APIs.
+ *
+ * Interfaz completa para explorar y documentar todos los endpoints
+ * disponibles en el sistema ITAM. Incluye búsqueda, filtrado por
+ * categorías y acceso directo a pruebas interactivas de APIs.
+ *
+ * Características principales:
+ * - Lista completa de todos los endpoints del sistema
+ * - Búsqueda en tiempo real por URL o descripción
+ * - Filtrado por categorías (Auth, Users, MasterData, Assets, Employees)
+ * - Vista tabular organizada con información clara
+ * - Integración con APIDetailModal para pruebas interactivas
+ * - Diseño responsive con navegación intuitiva
+ * - Estadísticas de resultados filtrados
+ */
+
 import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCode, faServer, faDatabase, faUsers, faKey, faSearch, faEye } from '@fortawesome/free-solid-svg-icons';

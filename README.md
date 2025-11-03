@@ -303,3 +303,194 @@ Para soporte técnico:
 ---
 
 **Sistema ITAM v1.0.0** - Desarrollado por Mynor Urrutia
+
+```
+ITAM_System
+├─ deploy_prod.py
+├─ itam_backend
+│  ├─ apps
+│  │  ├─ assets
+│  │  │  ├─ admin.py
+│  │  │  ├─ apps.py
+│  │  │  ├─ management
+│  │  │  │  └─ commands
+│  │  │  │     ├─ update_activo_assignments.py
+│  │  │  │     └─ update_activo_maintenance.py
+│  │  │  ├─ migrations
+│  │  │  │  ├─ 0001_initial.py
+│  │  │  │  ├─ 0002_activo_cuenta_contable_activo_cuotas_and_more.py
+│  │  │  │  ├─ 0003_activo_costo_activo_moneda.py
+│  │  │  │  ├─ 0004_alter_activo_correo_electronico_and_more.py
+│  │  │  │  ├─ 0005_activo_estado_activo_fecha_baja.py
+│  │  │  │  ├─ 0006_activo_motivo_baja_activo_usuario_baja.py
+│  │  │  │  ├─ 0007_add_missing_fields.py
+│  │  │  │  ├─ 0008_activo_documentos_baja.py
+│  │  │  │  ├─ 0009_activo_proximo_mantenimiento_and_more.py
+│  │  │  │  ├─ 0010_alter_maintenance_options_and_more.py
+│  │  │  │  ├─ 0011_alter_maintenance_options_assignment.py
+│  │  │  │  ├─ 0012_activo_administrable_activo_alimentacion_and_more.py
+│  │  │  │  ├─ 0013_alter_activo_administrable_alter_activo_ethernet_and_more.py
+│  │  │  │  ├─ 0014_set_boolean_fields_to_null.py
+│  │  │  │  ├─ 0015_activo_assigned_to.py
+│  │  │  │  └─ __init__.py
+│  │  │  ├─ models.py
+│  │  │  ├─ serializers.py
+│  │  │  ├─ tests.py
+│  │  │  ├─ urls.py
+│  │  │  ├─ views.py
+│  │  │  └─ __init__.py
+│  │  ├─ employees
+│  │  │  ├─ admin.py
+│  │  │  ├─ apps.py
+│  │  │  ├─ migrations
+│  │  │  │  ├─ 0001_initial.py
+│  │  │  │  ├─ 0002_employee_document.py
+│  │  │  │  └─ __init__.py
+│  │  │  ├─ models.py
+│  │  │  ├─ serializers.py
+│  │  │  ├─ tests.py
+│  │  │  ├─ urls.py
+│  │  │  ├─ views.py
+│  │  │  └─ __init__.py
+│  │  ├─ masterdata
+│  │  │  ├─ admin.py
+│  │  │  ├─ apps.py
+│  │  │  ├─ migrations
+│  │  │  │  ├─ 0001_initial.py
+│  │  │  │  ├─ 0001_initial_squashed_0009_auditlog_new_data_auditlog_old_data.py
+│  │  │  │  ├─ 0002_tipoactivo.py
+│  │  │  │  ├─ 0003_marca.py
+│  │  │  │  ├─ 0004_alter_marca_options_alter_marca_name.py
+│  │  │  │  ├─ 0005_modelo_especificacionescomputo_and_more.py
+│  │  │  │  ├─ 0006_remove_especificacionesred_modelo_and_more.py
+│  │  │  │  ├─ 0007_remove_modelocomputo_marca_and_more.py
+│  │  │  │  ├─ 0010_proveedor.py
+│  │  │  │  ├─ 0011_activo.py
+│  │  │  │  ├─ 0012_delete_activo.py
+│  │  │  │  ├─ 0013_create_auditlog.py
+│  │  │  │  ├─ 0014_alter_modeloactivo_alimentacion_and_more.py
+│  │  │  │  ├─ 0015_alter_auditlog_activity_type.py
+│  │  │  │  └─ __init__.py
+│  │  │  ├─ models.py
+│  │  │  ├─ serializers.py
+│  │  │  ├─ signals.py
+│  │  │  ├─ tests.py
+│  │  │  ├─ urls.py
+│  │  │  ├─ views.py
+│  │  │  └─ __init__.py
+│  │  └─ users
+│  │     ├─ admin.py
+│  │     ├─ apps.py
+│  │     ├─ management
+│  │     │  ├─ commands
+│  │     │  │  ├─ create_superadmin.py
+│  │     │  │  ├─ setup_roles.py
+│  │     │  │  └─ __init__.py
+│  │     │  └─ __init__.py
+│  │     ├─ migrations
+│  │     │  ├─ 0001_initial.py
+│  │     │  ├─ 0001_initial_squashed_0003_alter_customuser_departamento.py
+│  │     │  ├─ 0002_alter_customuser_region.py
+│  │     │  ├─ 0003_alter_customuser_departamento.py
+│  │     │  ├─ 0004_update_existing_users_is_active.py
+│  │     │  ├─ 0005_customuser_employee.py
+│  │     │  └─ __init__.py
+│  │     ├─ models.py
+│  │     ├─ permissions.py
+│  │     ├─ serializers.py
+│  │     ├─ tests.py
+│  │     ├─ urls.py
+│  │     ├─ views.py
+│  │     └─ __init__.py
+│  ├─ asgi.py
+│  ├─ manage.py
+│  ├─ middleware.py
+│  ├─ requirements.txt
+│  ├─ settings.py
+│  ├─ threadlocals.py
+│  ├─ urls.py
+│  ├─ wsgi.py
+│  └─ __init__.py
+├─ itam_frontend
+│  ├─ package-lock.json
+│  ├─ package.json
+│  ├─ postcss.config.js
+│  ├─ README.md
+│  ├─ src
+│  │  ├─ api.js
+│  │  ├─ App.js
+│  │  ├─ App.test.js
+│  │  ├─ axiosConfig.js
+│  │  ├─ components
+│  │  │  ├─ 30
+│  │  │  ├─ ChangePasswordForm.js
+│  │  │  ├─ EmployeeAutocomplete.js
+│  │  │  ├─ EmployeeSearchModal.js
+│  │  │  ├─ Home.js
+│  │  │  ├─ Login.js
+│  │  │  ├─ MasterDataAutocomplete.js
+│  │  │  ├─ Modal.js
+│  │  │  ├─ ModeloActivoForm.js
+│  │  │  ├─ Navbar.js
+│  │  │  ├─ Pagination.js
+│  │  │  ├─ PrivateRoute.js
+│  │  │  ├─ RoleManagement.js
+│  │  │  ├─ Sidebar.js
+│  │  │  ├─ UserCrud.js
+│  │  │  ├─ UserDetail.js
+│  │  │  └─ UserForm.js
+│  │  ├─ config.js
+│  │  ├─ context
+│  │  │  └─ AuthContext.js
+│  │  ├─ hooks
+│  │  │  └─ usePageTitle.js
+│  │  ├─ index.css
+│  │  ├─ index.js
+│  │  ├─ pages
+│  │  │  ├─ AboutPage.js
+│  │  │  ├─ APIDetailModal.js
+│  │  │  ├─ APIDocumentationPage.js
+│  │  │  ├─ assets
+│  │  │  │  ├─ ActivoDetailModal.js
+│  │  │  │  ├─ ActivoFormModal.js
+│  │  │  │  ├─ ActivosPage.js
+│  │  │  │  ├─ AssignmentFormModal.js
+│  │  │  │  ├─ AssignmentModal.js
+│  │  │  │  ├─ AssignmentPage.js
+│  │  │  │  ├─ MaintenanceDetailModal.js
+│  │  │  │  ├─ MaintenanceModal.js
+│  │  │  │  ├─ MaintenancePage.js
+│  │  │  │  └─ RetireActivoModal.js
+│  │  │  ├─ ContactPage.js
+│  │  │  ├─ employees
+│  │  │  │  ├─ EmployeeDetailModal.js
+│  │  │  │  ├─ EmployeeFormModal.js
+│  │  │  │  └─ EmployeesPage.js
+│  │  │  ├─ masterdata
+│  │  │  │  ├─ AreaFormModal.js
+│  │  │  │  ├─ AreasPage.js
+│  │  │  │  ├─ AuditLogsPage.js
+│  │  │  │  ├─ DepartmentFormModal.js
+│  │  │  │  ├─ DepartmentsPage.js
+│  │  │  │  ├─ FarmsPage.js
+│  │  │  │  ├─ FincaFormModal.js
+│  │  │  │  ├─ MarcaFormModal.js
+│  │  │  │  ├─ MarcasPage.js
+│  │  │  │  ├─ ModelosActivoPage.js
+│  │  │  │  ├─ ProveedoresPage.js
+│  │  │  │  ├─ ProveedorFormModal.js
+│  │  │  │  ├─ RegionFormModal.js
+│  │  │  │  ├─ RegionsPage.js
+│  │  │  │  ├─ TipoActivoFormModal.js
+│  │  │  │  └─ TiposActivosPage.js
+│  │  │  ├─ ReportsPage.js
+│  │  │  └─ UserProfile.js
+│  │  ├─ reportWebVitals.js
+│  │  └─ setupTests.js
+│  └─ tailwind.config.js
+├─ package-lock.json
+├─ README.md
+├─ setup_dev.py
+└─ start_dev.py
+
+```

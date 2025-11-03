@@ -1,4 +1,18 @@
-// C:\Proyectos\ITAM_System\itam_frontend\src\pages\masterdata\FincaFormModal.js
+/**
+ * Modal de Formulario para Fincas.
+ *
+ * Formulario para crear y editar fincas agrícolas con asignación
+ * opcional a regiones geográficas. Incluye validación básica
+ * y manejo de estados de carga.
+ *
+ * Características principales:
+ * - Creación y edición de fincas
+ * - Asignación opcional a regiones
+ * - Información de dirección
+ * - Estados de carga y manejo de errores
+ * - Diseño responsive y accesible
+ */
+
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import api from '../../api'; // Use the correct global instance

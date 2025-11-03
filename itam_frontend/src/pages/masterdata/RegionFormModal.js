@@ -1,4 +1,17 @@
-// C:\Proyectos\ITAM_System\itam_frontend\src\pages\masterdata\RegionFormModal.js
+/**
+ * Modal de Formulario para Regiones.
+ *
+ * Formulario simple para crear y editar regiones geográficas.
+ * Incluye validación básica de campos y manejo de estados de carga.
+ *
+ * Características principales:
+ * - Creación y edición de regiones
+ * - Validación de nombre obligatorio
+ * - Descripción opcional
+ * - Estados de carga y manejo de errores
+ * - Diseño responsive y accesible
+ */
+
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import api from '../../api';

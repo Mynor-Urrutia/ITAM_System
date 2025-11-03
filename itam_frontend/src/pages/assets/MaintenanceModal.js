@@ -1,4 +1,18 @@
-// itam_frontend/src/pages/assets/MaintenanceModal.js
+/**
+ * Modal de Registro de Mantenimiento.
+ *
+ * Formulario para registrar mantenimientos realizados a activos.
+ * Soporta tanto mantenimiento desde la ficha del activo como
+ * registro manual con validación de identificador.
+ *
+ * Características principales:
+ * - Registro manual de mantenimientos con validación de activo
+ * - Selección de técnico de una lista de usuarios
+ * - Adjunto de múltiples archivos (imágenes, PDF, documentos)
+ * - Validación en tiempo real del identificador del activo
+ * - Estados de carga y manejo de errores completo
+ * - Diseño responsive con información contextual
+ */
 
 import React, { useState, useEffect } from 'react';
 import Modal from '../../components/Modal';

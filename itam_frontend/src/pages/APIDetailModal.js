@@ -1,3 +1,21 @@
+/**
+ * Modal Interactivo de Documentación API.
+ *
+ * Interfaz completa para probar y documentar endpoints de la API REST.
+ * Incluye ejecución de requests en tiempo real, visualización de respuestas,
+ * generación de comandos cURL y plantillas de datos de ejemplo.
+ *
+ * Características principales:
+ * - Pruebas interactivas de endpoints con autenticación JWT
+ * - Visualización de respuestas JSON con formato
+ * - Generación automática de comandos cURL
+ * - Plantillas de datos de ejemplo por endpoint
+ * - Manejo especial del endpoint de login
+ * - Copiado al portapapeles de requests/responses
+ * - Estados de carga y manejo de errores completo
+ * - Diseño responsive con tabs organizados
+ */
+
 import React, { useState, useEffect } from 'react';
 import Modal from '../components/Modal';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';

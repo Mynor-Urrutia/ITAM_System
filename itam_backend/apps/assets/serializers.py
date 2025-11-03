@@ -1,3 +1,11 @@
+"""
+Serializadores para la aplicación de activos.
+
+Convierten los modelos de datos (Activo, Maintenance, Assignment) a formato JSON
+para las APIs REST. Incluyen lógica para mostrar nombres en lugar de IDs,
+campos calculados y validaciones personalizadas.
+"""
+
 from rest_framework import serializers
 from .models import Activo, Maintenance, Assignment
 from apps.masterdata.models import TipoActivo, Marca, ModeloActivo, Proveedor, Region, Finca, Departamento, Area, AuditLog
@@ -5,7 +13,14 @@ from apps.employees.models import Employee
 from django.contrib.contenttypes.models import ContentType
 
 class ActivoSerializer(serializers.ModelSerializer):
-    # Read-only fields for displaying names
+    """
+    Serializador principal para el modelo Activo.
+
+    Convierte instancias de Activo a JSON y viceversa. Incluye campos calculados
+    que muestran nombres en lugar de IDs para mejor usabilidad en el frontend.
+    """
+
+    # Campos de solo lectura para mostrar nombres de las relaciones
     tipo_activo_name = serializers.CharField(source='tipo_activo.name', read_only=True)
     proveedor_name = serializers.CharField(source='proveedor.nombre_empresa', read_only=True)
     marca_name = serializers.CharField(source='marca.name', read_only=True)
@@ -25,7 +40,8 @@ class ActivoSerializer(serializers.ModelSerializer):
     departamento_id = serializers.IntegerField(source='departamento.id', read_only=True)
     area_id = serializers.IntegerField(source='area.id', read_only=True)
 
-    # Asset/ModeloActivo fields (prefer asset values, fallback to modelo)
+    # Campos calculados que priorizan valores del activo sobre los del modelo
+    # Permiten personalizar especificaciones técnicas por activo individual
     procesador = serializers.SerializerMethodField()
     ram = serializers.SerializerMethodField()
     almacenamiento = serializers.SerializerMethodField()

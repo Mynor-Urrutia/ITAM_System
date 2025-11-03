@@ -1,3 +1,20 @@
+/**
+ * Página de Reportes del sistema ITAM.
+ *
+ * Permite generar y descargar reportes en formato CSV con filtros avanzados.
+ * Incluye reportes para:
+ * - Activos: Inventario completo con filtros por tipo, marca, ubicación, etc.
+ * - Mantenimiento: Historial de mantenimientos con filtros por fechas y técnicos
+ * - Asignaciones: Historial de asignaciones de activos a empleados
+ * - Auditoría: Logs de cambios en el sistema
+ *
+ * Características:
+ * - Filtros dinámicos basados en datos maestros
+ * - Descarga automática en formato CSV compatible con Excel
+ * - Control de permisos por tipo de reporte
+ * - Manejo de errores y timeouts para reportes grandes
+ */
+
 import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -29,6 +46,12 @@ import {
 } from '../api';
 import api from '../api';
 
+/**
+ * Componente principal de la página de reportes.
+ *
+ * Gestiona múltiples pestañas de reportes con filtros independientes
+ * y descarga de archivos CSV. Utiliza permisos para controlar acceso.
+ */
 function ReportsPage() {
     const { hasPermission } = useAuth();
     const [activeTab, setActiveTab] = useState('assets');

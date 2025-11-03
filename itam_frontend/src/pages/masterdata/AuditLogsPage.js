@@ -1,4 +1,20 @@
-// C:\Proyectos\ITAM_System\itam_frontend\src\pages\masterdata\AuditLogsPage.js
+/**
+ * Página de Registros de Auditoría.
+ *
+ * Interfaz completa para visualizar el historial completo de cambios
+ * en el sistema. Muestra todas las operaciones CRUD con detalles
+ * de cambios realizados, usuarios responsables y timestamps.
+ *
+ * Características principales:
+ * - Visualización completa de logs de auditoría
+ * - Diferentes tipos de actividad (CREATE, UPDATE, DELETE, RETIRE, REACTIVATE)
+ * - Vista detallada de cambios realizados en cada operación
+ * - Formateo inteligente de datos antes/después
+ * - Vista dual: cards móviles / tabla desktop
+ * - Estados de carga y manejo de errores completo
+ * - Paginación y búsqueda (placeholder)
+ */
+
 import React, { useState, useEffect } from 'react';
 import { getAuditLogs } from '../../api'; // Importa las funciones API
 import { toast } from 'react-toastify';

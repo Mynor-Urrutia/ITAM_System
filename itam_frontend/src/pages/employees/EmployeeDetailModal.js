@@ -1,4 +1,19 @@
-// itam_frontend/src/pages/employees/EmployeeDetailModal.js
+/**
+ * Modal de Detalles de Empleado.
+ *
+ * Vista detallada completa de información de empleados con visor
+ * integrado de documentos PDF e imágenes. Incluye información
+ * personal, organizacional y sistema con navegación intuitiva.
+ *
+ * Características principales:
+ * - Vista completa de información del empleado
+ * - Visor integrado de documentos PDF con zoom
+ * - Soporte para imágenes (JPG, PNG, GIF)
+ * - Información organizacional jerárquica
+ * - Formateo de fechas localizado
+ * - Diseño responsive con secciones organizadas
+ * - Estados de carga y manejo de errores
+ */
 
 import React, { useState } from 'react';
 import Modal from '../../components/Modal';

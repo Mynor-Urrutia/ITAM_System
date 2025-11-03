@@ -1,3 +1,33 @@
+/**
+ * Componente de Detalles de Usuario.
+ *
+ * Muestra información detallada de un usuario del sistema
+ * en una vista de solo lectura. Incluye información personal,
+ * organizacional y de estado.
+ *
+ * Características principales:
+ * - Vista detallada de información de usuario
+ * - Campos organizacionales (departamento, región, puesto)
+ * - Estado del usuario con colores visuales
+ * - Diseño responsive y accesible
+ * - Botón de cierre integrado
+ */
+
+/**
+ * Componente de Detalles de Usuario.
+ *
+ * Muestra información detallada de un usuario del sistema
+ * en una vista de solo lectura. Incluye información personal,
+ * organizacional y de estado.
+ *
+ * Características principales:
+ * - Vista detallada de información de usuario
+ * - Campos organizacionales (departamento, región, puesto)
+ * - Estado del usuario con colores visuales
+ * - Diseño responsive y accesible
+ * - Botón de cierre integrado
+ */
+
 import React from 'react';
 
 function UserDetail({ user, onClose }) {

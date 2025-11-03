@@ -1,4 +1,19 @@
-// C:\\Proyectos\\ITAM_System\\itam_frontend\\src\\pages\\masterdata\\ModelosComputoPage.js
+/**
+ * Página de Gestión de Modelos de Activo.
+ *
+ * Interfaz completa para administrar modelos de activos tecnológicos.
+ * Incluye especificaciones técnicas detalladas por tipo de activo
+ * (computo, red, periféricos) con formularios dinámicos.
+ *
+ * Características principales:
+ * - Gestión CRUD completa de modelos de activos
+ * - Especificaciones técnicas por categoría (computo/red/periférico)
+ * - Relaciones con marcas y tipos de activo
+ * - Vista dual: cards móviles / tabla desktop
+ * - Formularios dinámicos basados en tipo de activo
+ * - Validaciones específicas por categoría
+ * - Estados de carga y manejo de errores completo
+ */
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';

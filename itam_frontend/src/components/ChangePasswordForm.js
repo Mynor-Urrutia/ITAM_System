@@ -1,4 +1,19 @@
-// src/components/ChangePasswordForm.js
+/**
+ * Componente de formulario para cambio de contraseña de usuarios.
+ *
+ * Permite a los usuarios cambiar su contraseña con validaciones de seguridad
+ * y confirmación. Incluye indicadores visuales de visibilidad de contraseña
+ * y manejo completo de errores.
+ *
+ * Características principales:
+ * - Validación de fortaleza de contraseña (8+ caracteres, mayúsculas, minúsculas, números, especiales)
+ * - Confirmación de contraseña coincidente
+ * - Indicadores visuales para mostrar/ocultar contraseñas
+ * - Manejo de errores con mensajes específicos
+ * - Redirección automática en caso de sesión expirada
+ * - Estados de carga durante el envío
+ */
+
 import React, { useState } from 'react';
 import api from '../api';
 import { useNavigate } from 'react-router-dom';

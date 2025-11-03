@@ -1,4 +1,16 @@
-// itam_frontend/src/pages/masterdata/MarcaFormModal.js
+/**
+ * Modal de Formulario para Marcas.
+ *
+ * Formulario simple para crear y editar marcas de equipos tecnológicos.
+ * Incluye validación básica y manejo de estados de carga.
+ *
+ * Características principales:
+ * - Creación y edición de marcas
+ * - Validación de nombre obligatorio
+ * - Descripción opcional
+ * - Estados de carga y manejo de errores
+ * - Diseño responsive y accesible
+ */
 
 import React, { useState, useEffect } from 'react';
 import Modal from '../../components/Modal';

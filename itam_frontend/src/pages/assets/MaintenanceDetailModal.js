@@ -1,4 +1,19 @@
-// itam_frontend/src/pages/assets/MaintenanceDetailModal.js
+/**
+ * Modal de Detalles de Mantenimiento.
+ *
+ * Vista completa de un registro de mantenimiento específico con
+ * historial completo del activo, visor de documentos adjuntos
+ * y navegación entre mantenimientos relacionados.
+ *
+ * Características principales:
+ * - Vista detallada de mantenimiento individual
+ * - Historial completo de mantenimientos del activo
+ * - Visor integrado de documentos (PDF, imágenes)
+ * - Navegación entre registros de mantenimiento
+ * - Información técnica completa del activo
+ * - Estados de carga y manejo de errores
+ * - Diseño responsive con secciones organizadas
+ */
 
 import React, { useState, useEffect } from 'react';
 import Modal from '../../components/Modal';

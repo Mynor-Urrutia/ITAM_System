@@ -1,4 +1,23 @@
-// itam_frontend/src/pages/employees/EmployeesPage.js
+/**
+ * Página de Gestión de Empleados del sistema ITAM.
+ *
+ * Permite gestionar el directorio completo de empleados de la organización:
+ * - Visualización de empleados con información organizacional completa
+ * - Búsqueda por número de empleado, nombres y apellidos
+ * - Ordenamiento por múltiples campos organizacionales
+ * - Operaciones CRUD: crear, editar, ver detalles, eliminar empleados
+ * - Vista responsiva con cards expandibles para móvil y tabla para desktop
+ * - Control de permisos basado en roles de usuario
+ *
+ * Características principales:
+ * - Información jerárquica: departamento, área, región, finca, supervisor
+ * - Relaciones organizacionales completas
+ * - Búsqueda avanzada por texto
+ * - Ordenamiento por campos organizacionales
+ * - Gestión del ciclo de vida de empleados
+ * - Paginación configurable
+ * - Modales para formularios y detalles
+ */
 
 import React, { useState, useEffect } from 'react';
 import { getEmployees, deleteEmployee } from '../../api';
@@ -10,6 +29,13 @@ import { useAuth } from '../../context/AuthContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus, faEdit, faTrash, faEye, faSort, faSortUp, faSortDown, faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons';
 
+/**
+ * Componente principal de la página de empleados.
+ *
+ * Gestiona la visualización y manipulación del directorio de empleados,
+ * incluyendo búsqueda, ordenamiento y operaciones CRUD con control
+ * de permisos. Maneja tanto vista móvil (cards) como desktop (tabla).
+ */
 function EmployeesPage() {
     const [employees, setEmployees] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);

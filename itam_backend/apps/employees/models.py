@@ -1,11 +1,27 @@
+"""
+Modelo de empleados para el sistema ITAM.
+
+Este archivo define la estructura de datos para gestionar la información
+de empleados, incluyendo su jerarquía organizacional, ubicación geográfica
+y documentos asociados.
+"""
+
 from django.db import models
 from apps.masterdata.models import Region, Finca, Departamento, Area
 
 class Employee(models.Model):
-    employee_number = models.CharField(max_length=50, unique=True, verbose_name="No. Empleado")
+    """
+    Modelo que representa a un empleado en la organización.
+
+    Incluye información personal, jerarquía organizacional (departamento, área),
+    ubicación geográfica (región, finca) y relación jerárquica con supervisores.
+    """
+    # Información personal del empleado
+    employee_number = models.CharField(max_length=50, unique=True, verbose_name="Número de Empleado")
     first_name = models.CharField(max_length=100, verbose_name="Nombres")
     last_name = models.CharField(max_length=100, verbose_name="Apellidos")
 
+    # Jerarquía organizacional
     department = models.ForeignKey(
         Departamento,
         on_delete=models.SET_NULL,
@@ -22,6 +38,8 @@ class Employee(models.Model):
         related_name='employees',
         verbose_name="Área"
     )
+
+    # Ubicación geográfica
     region = models.ForeignKey(
         Region,
         on_delete=models.SET_NULL,
@@ -39,21 +57,25 @@ class Employee(models.Model):
         verbose_name="Finca"
     )
 
-    start_date = models.DateField(verbose_name="Inicio de Labores")
+    # Información laboral
+    start_date = models.DateField(verbose_name="Fecha de Inicio de Labores")
+
+    # Relación jerárquica (auto-referencial)
     supervisor = models.ForeignKey(
-        'self',
+        'self',  # Referencia a la misma clase Employee
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='subordinates',
+        related_name='subordinates',  # Permite acceder a subordinados desde el supervisor
         verbose_name="Jefe Inmediato"
     )
 
+    # Documentos asociados
     document = models.FileField(
-        upload_to='employee_documents/',
+        upload_to='employee_documents/',  # Carpeta donde se guardan los archivos
         null=True,
         blank=True,
-        verbose_name="Documento PDF"
+        verbose_name="Documento PDF del Empleado"
     )
 
     created_at = models.DateTimeField(auto_now_add=True)

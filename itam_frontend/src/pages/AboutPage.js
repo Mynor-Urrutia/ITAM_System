@@ -1,5 +1,22 @@
+/**
+ * Página "Acerca de" del sistema ITAM.
+ *
+ * Muestra información general del sistema, incluyendo:
+ * - Información básica del sistema (nombre, descripción, versión)
+ * - Tecnologías utilizadas en el backend (Django)
+ * - Tecnologías utilizadas en el frontend (React)
+ *
+ * Esta página es accesible para todos los usuarios autenticados.
+ */
+
 import React from 'react';
 
+/**
+ * Componente principal de la página About.
+ *
+ * Renderiza información estática del sistema en un layout responsivo
+ * con tarjetas que muestran las tecnologías utilizadas.
+ */
 function AboutPage() {
     const systemInfo = {
         name: 'ITAM System',

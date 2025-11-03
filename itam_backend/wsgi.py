@@ -1,7 +1,11 @@
 """
 WSGI config for itam_backend project.
 
-It exposes the WSGI callable as a module-level variable named ``application``.
+Configuración WSGI (Web Server Gateway Interface) para el proyecto ITAM.
+Interfaz estándar para servidores web Python como Gunicorn o uWSGI.
+Se usa en producción para conectar Django con el servidor web.
+
+Expone el callable WSGI como una variable a nivel de módulo llamada ``application``.
 
 For more information on this file, see
 https://docs.djangoproject.com/en/5.2/howto/deployment/wsgi/

@@ -1,10 +1,24 @@
-// C:\Proyectos\ITAM_System\itam_frontend\src\components\MasterDataAutocomplete.js
+/**
+ * Componente de Autocompletado para Datos Maestros.
+ *
+ * Proporciona búsqueda en tiempo real para entidades de datos maestros
+ * (departamentos, áreas, tipos de activo, etc.) con funcionalidad
+ * de autocompletado inteligente y manejo de estados de carga.
+ *
+ * Características principales:
+ * - Búsqueda en tiempo real con debounce de 300ms
+ * - Carga automática del nombre cuando hay ID preseleccionado
+ * - Estados visuales de carga y búsqueda
+ * - Manejo de errores y casos edge
+ * - Integración perfecta con formularios React
+ * - Diseño responsive y accesible
+ */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { debounce } from 'lodash'; 
-import api from '../api'; 
+import { debounce } from 'lodash';
+import api from '../api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSearch, faCircleNotch } from '@fortawesome/free-solid-svg-icons'; 
+import { faSearch, faCircleNotch } from '@fortawesome/free-solid-svg-icons';
 
 /**
  * Componente de Autocompletado para Datos Maestros (Foreing Keys)

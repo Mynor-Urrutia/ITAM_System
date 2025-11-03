@@ -1,21 +1,30 @@
+"""
+Vistas API para la gestión de usuarios en el sistema ITAM.
+
+Este archivo contiene todas las vistas necesarias para:
+- CRUD completo de usuarios con auditoría
+- Gestión de roles y permisos
+- Cambio de contraseñas
+- Obtención del usuario actual
+- Serialización de datos para auditoría
+"""
+
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework_simplejwt.tokens import RefreshToken
-# Importa get_user_model para obtener tu CustomUser
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Group, Permission # Importa Group y Permission
+from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.forms.models import model_to_dict
 from django.core.serializers.json import DjangoJSONEncoder
 import json
-from .permissions import IsActiveUser # ¡Importa tu permiso personalizado!
-# Asume que CustomUser está importado o definido en models.py
+from .permissions import IsActiveUser
 from rest_framework.permissions import IsAuthenticated
 from apps.masterdata.models import AuditLog
 
-# Obtiene tu CustomUser
+# Obtiene el modelo de usuario personalizado
 User = get_user_model()
 
 class StandardResultsSetPagination(PageNumberPagination):
@@ -69,8 +78,13 @@ from .serializers import (
     PermissionSerializer, RoleSerializer
 )
 
-# Vistas para el CRUD de usuarios
+# Vistas para CRUD completo de usuarios con auditoría automática
 class UserListCreateAPIView(generics.ListCreateAPIView):
+    """
+    Vista para listar y crear usuarios.
+
+    Incluye auditoría automática de creación de usuarios y paginación.
+    """
     queryset = User.objects.all().order_by('username')
     serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated, permissions.DjangoModelPermissions, IsActiveUser]

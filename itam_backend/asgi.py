@@ -1,7 +1,11 @@
 """
 ASGI config for itam_backend project.
 
-It exposes the ASGI callable as a module-level variable named ``application``.
+Configuración ASGI (Asynchronous Server Gateway Interface) para el proyecto ITAM.
+Permite el despliegue con servidores asíncronos como Daphne para mejor rendimiento
+en aplicaciones que requieren conexiones en tiempo real.
+
+Expone el callable ASGI como una variable a nivel de módulo llamada ``application``.
 
 For more information on this file, see
 https://docs.djangoproject.com/en/5.2/howto/deployment/asgi/

@@ -1,4 +1,10 @@
-# itam_backend/masterdata/views.py CORREGIDO
+"""
+Vistas API para la gestión de datos maestros en el sistema ITAM.
+
+Este archivo contiene ViewSets para todas las entidades de catálogo,
+incluyendo auditoría automática, filtros, búsqueda y exportación CSV.
+Proporciona endpoints para CRUD completo de datos maestros.
+"""
 
 from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
@@ -102,13 +108,23 @@ class AuditLogMixin:
         )
 
 class RegionViewSet(AuditLogMixin, viewsets.ModelViewSet):
+    """
+    ViewSet para gestión CRUD de regiones geográficas.
+
+    Incluye validación de integridad referencial para evitar eliminación
+    de regiones que tienen fincas asignadas.
+    """
     queryset = Region.objects.all()
     serializer_class = RegionSerializer
     pagination_class = StandardResultsSetPagination
-    # Usar permisos del modelo: requiere permisos específicos como masterdata.add_region, etc.
-    permission_classes = [permissions.IsAuthenticated]  # Temporarily allow all authenticated users for dropdowns
+    permission_classes = [permissions.IsAuthenticated]
 
     def destroy(self, request, *args, **kwargs):
+        """
+        Elimina una región con validación de integridad referencial.
+
+        Verifica que no existan fincas asignadas antes de permitir la eliminación.
+        """
         instance = self.get_object()
         # Verificar si hay fincas asociadas
         if instance.fincas.exists():

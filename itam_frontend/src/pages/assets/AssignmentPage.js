@@ -1,4 +1,23 @@
-// itam_frontend/src/pages/assets/AssignmentPage.js
+/**
+ * Página de Asignación de Activos del sistema ITAM.
+ *
+ * Gestiona la asignación y devolución de activos a empleados:
+ * - Selección de empleado con autocompletado
+ * - Visualización de asignaciones actuales del empleado seleccionado
+ * - Vista general de todas las asignaciones activas agrupadas por empleado
+ * - Asignación masiva de múltiples activos a un empleado
+ * - Devolución individual o masiva de activos
+ * - Control de reglas de negocio (un activo por tipo por empleado)
+ * - Vista responsiva con cards expandibles y tabla
+ *
+ * Características principales:
+ * - Autocompletado inteligente para selección de empleados
+ * - Agrupación de asignaciones por empleado
+ * - Validación de reglas de asignación
+ * - Operaciones masivas para eficiencia
+ * - Paginación en vista general
+ * - Modales para asignación y devolución
+ */
 
 import React, { useState, useEffect } from 'react';
 import { getEmployees, getAssignments, bulkAssignAssets, returnAssignment } from '../../api';
@@ -11,6 +30,13 @@ import { useAuth } from '../../context/AuthContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus, faUndo, faEye, faEdit, faCheck, faTimes, faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons';
 
+/**
+ * Componente principal de la página de asignaciones.
+ *
+ * Gestiona el flujo completo de asignación de activos a empleados,
+ * incluyendo selección de empleado, visualización de asignaciones
+ * actuales y operaciones de asignación/devolución.
+ */
 function AssignmentPage() {
     const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
     const [selectedEmployee, setSelectedEmployee] = useState(null);

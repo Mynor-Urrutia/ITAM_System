@@ -1,19 +1,39 @@
-// C:\Proyectos\ITAM_System\itam_frontend\src\context\AuthContext.js
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { jwtDecode } from 'jwt-decode';
-import api from '../api';
-import { toast } from 'react-toastify';
-import { useNavigate } from 'react-router-dom';
+/**
+ * Contexto de Autenticación para el sistema ITAM - Frontend React.
+ *
+ * Gestiona el estado global de autenticación, incluyendo:
+ * - Login/logout de usuarios
+ * - Gestión automática de tokens JWT
+ * - Verificación de permisos
+ * - Estado de carga y navegación automática
+ *
+ * Proporciona un sistema completo de autenticación que se integra
+ * con el backend Django y maneja automáticamente el refresh de tokens.
+ */
 
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { jwtDecode } from 'jwt-decode'; // Librería para decodificar tokens JWT
+import api from '../api'; // Cliente API configurado
+import { toast } from 'react-toastify'; // Notificaciones al usuario
+import { useNavigate } from 'react-router-dom'; // Navegación programática
+
+// Creación del contexto de autenticación
 const AuthContext = createContext();
 
+/**
+ * Proveedor del contexto de autenticación.
+ *
+ * Componente que envuelve la aplicación y proporciona el estado de autenticación
+ * a todos los componentes hijos a través del contexto.
+ */
 export const AuthProvider = ({ children }) => {
     const navigate = useNavigate();
+
+    // Estados principales de autenticación
     const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [user, setUser] = useState(null); // This will now include is_staff, is_superuser
+    const [user, setUser] = useState(null); // Datos del usuario incluyendo flags de staff/superuser
     const [loading, setLoading] = useState(true);
-    // State to store user permissions as a Set for efficient lookups
-    const [userPermissions, setUserPermissions] = useState(new Set());
+    const [userPermissions, setUserPermissions] = useState(new Set()); // Set para búsquedas eficientes de permisos
 
     const logout = useCallback(() => {
         localStorage.removeItem('access_token');

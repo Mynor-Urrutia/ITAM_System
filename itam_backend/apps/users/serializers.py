@@ -1,3 +1,14 @@
+"""
+Serializadores para la gestión de usuarios en el sistema ITAM.
+
+Este archivo contiene todos los serializadores necesarios para:
+- CRUD completo de usuarios con roles y permisos
+- Registro de nuevos usuarios
+- Cambio de contraseñas
+- Gestión de roles y permisos
+- Autenticación JWT personalizada
+"""
+
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
@@ -9,21 +20,27 @@ from apps.employees.serializers import EmployeeSerializer
 User = get_user_model()
 
 class UserSerializer(serializers.ModelSerializer):
-    # Campos de solo lectura para mostrar los IDs y nombres de los roles (grupos)
+    """
+    Serializador principal para el modelo CustomUser.
+
+    Incluye campos calculados para mostrar información relacionada,
+    gestión de roles/permisos, y estadísticas de actividad del usuario.
+    Maneja tanto lectura como escritura de datos complejos.
+    """
+
+    # Campos calculados para roles y permisos
     role_ids = serializers.SerializerMethodField(read_only=True)
     role_names = serializers.SerializerMethodField(read_only=True)
-    role_name = serializers.SerializerMethodField(read_only=True)  # Single role name for profile
-
-    # Campo para las listas de permisos del usuario
+    role_name = serializers.SerializerMethodField(read_only=True)  # Nombre del primer rol para perfil
     user_permissions = serializers.SerializerMethodField()
     permissions_count = serializers.SerializerMethodField(read_only=True)
 
-    # Campo de escritura para asignar los roles (grupos) al usuario
+    # Campo de escritura para asignar roles (grupos)
     assigned_role_ids = serializers.PrimaryKeyRelatedField(
         queryset=Group.objects.all(), source='groups', many=True, write_only=True, required=False, allow_null=True
     )
 
-    # Campo de departamento y región
+    # Relaciones con datos maestros y empleados
     departamento = serializers.PrimaryKeyRelatedField(
         queryset=Departamento.objects.all(), allow_null=True, required=False
     )
@@ -38,11 +55,11 @@ class UserSerializer(serializers.ModelSerializer):
     employee_name = serializers.SerializerMethodField(read_only=True)
     employee_data = serializers.SerializerMethodField(read_only=True)
 
-    # Activity counts
+    # Estadísticas de actividad del usuario
     audit_logs_count = serializers.SerializerMethodField(read_only=True)
     assets_count = serializers.SerializerMethodField(read_only=True)
 
-    # Groups for profile display
+    # Grupos para visualización en perfil
     groups = serializers.SerializerMethodField(read_only=True)
 
 

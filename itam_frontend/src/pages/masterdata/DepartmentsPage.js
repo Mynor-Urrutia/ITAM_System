@@ -1,4 +1,22 @@
-// C:\Proyectos\ITAM_System\itam_frontend\src\pages\masterdata\DepartmentsPage.js
+/**
+ * Página de Gestión de Departamentos del sistema ITAM.
+ *
+ * Gestiona los departamentos organizacionales de la empresa:
+ * - CRUD completo de departamentos (crear, leer, actualizar, eliminar)
+ * - Vista responsiva con cards expandibles para móvil y tabla para desktop
+ * - Eliminación en cascada (elimina también áreas asociadas)
+ * - Paginación configurable
+ * - Control de permisos basado en roles
+ * - Validación de integridad referencial
+ *
+ * Características principales:
+ * - Gestión de estructura organizacional
+ * - Relaciones jerárquicas con áreas
+ * - Interfaz intuitiva para administración
+ * - Mensajes de confirmación para operaciones destructivas
+ * - Modales para formularios de creación/edición
+ */
+
 import React, { useState, useEffect } from 'react';
 import { getDepartamentos, deleteDepartamento } from '../../api'; // Importa las funciones API
 import DepartmentFormModal from './DepartmentFormModal'; // Importa el modal del formulario
@@ -8,6 +26,13 @@ import { useAuth } from '../../context/AuthContext'; // Para permisos
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus, faEdit, faTrash, faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons';
 
+/**
+ * Componente principal de la página de departamentos.
+ *
+ * Gestiona la visualización y manipulación de los departamentos
+ * organizacionales, incluyendo operaciones CRUD con validaciones
+ * de eliminación en cascada.
+ */
 function DepartmentsPage() {
     const [departamentos, setDepartamentos] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);

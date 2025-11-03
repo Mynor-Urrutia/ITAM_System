@@ -1,5 +1,21 @@
 // itam_frontend/src/pages/assets/RetireActivoModal.js
 
+/**
+ * Modal para dar de baja activos del sistema ITAM.
+ *
+ * Permite registrar la baja de un activo con motivo obligatorio
+ * y documentos opcionales adjuntos. Incluye validaciones,
+ * manejo de archivos múltiples y confirmación visual de la acción.
+ *
+ * Características principales:
+ * - Motivo de baja obligatorio con validación
+ * - Soporte para múltiples archivos adjuntos
+ * - Validación de tipos de archivo permitidos
+ * - Confirmación visual con advertencia de irreversibilidad
+ * - Estados de carga y manejo de errores
+ * - Reset automático del formulario al cerrar
+ */
+
 import React, { useState } from 'react';
 import Modal from '../../components/Modal';
 import { retireActivo } from '../../api';

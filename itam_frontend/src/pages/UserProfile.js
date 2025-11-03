@@ -1,4 +1,16 @@
-// itam_frontend/src/pages/UserProfile.js
+/**
+ * Página de Perfil de Usuario del sistema ITAM.
+ *
+ * Muestra información completa del usuario actual, incluyendo:
+ * - Información personal y organizacional
+ * - Roles y permisos asignados
+ * - Estadísticas de actividad (logs de auditoría, permisos)
+ * - Activos asignados actualmente
+ * - Funcionalidad para cambiar contraseña
+ *
+ * Maneja tanto usuarios del sistema como empleados con diferentes
+ * layouts de información según el tipo de usuario.
+ */
 
 import React, { useState, useEffect } from 'react';
 import { getCurrentUser, getAssignments, getActivos } from '../api';
@@ -20,6 +32,13 @@ import {
 import Modal from '../components/Modal';
 import ChangePasswordForm from '../components/ChangePasswordForm';
 
+/**
+ * Componente principal de la página de perfil de usuario.
+ *
+ * Gestiona la visualización de información del usuario actual con
+ * diferentes layouts para empleados vs usuarios del sistema.
+ * Incluye vista expandible de activos asignados.
+ */
 function UserProfile() {
     const [userData, setUserData] = useState(null);
     const [assignedAssets, setAssignedAssets] = useState([]);

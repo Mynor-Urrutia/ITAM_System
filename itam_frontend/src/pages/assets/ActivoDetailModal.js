@@ -1,4 +1,25 @@
-// itam_frontend/src/pages/assets/ActivoDetailModal.js
+/**
+ * Modal de detalles completos de un activo ITAM.
+ *
+ * Muestra información completa de un activo en pestañas organizadas:
+ * - General: Especificaciones técnicas, ubicación, fechas importantes
+ * - Mantenimiento: Historial y programación de mantenimientos
+ * - Pedido: Información del solicitante y detalles de compra
+ * - Asignación: Estado actual y historial de asignaciones
+ *
+ * Incluye funcionalidades para registrar mantenimientos y ver detalles específicos.
+ * Gestiona múltiples estados de carga, paginación y navegación por pestañas.
+ * Incluye manejo de archivos adjuntos y formato de fechas localizado.
+ *
+ * Características principales:
+ * - Vista por pestañas con navegación intuitiva
+ * - Información técnica condicional por tipo de activo
+ * - Estados de garantía calculados dinámicamente
+ * - Historial paginado de mantenimientos y asignaciones
+ * - Descarga de documentos adjuntos
+ * - Estados de carga independientes por sección
+ * - Formato de fechas localizado (español)
+ */
 
 import React, { useState, useEffect } from 'react';
 import Modal from '../../components/Modal';
@@ -8,17 +29,32 @@ import Pagination from '../../components/Pagination';
 import { getMaintenances, getAssignments } from '../../api';
 import { toast } from 'react-toastify';
 
+/**
+ * Componente principal del modal de detalles de activo.
+ *
+ * @param {boolean} show - Controla la visibilidad del modal
+ * @param {function} onClose - Función para cerrar el modal
+ * @param {Object} activo - Objeto del activo con toda su información
+ * @param {function} onActivoUpdate - Callback para actualizar datos del activo
+ */
 const ActivoDetailModal = ({ show, onClose, activo, onActivoUpdate }) => {
+    // Estados para navegación por pestañas
     const [activeTab, setActiveTab] = useState('general');
+
+    // Estados para modales relacionados
     const [showMaintenanceModal, setShowMaintenanceModal] = useState(false);
     const [showMaintenanceDetailModal, setShowMaintenanceDetailModal] = useState(false);
     const [selectedMaintenanceId, setSelectedMaintenanceId] = useState(null);
+
+    // Estados para historial de mantenimientos
     const [maintenances, setMaintenances] = useState([]);
     const [maintenancesLoading, setMaintenancesLoading] = useState(false);
     const [maintenancePage, setMaintenancePage] = useState(1);
     const [maintenancePageSize] = useState(5);
     const [maintenanceTotalCount, setMaintenanceTotalCount] = useState(0);
     const [maintenanceTotalPages, setMaintenanceTotalPages] = useState(0);
+
+    // Estados para información de asignación
     const [assignment, setAssignment] = useState(null);
     const [assignmentLoading, setAssignmentLoading] = useState(false);
     const [assignmentHistory, setAssignmentHistory] = useState([]);

@@ -1,13 +1,29 @@
+/**
+ * Componente de formulario para creación y edición de usuarios.
+ *
+ * Gestiona la creación de nuevos usuarios y la edición de usuarios existentes,
+ * incluyendo asignación de roles, información organizacional y vinculación
+ * con empleados. Incluye validaciones, manejo de errores y carga de datos maestros.
+ *
+ * Características principales:
+ * - Formulario dual: creación y edición de usuarios
+ * - Asignación múltiple de roles con selección múltiple
+ * - Vinculación opcional con empleados existentes
+ * - Campos organizacionales: departamento, región, empleado
+ * - Validaciones de contraseña y campos requeridos
+ * - Manejo de permisos (staff/superuser solo para superusuarios)
+ * - Estados de carga y manejo de errores
+ * - Búsqueda de empleados con modal dedicado
+ */
+
 import React, { useState, useEffect } from 'react';
-// IMPORTANTE: Se asume que '../api' contiene las funciones de la API
-// Asegúrate de que tu archivo api.js exporte getRegions y getDepartamentos
 import { getRegions, getDepartamentos, getEmployees } from '../api';
 import { toast } from 'react-toastify';
-import { useAuth } from '../context/AuthContext'; // Para obtener el usuario logueado
+import { useAuth } from '../context/AuthContext';
 import EmployeeSearchModal from './EmployeeSearchModal';
 import api from '../api';
 
-// Opciones para los campos de selección estáticos
+// Opciones estáticas para campos de selección
 const PUESTO_CHOICES = [
     'Gerente', 'Coordinador', 'Analista', 'Técnico', 'Desarrollador', 'Soporte', 'Otro'
 ];
@@ -15,12 +31,19 @@ const STATUS_CHOICES = [
     'Activo', 'Inactivo', 'Vacaciones', 'Licencia'
 ];
 
-// UserForm ahora recibe 'roles', 'onClose' y 'onSubmit' (que maneja la lógica de la API)
-function UserForm({ user, onClose, onSubmit, roles }) { 
+/**
+ * Componente principal del formulario de usuarios.
+ *
+ * @param {Object} user - Usuario a editar (null para creación)
+ * @param {function} onClose - Función para cerrar el modal
+ * @param {function} onSubmit - Función para enviar datos (crear/actualizar)
+ * @param {Array} roles - Lista de roles disponibles para asignar
+ */
+function UserForm({ user, onClose, onSubmit, roles }) {
     const isEditing = !!user;
-    const { user: loggedInUser } = useAuth(); // Para verificar si es superusuario
-    
-    // El estado de los campos de clave foránea (FK) debe inicializarse como null
+    const { user: loggedInUser } = useAuth(); // Usuario logueado para verificar permisos
+
+    // Estado inicial del formulario con valores por defecto
     const initialFormData = {
         username: '',
         email: '',
@@ -28,11 +51,11 @@ function UserForm({ user, onClose, onSubmit, roles }) {
         first_name: '',
         last_name: '',
         puesto: '',
-        departamento: null, // ID del departamento (debe ser null para FK opcionales en el backend)
-        region: null,       // ID de la región (debe ser null para FK opcionales en el backend)
-        employee: null,     // ID del empleado (debe ser null para FK opcionales en el backend)
+        departamento: null, // FK opcional - ID del departamento
+        region: null,       // FK opcional - ID de la región
+        employee: null,     // FK opcional - ID del empleado
         status: 'Activo',
-        assigned_role_ids: [], // Array de IDs de grupos/roles
+        assigned_role_ids: [], // Array de IDs de roles asignados
         is_staff: false,
         is_superuser: false,
     };

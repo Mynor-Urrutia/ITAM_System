@@ -1,4 +1,17 @@
-// C:\Proyectos\ITAM_System\itam_frontend\src\pages\masterdata\DepartmentFormModal.js
+/**
+ * Modal de Formulario para Departamentos.
+ *
+ * Formulario simple para crear y editar departamentos organizacionales.
+ * Incluye validación básica de campos y manejo de estados de carga.
+ *
+ * Características principales:
+ * - Creación y edición de departamentos
+ * - Validación de nombre obligatorio
+ * - Descripción opcional
+ * - Estados de carga y manejo de errores
+ * - Diseño responsive y accesible
+ */
+
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { createDepartamento, updateDepartamento } from '../../api'; // Importa las funciones API

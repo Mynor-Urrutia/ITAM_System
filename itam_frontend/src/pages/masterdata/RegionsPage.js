@@ -1,4 +1,22 @@
-// itam_frontend/src/pages/masterdata/RegionsPage.js
+/**
+ * Página de Gestión de Regiones del sistema ITAM.
+ *
+ * Gestiona las regiones geográficas de la organización:
+ * - CRUD completo de regiones (crear, leer, actualizar, eliminar)
+ * - Vista responsiva con cards expandibles para móvil y tabla para desktop
+ * - Búsqueda básica por nombre de región
+ * - Paginación configurable
+ * - Control de permisos basado en roles
+ * - Validación de integridad referencial (no eliminar si tiene fincas asignadas)
+ *
+ * Características principales:
+ * - Gestión de datos maestros geográficos
+ * - Interfaz intuitiva para administración
+ * - Mensajes de error informativos
+ * - Confirmaciones de eliminación
+ * - Modales para formularios de creación/edición
+ */
+
 import React, { useState, useEffect } from 'react';
 import { getRegions, deleteRegion } from '../../api';
 import { toast } from 'react-toastify';
@@ -8,6 +26,12 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus, faEdit, faTrash, faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons';
 import Pagination from '../../components/Pagination';
 
+/**
+ * Componente principal de la página de regiones.
+ *
+ * Gestiona la visualización y manipulación de las regiones geográficas,
+ * incluyendo operaciones CRUD con validaciones de integridad.
+ */
 function RegionsPage() {
     const [regions, setRegions] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);

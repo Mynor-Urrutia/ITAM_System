@@ -1,4 +1,19 @@
-// itam_frontend/src/pages/masterdata/ProveedoresPage.js
+/**
+ * Página de Gestión de Proveedores.
+ *
+ * Interfaz completa para administrar proveedores con información
+ * detallada de contactos de ventas y soporte. Incluye gestión
+ * CRUD completa con vistas duales y permisos granulares.
+ *
+ * Características principales:
+ * - Gestión CRUD completa de proveedores
+ * - Información completa de empresa y contactos
+ * - Contactos separados para ventas y soporte
+ * - Vista dual: cards móviles / tabla desktop
+ * - Estados de carga y manejo de errores completo
+ * - Diseño responsive con navegación intuitiva
+ * - Permisos granulares basados en roles
+ */
 
 import React, { useState, useEffect } from 'react';
 import { getProveedores, deleteProveedor } from '../../api';

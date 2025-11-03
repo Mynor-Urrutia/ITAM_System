@@ -1,4 +1,19 @@
-// itam_frontend/src/pages/masterdata/FarmsPage.js
+/**
+ * Página de Gestión de Fincas.
+ *
+ * Interfaz completa para administrar fincas agrícolas con asignación
+ * a regiones geográficas. Incluye gestión CRUD completa con vistas
+ * duales (cards móviles / tabla desktop) y permisos granulares.
+ *
+ * Características principales:
+ * - Gestión CRUD completa de fincas
+ * - Asignación opcional a regiones geográficas
+ * - Información de dirección y ubicación
+ * - Vista dual: cards móviles / tabla desktop
+ * - Estados de carga y manejo de errores completo
+ * - Diseño responsive con navegación intuitiva
+ */
+
 import React, { useState, useEffect } from 'react';
 import { getFincas, getRegions, deleteFinca } from '../../api';
 import { toast } from 'react-toastify';

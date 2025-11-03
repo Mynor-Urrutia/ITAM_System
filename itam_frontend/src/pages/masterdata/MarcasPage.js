@@ -1,4 +1,19 @@
-// itam_frontend/src/pages/masterdata/MarcasPage.js
+/**
+ * Página de Gestión de Marcas.
+ *
+ * Interfaz completa para administrar marcas de equipos tecnológicos.
+ * Incluye gestión CRUD completa con vistas duales (cards móviles / tabla desktop)
+ * y permisos granulares basados en roles de usuario.
+ *
+ * Características principales:
+ * - Gestión CRUD completa de marcas
+ * - Vista dual: cards móviles / tabla desktop
+ * - Estados de carga y manejo de errores completo
+ * - Diseño responsive con navegación intuitiva
+ * - Permisos granulares (add, change, delete)
+ * - Paginación inteligente
+ * - Búsqueda placeholder preparada
+ */
 
 import React, { useState, useEffect } from 'react';
 import { getMarcas, deleteMarca } from '../../api';

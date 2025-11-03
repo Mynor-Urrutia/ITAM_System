@@ -1,4 +1,20 @@
-// C:\Proyectos\ITAM_System\itam_frontend\src\pages\masterdata\TiposActivosPage.js
+/**
+ * Página de Gestión de Tipos de Activos.
+ *
+ * Interfaz completa para administrar tipos de activos tecnológicos
+ * (computadoras, routers, switches, etc.). Incluye gestión CRUD
+ * completa con vistas duales y permisos granulares.
+ *
+ * Características principales:
+ * - Gestión CRUD completa de tipos de activos
+ * - Vista dual: cards móviles / tabla desktop
+ * - Estados de carga y manejo de errores completo
+ * - Diseño responsive con navegación intuitiva
+ * - Permisos granulares basados en roles
+ * - Paginación inteligente
+ * - Búsqueda placeholder preparada
+ */
+
 import React, { useState, useEffect } from 'react';
 import { getTiposActivos, deleteTipoActivo } from '../../api'; // Make sure to import the correct API functions
 import TipoActivoFormModal from './TipoActivoFormModal'; // Make sure to import your modal component

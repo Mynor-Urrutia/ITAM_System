@@ -1,4 +1,19 @@
-// itam_frontend/src/pages/assets/AssignmentModal.js
+/**
+ * Modal de Selección de Activos para Asignación.
+ *
+ * Interfaz para seleccionar activos disponibles y asignarlos a empleados.
+ * Incluye búsqueda, filtrado, ordenamiento y selección múltiple de activos
+ * con vista previa antes de la asignación final.
+ *
+ * Características principales:
+ * - Lista paginada de activos disponibles (no asignados)
+ * - Búsqueda en tiempo real por hostname, serie, tipo, marca, modelo
+ * - Selección múltiple con checkboxes
+ * - Ordenamiento por columnas
+ * - Vista dual: cards móviles / tabla desktop
+ * - Integración con AssignmentFormModal para edición de especificaciones
+ * - Estados de carga y manejo de errores
+ */
 
 import React, { useState, useEffect } from 'react';
 import Modal from '../../components/Modal';

@@ -1,4 +1,21 @@
-// src/components/Home.js
+/**
+ * Componente principal del Dashboard ITAM.
+ *
+ * Página principal que muestra métricas generales, alertas críticas y
+ * vistas detalladas del estado del sistema. Incluye gráficos interactivos,
+ * tablas de garantías próximas a vencer y mantenimientos pendientes.
+ *
+ * Características principales:
+ * - Dashboard ejecutivo con estadísticas en tiempo real
+ * - Carousel automático de tipos de activos
+ * - Alertas de garantías próximas a vencer con filtros
+ * - Vista de mantenimientos con estados color-coded
+ * - Gráficos de distribución por tipo de activo
+ * - Modales detallados con paginación y filtros
+ * - Diseño responsive (móvil/desktop)
+ * - Estados de carga y manejo de errores
+ */
+
 import React, { useState, useEffect } from 'react';
 import Modal from './Modal';
 import Pagination from './Pagination';

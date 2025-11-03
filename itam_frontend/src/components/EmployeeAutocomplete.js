@@ -1,22 +1,25 @@
-// itam_frontend/src/components/EmployeeAutocomplete.js
+/**
+ * Componente de Autocompletado para Empleados.
+ *
+ * Proporciona búsqueda en tiempo real de empleados con funcionalidad
+ * de autocompletado. Incluye debounce para optimizar peticiones,
+ * manejo de estados de carga y selección intuitiva.
+ *
+ * Características principales:
+ * - Búsqueda en tiempo real con debounce de 300ms
+ * - Dropdown con resultados paginados (máximo 50)
+ * - Carga automática del nombre cuando hay ID preseleccionado
+ * - Estados visuales de carga y búsqueda
+ * - Manejo de errores y casos edge
+ * - Diseño responsive y accesible
+ * - Integración perfecta con formularios React
+ */
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { debounce } from 'lodash';
 import api from '../api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch, faCircleNotch } from '@fortawesome/free-solid-svg-icons';
-
-/**
- * Componente de Autocompletado para Empleados
- * @param {object} props
- * @param {string} props.name - Nombre del campo (ej. 'supervisor')
- * @param {string} props.label - Etiqueta a mostrar (ej. 'Jefe Inmediato')
- * @param {number|null} props.value - El ID actualmente seleccionado (del estado del formulario padre)
- * @param {function} props.onChange - Función para manejar el cambio (recibe un evento sintético con name y value)
- * @param {string} [props.placeholder='Escribe para buscar...']
- * @param {boolean} [props.required=false]
- * @param {boolean} [props.disabled=false]
- */
 const EmployeeAutocomplete = ({
     name,
     label,

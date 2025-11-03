@@ -1,4 +1,25 @@
-// itam_frontend/src/pages/employees/EmployeeFormModal.js
+/**
+ * Modal de Formulario de Empleados del sistema ITAM.
+ *
+ * Formulario completo para crear y editar empleados:
+ * - Campos organizados en secciones: Personal y Organizacional
+ * - Validaciones en tiempo real y al envío
+ * - Filtros dinámicos en cascada (departamento->área, región->finca)
+ * - Búsqueda de supervisor con modal dedicado
+ * - Carga automática de opciones desde APIs
+ * - Manejo de archivos para documentos PDF
+ * - Estados de carga y manejo de errores
+ * - Diseño responsivo con grid adaptable
+ *
+ * Características principales:
+ * - Formulario dividido en 2 secciones principales
+ * - Validación completa de campos obligatorios
+ * - Filtros inteligentes que dependen unos de otros
+ * - Búsqueda avanzada de supervisor con autocompletado
+ * - Soporte para archivos PDF y manejo de FormData
+ * - Estados de carga y feedback visual
+ * - Manejo de errores con mensajes específicos
+ */
 
 import React, { useState, useEffect } from 'react';
 import Modal from '../../components/Modal';
@@ -10,6 +31,19 @@ import {
 import api from '../../api';
 import { toast } from 'react-toastify';
 
+/**
+ * Componente modal para crear y editar empleados.
+ *
+ * Gestiona el formulario completo de empleados con validaciones,
+ * filtros dinámicos, búsqueda de supervisor y manejo de archivos.
+ * Incluye conversión automática de datos y manejo de FormData
+ * para archivos.
+ *
+ * @param {boolean} show - Estado de visibilidad del modal
+ * @param {function} onClose - Función para cerrar el modal
+ * @param {function} onSaveSuccess - Callback ejecutado tras guardar exitosamente
+ * @param {object} employeeToEdit - Objeto empleado para editar (opcional)
+ */
 const EmployeeFormModal = ({ show, onClose, onSaveSuccess, employeeToEdit }) => {
     const [formData, setFormData] = useState({
         employee_number: '',
