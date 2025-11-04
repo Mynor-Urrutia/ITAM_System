@@ -61,3 +61,14 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         if getattr(self, 'action', None) in ['create', 'update', 'partial_update']:
             return [parsers.MultiPartParser(), parsers.FormParser()]
         return super().get_parsers()
+
+    def update(self, request, *args, **kwargs):
+        try:
+            return super().update(request, *args, **kwargs)
+        except Exception as e:
+            print("\n❌ ERROR EN UPDATE EMPLOYEE:", str(e))
+            traceback.print_exc()
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
